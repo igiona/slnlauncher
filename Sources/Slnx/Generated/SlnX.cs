@@ -41,8 +41,6 @@ namespace Slnx.Generated {
         
         private string skipField;
         
-        private string autoupdateField;
-        
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute("env")]
         public EnvType[] env {
@@ -139,17 +137,6 @@ namespace Slnx.Generated {
             }
             set {
                 this.skipField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string autoupdate {
-            get {
-                return this.autoupdateField;
-            }
-            set {
-                this.autoupdateField = value;
             }
         }
     }
