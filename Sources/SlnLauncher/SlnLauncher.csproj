@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+	<OutputType>WinExe</OutputType>
+	<TargetFramework>net5.0-windows</TargetFramework>
+	<UseWindowsForms>true</UseWindowsForms>
+	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="SlnLauncher.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="SlnLauncher.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(NugetHelper)\NugetHelper.csproj" />
+    <ProjectReference Include="$(Slnx)\Slnx.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="NDesk.Options">
+      <HintPath>$(NDesk_Options)\NDesk.Options.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="ProgressDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="ProgressDialog.Designer.cs">
+      <DependentUpon>ProgressDialog.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="ProgressDialog.resx">
+      <DependentUpon>ProgressDialog.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
