@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+    <xs:include schemaLocation="PackageType.xsd"/>
+    
+	<xs:element name="SlnX" type="SlnXType">
+		<xs:annotation>
+			<xs:documentation>Root element</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="SlnXType">
+		<xs:sequence>
+			<xs:element name="env" type="EnvType" minOccurs="0" maxOccurs="5000"/>
+			<xs:element name="project" type="ProjectType" minOccurs="0" maxOccurs="5000"/>
+			<xs:element name="import" type="ImportType" minOccurs="0" maxOccurs="5000"/>
+			<xs:element name="bundle" type="BundleType" minOccurs="0" maxOccurs="5000"/>
+			<xs:element name="package" type="PackageType" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="sln" use="optional"/>
+		<xs:attribute name="searchPath"/>
+		<xs:attribute name="packagesPath" use="optional"/>
+		<xs:attribute name="skip" use="optional"/>
+		<xs:attribute name="autoupdate" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="EnvType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="ProjectType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="name" use="required"/>
+				<xs:attribute name="branch" use="optional"/>
+				<xs:attribute name="container" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="BundleType">
+		<xs:sequence>
+			<xs:element name="package" type="PackageType" minOccurs="0" maxOccurs="5000"/>
+		</xs:sequence>
+		<xs:attribute name="name" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="ImportType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="path" use="optional"/>
+				<xs:attribute name="bundle" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>
