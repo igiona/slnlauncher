@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SlnLauncher": {
+      "commandName": "Project",
+      "commandLineArgs": "-ib -o- --log D:\\GitRepositories\\slnlauncher\\SlnLauncher.slnx"
+    }
+  }
+}

@@ -34,7 +34,6 @@ namespace Slnx
 
         public CsProject(string fullpath, string container, string defaultContainer, string requestedBranch)
         {
-            int i;
             bool projectContentModified = false;
 
             _typeGuid = CsProjectTypeGuid.ToUpper();
@@ -61,14 +60,20 @@ namespace Slnx
 
             var projectContent = File.ReadAllText(FullPath);
             var m = _guidRegex.Match(projectContent);
-            if (!m.Success)
-                throw new Exception(string.Format("The project '{0}' does not contain a valid ProjectGuid tag!", FullPath));
-            _projectGuid = m.Groups["guid"].Value.ToUpper();
+            if (m.Success)
+            {
+                _projectGuid = m.Groups["guid"].Value.ToUpper(); 
+                
+            }
+            else
+            {
+                _projectGuid = Guid.NewGuid().ToString();
+            }
 
-            m = _dotNetVersionRegex.Match(projectContent);
+            /*m = _dotNetVersionRegex.Match(projectContent);
             if (!m.Success)
                 throw new Exception(string.Format("The project '{0}' does not contain a valid TargetFrameworkVersion tag!", FullPath));
-            DotNetVersion = m.Groups["version"].Value;
+            DotNetVersion = m.Groups["version"].Value;*/
 
             m = _platformRegex.Match(projectContent);
             Platform = PlatformType.x86; //Assume x86
@@ -129,12 +134,6 @@ namespace Slnx
         public override string Name
         {
             get { return _name; }
-        }
-
-        public string DotNetVersion
-        {
-            get;
-            private set;
         }
 
         public PlatformType Platform

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<SlnX searchPath="%__SLN_LAUNCHER_PROJECT_SEARCH_PATH%" packagesPath="C:\Nugetcache">
+    <!-- Local -->
+
+    <!-- 
+        ! DO NOT IMPORT COMMONS IN THIS SLNX ! 
+        The environment variable set there, will ovveride the variables specified in the other SLNX files during testing (NUnit) !
+        Additionally, define environment variables here with a very specific name, to avoid to override the one in the 
+        opened SlnX during debugging.
+    -->   
+    
+    <env name="__SLN_LAUNCHER_NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
+    <env name="__SLN_LAUNCHER_PROJECT_SEARCH_PATH">%_slnx_%\Sources</env>     
+    
+    <package id="NUnit" version="3.13.1" targetFramework="" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NUnit3TestAdapter" version="3.17.0" targetFramework="" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    
+    <package id="NDesk.Options" version="0.2.1" targetFramework="" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="System.Management.Automation.dll" version="10.0.10586.0" targetFramework="net40" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    
+    <package id="Newtonsoft.Json" version="9.0.1" targetFramework="netstandard1.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Configuration" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Frameworks" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Packaging" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Packaging.Core" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Protocol" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+
+    <!-- Projects -->
+    <project name="SlnLauncher" container="" />
+    <project name="Slnx" container="Lib" />
+    <!--<project name="Slnx.Test" /> -->
+    
+    <project name="NugetHelper" container="Lib" />
+    
+</SlnX>
