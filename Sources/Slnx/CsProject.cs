@@ -22,17 +22,15 @@ namespace Slnx
         public const string FileExtension = "csproj";
         public const string DotExtension = "." + FileExtension;
         const string GuidPattern = @"<ProjectGuid>{(?<guid>.*)}<\/ProjectGuid>";
-        const string DontNetVersionPattern = @"<TargetFrameworkVersion>(?<version>.*)<\/TargetFrameworkVersion>";
         const string PlatformPattern = @"<Platform .*>(?<platform>.*)<\/Platform>";
         const string ProjectReferencePattern = "<ProjectReference Include=\"(?<reference>.*)\">";
         const string ProjectReferenceTemplate = @"$({0})\{1}.{2}";
 
         static Regex _guidRegex = new Regex(GuidPattern);
-        static Regex _dotNetVersionRegex = new Regex(DontNetVersionPattern);
         static Regex _platformRegex = new Regex(PlatformPattern);
         static Regex _projectRefRegex = new Regex(ProjectReferencePattern);
 
-        public CsProject(string fullpath, string container, string defaultContainer, string requestedBranch)
+        public CsProject(string fullpath, string container, string defaultContainer)
         {
             bool projectContentModified = false;
 
@@ -69,11 +67,6 @@ namespace Slnx
             {
                 _projectGuid = Guid.NewGuid().ToString();
             }
-
-            /*m = _dotNetVersionRegex.Match(projectContent);
-            if (!m.Success)
-                throw new Exception(string.Format("The project '{0}' does not contain a valid TargetFrameworkVersion tag!", FullPath));
-            DotNetVersion = m.Groups["version"].Value;*/
 
             m = _platformRegex.Match(projectContent);
             Platform = PlatformType.x86; //Assume x86

@@ -19,7 +19,6 @@
 		<xs:attribute name="searchPath"/>
 		<xs:attribute name="packagesPath" use="optional"/>
 		<xs:attribute name="skip" use="optional"/>
-		<xs:attribute name="autoupdate" use="optional"/>
 	</xs:complexType>
 	<xs:complexType name="EnvType">
 		<xs:simpleContent>
@@ -32,7 +31,6 @@
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
 				<xs:attribute name="name" use="required"/>
-				<xs:attribute name="branch" use="optional"/>
 				<xs:attribute name="container" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
