@@ -69,7 +69,7 @@ namespace Slnx
             }
 
             m = _platformRegex.Match(projectContent);
-            Platform = PlatformType.x86; //Assume x86
+            Platform = PlatformType.AnyCpu;
             if (m.Success)
             {
                 var p = m.Groups["platform"].Value.ToLower();
