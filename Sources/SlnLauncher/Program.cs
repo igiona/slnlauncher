@@ -11,6 +11,8 @@ using System.Reflection;
 using Slnx;
 using Slnx.Generated;
 using NDesk.Options;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 // Important note:
 //  The NuGet Client code requires to know its version.
@@ -102,7 +104,9 @@ namespace SlnLauncher
                 MakeSln(slnx);
 
                 if (_openSolution)
-                    System.Diagnostics.Process.Start(slnx.SlnPath);
+                {
+                    OpenSln(slnx.SlnPath);
+                }
             }
             catch (Exception ex)
             {
@@ -237,6 +241,29 @@ namespace SlnLauncher
             _logger.Info("Done!");
         }
 
+        static void OpenSln(string sln)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                new Process
+                {
+                    StartInfo = new ProcessStartInfo($"{sln}")
+                    {
+                        UseShellExecute = true
+                    }
+                }.Start();
+                //Process.Start(new ProcessStartInfo("cmd", $"/c start {sln}"));
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Process.Start("xdg-open", sln);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Process.Start("open", sln);
+            }
+        }
+
         static void MakeSln(SlnxHandler slnx)
         {
             List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
@@ -270,8 +297,8 @@ namespace SlnLauncher
 
             //Header
             slnSb.Append(@"Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1");
             //Project list
             slnSb.Append(projectListSb);
@@ -303,8 +330,12 @@ Global
             //End
             slnSb.Append(@"
 	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution");
+	slnSb.AppendFormat(@"
+		SolutionGuid = {{{0}}}
+	EndGlobalSection
 EndGlobal
-");
+", Guid.NewGuid().ToString());
             File.WriteAllText(outFile, slnSb.ToString());
             _logger.Info("Done!");
         }
