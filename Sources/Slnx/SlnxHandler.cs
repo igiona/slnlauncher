@@ -230,7 +230,7 @@ namespace Slnx
                 var p = new Project(knownProject[0], requestedProject.container);
                 _projects.Add(p);
 
-                if (p.Item != null)
+                if (p.Item?.Container != null)
                 {
                     var containers = p.Item.Container.Split('/');
 
