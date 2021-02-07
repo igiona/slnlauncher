@@ -46,12 +46,10 @@ namespace SlnLauncher
             _openSolution = true;
             _createMsBuild = false;
             var quiteExecution = false;
-            var ignoreBranches = false;
             var autoNuget = true;
             var dump = false;
             string slnxFile = null;
             _pythonEnvVarsPath = null;
-            string checkoutProjectsSvnUrl = null;
 
             OptionSet p = new OptionSet()
               .Add("q|quite", "If set (-q/-q+) no popups will be shown in case of exceptions. [Default: not set]", v => quiteExecution = v != null)
@@ -60,8 +58,6 @@ namespace SlnLauncher
               .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location . [Default: not set]", v => dump = v != null)
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
-              .Add("ib|ignoreBranches", "If set (-ib/-ib+), the Launcher will not check if a project is checked out in a path containing the specified project branch path. [Default: not set]", v => ignoreBranches = v != null)
-              .Add("co=|checkout=", "SVN URL where to search for the projects to checkout. If set, all necessary projects will be checkedout in the searchPath specified in the SlnX. [Default: not set]", v => checkoutProjectsSvnUrl = v)
               .Add("log", "If set (-log/-log+), a log file location in the EXE directory will be created. [Default: false]", v => { if (v != null) { _logger.SetLog(Path.Combine(typeof(Program).Assembly.Location + ".log"), LogLevel.Debug); } })
               .Add("ng|nuget", "If set (-ng/-ng+), the defined NuGet packages will be automatically downloaded. [Default: true]", v => autoNuget = v != null);
 
@@ -82,14 +78,7 @@ namespace SlnLauncher
                     slnxUser = SlnxHandler.ReadSlnx(slnxUserFile);
                 }
 
-                if (!string.IsNullOrEmpty(checkoutProjectsSvnUrl))
-                {
-                    var checkoutSlnx = new SlnxHandler(slnxFile, checkoutProjectsSvnUrl, slnxUser);
-                    checkoutSlnx.CheckoutApplication();
-                    checkoutSlnx = null;
-                }
-
-                var slnx = new SlnxHandler(slnxFile, slnxUser, ignoreBranches);
+                var slnx = new SlnxHandler(slnxFile, slnxUser);
 
                 if (_createMsBuild)
                 {
@@ -119,9 +108,10 @@ namespace SlnLauncher
             {
                 string exText = string.Join("\n", new AggregateException(ex).InnerExceptions.Select(x => x.Message));
                 _logger.Error(exText);
+                _logger.Error(ex.StackTrace);
 
                 if (!quiteExecution)
-                    MessageBox.Show(exText, "Error");
+                    MessageBox.Show(string.Format("Run the command with the option --log for more information\n\n{0}", exText), "Error");
                 else
                     throw;
             }
@@ -210,7 +200,7 @@ namespace SlnLauncher
 
                 foreach (var p in slnx.Projects.Where(x => x.Item != null && !x.Item.IsContainer))
                 {
-                    f.WriteLine("{0,-80} [{1,-8}] => {2}", p.Item.Name, p.Branch, p.FullPath);
+                    f.WriteLine("{0,-40} => {1}", p.Item.Name, p.FullPath);
                 }
 
                 f.WriteLine("------------------------------------\n");

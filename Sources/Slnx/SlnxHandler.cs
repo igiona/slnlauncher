@@ -18,50 +18,32 @@ namespace Slnx
         public const string DefaultPackagesFolderName = "pack";
 
         string _slnxPath;
-        string _svnSearchPath;
         string _slnxDirectory;
         string _slnxFile;
         string _slnxName;
         SlnXType _slnx;
-        Logger _logger;
+        Logger _logger = Logger.Instance;
 
         Dictionary<string, string> _environmentVariables = new Dictionary<string, string>();
         Dictionary<string, List<PackageType>> _packageBundles = new Dictionary<string, List<PackageType>>();
-        Dictionary<string, string> _knownVariables = new Dictionary<string, string>();
         List<SlnxHandler> _imports = new List<SlnxHandler>();
         List<Project> _projects = null;
         Dictionary<string, NugetPackage> _packages = new Dictionary<string, NugetPackage>();
 
-        public SlnxHandler(string fName, bool ignoreBranches = false) : this(fName, null, null, ignoreBranches)
+        public SlnxHandler(string fName) : this(fName, null)
         {
         }
 
-        public SlnxHandler(string fName, string svnSearchPath) : this(fName, svnSearchPath, null, false)
+        public SlnxHandler(string fName, SlnXType userSettings)
         {
-        }
-
-        public SlnxHandler(string fName, SlnXType userSettings, bool ignoreBranches = false) : this(fName, null, userSettings, ignoreBranches)
-        {
-        }
-
-        public SlnxHandler(string fName, string svnSearchPath, SlnXType userSettings, bool ignoreBranches = false)
-        {
-            if (!(!ignoreBranches || (ignoreBranches && string.IsNullOrEmpty(svnSearchPath))))
-            {
-                throw new ArgumentOutOfRangeException("Ignoring branches with the SVN search path set is not allowed. It will lead to many ambigous projects (trunk & tags & branches)");
-            }
-            
             _slnxPath = Path.GetFullPath(fName);
             Assert(File.Exists(_slnxPath), "The provided SlnX file '{0}' is not a file or it doesn't exists", _slnxPath);
             _slnxDirectory = Path.GetDirectoryName(_slnxPath);
             _slnxFile = Path.GetFileName(fName);
             _slnxName = Path.GetFileNameWithoutExtension(fName);
-            _knownVariables["$slnx"] = _slnxDirectory;
-            IgnoreBranches = ignoreBranches;
+            _environmentVariables["_slnx_"] = _slnxDirectory;
 
             _slnx = ReadSlnx(fName);
-
-            AutoUpdateSources = ParseBoolean(_slnx?.autoupdate, true);
 
             ExtendDictionary(_environmentVariables, _slnx.env, true);
             ExtendDictionary(_packageBundles, _slnx.bundle, true);
@@ -78,18 +60,11 @@ namespace Slnx
 
             ExpandAll(_environmentVariables); // to apply imports & user env vars 
 
-            var searchPath = LocalSearchPath;
-            if (!string.IsNullOrEmpty(svnSearchPath))
-            {
-                _svnSearchPath = Environment.ExpandEnvironmentVariables(svnSearchPath);
-                searchPath = SvnSearchPath;
-            }
-
-            FindProjects(_slnx.project, searchPath, _slnx.skip, "trunk", ignoreBranches);
+            FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip);
             ExtendDictionary(_packages, _slnx.package, true);
         }
 
-        public string LocalSearchPath
+        public string ProjectsSearchPath
         {
             get
             {
@@ -107,11 +82,6 @@ namespace Slnx
                     return Environment.ExpandEnvironmentVariables(_slnx?.packagesPath);
                 return Path.Combine(SlnxDirectory, DefaultPackagesFolderName);
             }
-        }
-
-        public string SvnSearchPath
-        {
-            get { return _svnSearchPath; }
         }
 
         public string SlnxDirectory
@@ -140,18 +110,6 @@ namespace Slnx
             }
         }
 
-        public bool IgnoreBranches
-        {
-            get;
-            private set;
-        }
-
-        public bool AutoUpdateSources
-        {
-            get;
-            private set;
-        }
-
         public IEnumerable<Project> Projects
         {
             get
@@ -176,191 +134,6 @@ namespace Slnx
             }
         }
 
-        /// <summary>
-        /// List of path (to be used only when running locally!) of required branches.
-        /// The returned list contains both projects and SlnX files to be branched.
-        /// </summary>
-        public IEnumerable<Interfaces.IBranchable> NeededBranches
-        {
-            get
-            {
-                return ListAllRequiredBranches(true);
-            }
-        }
-
-        /// <summary>
-        /// List of path (to be used only when running locally!) of required tags.
-        /// The returned list contains both projects and SlnX files to be tagged.
-        /// </summary>
-        public IEnumerable<Interfaces.IBranchable> NeededTags
-        {
-            get
-            {
-                return ListAllRequiredBranches(false);
-            }
-        }
-
-        public IEnumerable<Project> NeededSvnBranches
-        {
-            get
-            {
-                SortedSet<Project> co = new SortedSet<Project>();
-
-                foreach (var import in _imports)
-                {
-                    foreach (var c in import.NeededSvnBranches)
-                    {
-                        co.Add(c);
-                    }
-                }
-
-                foreach (var p in Projects.Where((x) => x.BranchableDirectory != null))
-                {
-                    if (!p.IsLocalFile)
-                    {
-                        co.Add(p);
-                    }
-                }
-                return co;
-            }
-        }
-        
-        public void CheckoutApplication()
-        {
-            CheckoutApplication(LocalSearchPath);
-        }
-
-        public void CheckoutApplication(string checkoutRoot)
-        {
-            Assert(!IgnoreBranches, "Unable to checkout the application if the ignore branches flag is set.");
-            _logger.Info("Application checkout in: {0}", checkoutRoot);
-
-            if (!Directory.Exists(checkoutRoot))
-            {
-                Directory.CreateDirectory(checkoutRoot);
-            }
-
-            foreach(var svnRoot in NeededSvnBranches)
-            {
-                var checkoutFolder = Path.Combine(checkoutRoot, svnRoot.CommonRootName, svnRoot.Branch.Replace('/', '\\'));
-                _logger.Info("Checking/Updating {0}", checkoutFolder);
-                if (!Directory.Exists(checkoutFolder))
-                {
-                    ExecuteLongSvnOperation(() => { /*SvnAccess.Instance.CheckOut(svnRoot.BranchableDirectory, checkoutFolder);*/ });
-                }
-                else if (AutoUpdateSources)
-                {
-                    ExecuteLongSvnOperation(() => { /*SvnAccess.Instance.Update(checkoutFolder);*/ });
-                }
-                _logger.Info("Done!");
-            }
-            _logger.Info("Application successfully checked out.");
-        }
-
-        public void TagApplication(string tagName)
-        {
-            BranchTagApplication(tagName, true);
-        }
-
-        public void BranchApplication(string tagName)
-        {
-            BranchTagApplication(tagName, false);
-        }
-
-        private SortedSet<Interfaces.IBranchable> ListAllRequiredBranches(bool allowTaggedElements)
-        {
-            SortedSet<Interfaces.IBranchable> branches = new SortedSet<Interfaces.IBranchable>();
-            if (allowTaggedElements || !SlnxPath.ToLower().Contains("tags"))
-                branches.Add(new SlnxFile(SlnxPath));
-
-            foreach (var import in _imports)
-            {
-                foreach (var b in import.NeededBranches)
-                {
-                    if (allowTaggedElements || !b.BranchableDirectory.ToLower().Contains("tags"))
-                        branches.Add(b);
-                }
-            }
-
-            foreach (var p in Projects.Where((x) => x.Branch != null))
-            {
-                Assert(System.IO.Directory.Exists(p.BranchableDirectory), "Branchable directory {0} for the project {1} not found", p.BranchableDirectory, p.FullPath);
-
-                if (allowTaggedElements || !p.BranchableDirectory.ToLower().Contains("tags"))
-                {
-                    branches.Add(p);
-                }
-            }
-            return branches;
-        }
-
-        /// <summary>
-        /// It tags/branches all the necessary projects roots.
-        /// </summary>
-        /// <param name="tagName">The tag plain name (without the "tags" or "branchs" marking!). It needs to be a valid folder name</param>
-        private void BranchTagApplication(string tagName, bool isTag)
-        {
-            throw new NotImplementedException();
-            /*
-            Assert(!IgnoreBranches, "Unable to branch the application if the ignore branches flag is set.");
-            Assert(SvnSearchPath == null, "It is not possible to tag/branch the application if the project are searched in a SVN localtion.");
-
-            string tagDir = isTag ? "tags" : "branches";
-
-            tagName = tagName.Replace(" ", "");
-            foreach(var c in Path.GetInvalidFileNameChars())
-            {
-                Assert(!tagName.Contains(c), "The caharacter '{0}' in the tag/branch name is invalid", c);
-            }
-
-            var requiredElements = isTag ? NeededTags : NeededBranches;
-
-            foreach (var toBranch in requiredElements)
-            {
-                //if (SvnAccess.Instance.HasUncommittedChanges(branchDir))
-                //{
-                //    //Todo LOG ?
-                //}
-                string tagSource = SvnAccess.Instance.GetRepositoryPath(toBranch.BranchableDirectory); 
-                var tagDest = GetSvnTagDirectory(toBranch.BranchableDirectory, tagDir, tagName);
-                ExecuteLongSvnOperation(() => { SvnAccess.Instance.Copy(tagSource, tagDest, string.Format("[{0}] Automatic tag/branch {1}", SlnxName, tagName)); });
-
-                if (toBranch is SlnxFile) //Need to patch this file !
-                {
-                    var tmpDir = HIMS.Services.Core.PredefinedFolders.GetAndEnsureLocalPath("SlnXCheckouts");
-                    var tmpPath = Path.Combine(tmpDir, tagName, Path.GetFileName(toBranch.FullPath));
-
-                    try
-                    {
-                        ExecuteLongSvnOperation(() => { SvnAccess.Instance.CheckOutFile(tagDest, tmpDir); });
-                        var slnx = ReadSlnx(tmpPath);
-                        slnx.autoupdate = "true"; //Override in case of a wrong check-in
-                        //slnx.import = 
-                        if (slnx.project != null)
-                        {
-                            foreach (var p in slnx.project)
-                            {
-                                p.branch = string.Format("{0}\\{1}", tagDir, tagName);
-                            }
-                        }
-                        //if (slnx.import != null)
-                        //{
-                        //    foreach (var i in slnx.import)
-                        //    {
-                        //        i.path = ??
-                        //    }
-                        //}
-                        WriteSlnx(tmpPath, slnx);
-                        ExecuteLongSvnOperation(() => { SvnAccess.Instance.CommitChanges(tmpPath, string.Format("[{0}] Automatic SlnX tag/branch-fix on {1}", SlnxName, tagName)); });
-                    }
-                    finally
-                    {
-                        Directory.Delete(tmpDir, true);
-                    }
-                }
-            }*/
-        }
-
         public static SlnXType ReadSlnx(string slnxFile)
         {
             var xmlSer = new XmlSerializer(typeof(SlnXType));
@@ -381,25 +154,7 @@ namespace Slnx
             }
         }
 
-        private string GetSvnTagDirectory(string dir, string tagDir, string tagName)
-        {
-            Assert(Directory.Exists(dir), "The directory to branch does not exist locally: {0}", dir);
-
-            int endIndex = -1;
-            foreach (var v in new[] { "trunk", "tags", "branches" })
-            {
-                endIndex = dir.IndexOf(v);
-                if (endIndex >= 0) break;
-            }
-            Assert(endIndex >= 0, "The directory to branch does is invalid (no tags/trunk/branches markup): {0}", dir);
-            var root = dir.Substring(0, endIndex);
-            var svnRoot = ""/*SvnAccess.Instance.GetRepositoryPath(root)*/;
-            return string.Format("{0}{1}/{2}", svnRoot, tagDir, tagName);
-        }
-
-        void FindProjects(ProjectType[] requestedGlobalSettingsProjects,
-            string searchPath, string skip, string defaultBranch,
-            bool ignoreBranches)
+        void FindProjects(ProjectType[] requestedGlobalSettingsProjects, string searchPath, string skip)
         {
             _projects = new List<Project>();
             if (requestedGlobalSettingsProjects != null)
@@ -421,26 +176,11 @@ namespace Slnx
                 }
                 Assert(knownProjects != null, "Unable to find the path/url: '{0}'", searchPath);
 
-                InspectProjects(requestedGlobalSettingsProjects, knownProjects, skip, defaultBranch, ignoreBranches);
+                InspectProjects(requestedGlobalSettingsProjects, knownProjects, skip);
             }
         }
 
-        string TrimBranchName(string requestedBranch, string defaultBranch, bool ignoreBranches)
-        {
-            if (!ignoreBranches)
-            {
-                if (!string.IsNullOrEmpty(requestedBranch))
-                {
-                    return requestedBranch.Trim();
-                }
-                if (string.IsNullOrEmpty(requestedBranch))
-                    return defaultBranch;
-            }
-            return null;
-        }
-
-        void InspectProjects(ProjectType[] requestedGlobalSettingsProjects,
-            IEnumerable<string> knownProjects, string skip, string defaultBranch, bool ignoreBranches)
+        void InspectProjects(ProjectType[] requestedProjectsXmlType, IEnumerable<string> knownProjects, string skip)
         {
             List<string> skipList = new List<string>();
             if (!string.IsNullOrEmpty(skip))
@@ -452,20 +192,17 @@ namespace Slnx
             List<ProjectType> requestedProjects = new List<ProjectType>();
 
             //Expand all wildcards
-            foreach (var requestedProject in requestedGlobalSettingsProjects)
+            foreach (var reqProjXmlType in requestedProjectsXmlType)
             {
-                var requestedBranch = TrimBranchName(requestedProject.branch, defaultBranch, ignoreBranches);
-               
-                if (requestedProject.name.Contains("*")) //Check wildcards
+                if (reqProjXmlType.name.Contains("*")) //Check wildcards
                 {
-                    var wildCardMatches = knownProjects.Where((x) => FilterProjectByBranchAndName(x, requestedProject.name, requestedBranch, skipList)).ToList();
+                    var wildCardMatches = knownProjects.Where((x) => FilterProjectByName(x, reqProjXmlType.name, skipList)).ToList();
                     var wildCardProjects = wildCardMatches.ConvertAll<ProjectType>((name) =>
                                                 {
                                                     var p = new ProjectType();
                                                     p.name = Path.GetFileNameWithoutExtension(name);
-                                                    p.container = requestedProject.container;
-                                                    p.branch = requestedProject.branch;
-                                                    p.Value = requestedProject.Value;
+                                                    p.container = reqProjXmlType.container;
+                                                    p.Value = reqProjXmlType.Value;
                                                     return p;
                                                 }
                                             );
@@ -474,24 +211,23 @@ namespace Slnx
                 }
                 else
                 {
-                    requestedProjects.Add(requestedProject);
+                    requestedProjects.Add(reqProjXmlType);
                 }
             }
 
             //Check projects's existance and ambiguity (also for wildcard imported projects)
             foreach (var requestedProject in requestedProjects)
             {
-                var requestedBranch = TrimBranchName(requestedProject.branch, defaultBranch, ignoreBranches);
                 var requestedCsProjName = string.Format("{0}.{1}", requestedProject.name, CsProject.FileExtension);
 
-                var knownProject = knownProjects.Where((x) => FilterProjectByBranchAndName(x, requestedCsProjName, requestedBranch, skipList)).ToList();
+                var knownProject = knownProjects.Where((x) => FilterProjectByName(x, requestedCsProjName, skipList)).ToList();
 
                 if (knownProject.Count == 0)
-                    throw new Exception(string.Format("Project '{0}' not found in any branch with name '{1}' !", requestedProject.name, requestedBranch));
+                    throw new Exception(string.Format("Project '{0}' not found!", requestedProject.name));
                 if (knownProject.Count > 1)
                     throw new Exception(string.Format("Project '{0}' is ambiguous!\n\n{1}", requestedProject.name, string.Join("\n\n", knownProject)));
 
-                var p = new Project(knownProject[0], requestedProject.container, ignoreBranches);
+                var p = new Project(knownProject[0], requestedProject.container);
                 _projects.Add(p);
 
                 if (p.Item != null)
@@ -510,7 +246,7 @@ namespace Slnx
                             currentFullPath = string.Format("{0}/{1}", currentFullPath, c);
 
                         if (_projects.Where((x) => x.Item != null && x.Item.IsContainer && x.FullPath == currentFullPath).Count() == 0) //Need to create the container
-                            _projects.Add(new Project(c, parent, ignoreBranches));
+                            _projects.Add(new Project(c, parent));
 
                         parent = currentFullPath;
                     }
@@ -518,30 +254,23 @@ namespace Slnx
             }
         }
 
-        bool FilterProjectByBranchAndName(string path, string requestedCsProjName, string branch, List<string> skipList)
+        bool FilterProjectByName(string path, string requestedCsProjName, List<string> skipList)
         {
             var normalizedPath = path.Replace('/', '\\');
-            var normalizedBranch = branch?.Replace('/', '\\');
 
-            var branchMatch = (string.IsNullOrEmpty(normalizedBranch) || normalizedPath.ToLower().Contains(normalizedBranch.ToLower()));
-            var projectMatch = false;
+            var projectCandidate = normalizedPath.Split('\\').LastOrDefault();
+            var projectMatch = new Regex(Regex.Escape(requestedCsProjName).Replace(@"\*", ".*")).IsMatch(projectCandidate);
+            //projectMatch = path.EndsWith(requestedCsProjName);
 
-            if (branchMatch)
+            if (projectMatch && skipList != null)
             {
-                var projectCandidate = normalizedPath.Split('\\').LastOrDefault();
-                projectMatch = new Regex(Regex.Escape(requestedCsProjName).Replace(@"\*", ".*")).IsMatch(projectCandidate);
-                //projectMatch = path.EndsWith(requestedCsProjName);
-
-                if (projectMatch && skipList != null)
+                foreach (var skip in skipList)
                 {
-                    foreach (var skip in skipList)
-                    {
-                        if (path.Contains(skip))
-                            return false;
-                    }
+                    if (path.Contains(skip))
+                        return false;
                 }
             }
-            return branchMatch && projectMatch;
+            return projectMatch;
         }
 
         /// <summary>
@@ -601,14 +330,6 @@ namespace Slnx
                         }
                     }
                 }
-                if (slnxUser.autoupdate != null)
-                {
-                    try
-                    {
-                        AutoUpdateSources = ParseBoolean(slnxUser.autoupdate, true);
-                    }
-                    catch (FormatException) { }
-                }
             }
         }
         
@@ -642,10 +363,6 @@ namespace Slnx
                         if (overrideValues)
                             env[e.name] = e.Value; //Keep only the last entry in case of multiple definition of the same variable.
                     }
-                    else if (_knownVariables.ContainsKey(e.Value))
-                    {
-                        env.Add(e.name, _knownVariables[e.Value]);
-                    }
                     else
                     {
                         env.Add(e.name, e.Value);
@@ -676,10 +393,18 @@ namespace Slnx
                 {
                     if (!packages.ContainsKey(e.id) || overrideValues)
                     {
-                        packages[e.id] = new NugetPackage(e.id, e.version, e.targetFramework, e.source, e.var, e.IsDotNetLib, PackagesPath);
+                        packages[e.id] = new NugetPackage(e.id, e.version, e.targetFramework, e.source, e.var, IsDotNet(e), PackagesPath);
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// If field not specified, assume that it is a .NET lib
+        /// </summary>
+        private static bool IsDotNet(PackageType p)
+        {
+            return !p.IsDotNetLibSpecified || p.IsDotNetLib; 
         }
 
         /// <summary>

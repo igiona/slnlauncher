@@ -32,7 +32,7 @@ namespace Slnx
         static Regex _platformRegex = new Regex(PlatformPattern);
         static Regex _projectRefRegex = new Regex(ProjectReferencePattern);
 
-        public CsProject(string fullpath, string container, string defaultContainer, string requestedBranch)
+        public CsProject(string fullpath, string container, string defaultContainer)
         {
             bool projectContentModified = false;
 

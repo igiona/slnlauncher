@@ -390,8 +390,6 @@ namespace Slnx.Generated {
         
         private string nameField;
         
-        private string branchField;
-        
         private string containerField;
         
         private string valueField;
@@ -404,17 +402,6 @@ namespace Slnx.Generated {
             }
             set {
                 this.nameField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string branch {
-            get {
-                return this.branchField;
-            }
-            set {
-                this.branchField = value;
             }
         }
         
