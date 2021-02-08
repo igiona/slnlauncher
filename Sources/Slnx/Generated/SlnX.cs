@@ -23,6 +23,8 @@ namespace Slnx.Generated {
     [System.Xml.Serialization.XmlRootAttribute("SlnX", Namespace="", IsNullable=false)]
     public partial class SlnXType {
         
+        private NugetType nugetField;
+        
         private EnvType[] envField;
         
         private ProjectType[] projectField;
@@ -40,6 +42,16 @@ namespace Slnx.Generated {
         private string packagesPathField;
         
         private string skipField;
+        
+        /// <remarks/>
+        public NugetType nuget {
+            get {
+                return this.nugetField;
+            }
+            set {
+                this.nugetField = value;
+            }
+        }
         
         /// <remarks/>
         [System.Xml.Serialization.XmlElementAttribute("env")]
@@ -146,31 +158,87 @@ namespace Slnx.Generated {
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
-    public partial class EnvType {
+    public partial class NugetType {
         
-        private string nameField;
+        private string idField;
         
-        private string valueField;
+        private string versionField;
+        
+        private string readmeField;
+        
+        private string targetConfigField;
+        
+        private NugetTypeInfo infoField;
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string name {
+        public string id {
             get {
-                return this.nameField;
+                return this.idField;
             }
             set {
-                this.nameField = value;
+                this.idField = value;
             }
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlTextAttribute()]
-        public string Value {
+        public string version {
             get {
-                return this.valueField;
+                return this.versionField;
             }
             set {
-                this.valueField = value;
+                this.versionField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public string readme {
+            get {
+                return this.readmeField;
+            }
+            set {
+                this.readmeField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public string targetConfig {
+            get {
+                return this.targetConfigField;
+            }
+            set {
+                this.targetConfigField = value;
+            }
+        }
+        
+        /// <remarks/>
+        public NugetTypeInfo info {
+            get {
+                return this.infoField;
+            }
+            set {
+                this.infoField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.8.3928.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true)]
+    public partial class NugetTypeInfo {
+        
+        private System.Xml.XmlElement[] anyField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAnyElementAttribute()]
+        public System.Xml.XmlElement[] Any {
+            get {
+                return this.anyField;
+            }
+            set {
+                this.anyField = value;
             }
         }
     }
@@ -400,6 +468,40 @@ namespace Slnx.Generated {
             }
             set {
                 this.containerField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlTextAttribute()]
+        public string Value {
+            get {
+                return this.valueField;
+            }
+            set {
+                this.valueField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.8.3928.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    public partial class EnvType {
+        
+        private string nameField;
+        
+        private string valueField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string name {
+            get {
+                return this.nameField;
+            }
+            set {
+                this.nameField = value;
             }
         }
         

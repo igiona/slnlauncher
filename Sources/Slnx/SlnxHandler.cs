@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using System.Reflection;
 using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 using Slnx.Generated;
@@ -42,6 +43,7 @@ namespace Slnx
             _slnxFile = Path.GetFileName(fName);
             _slnxName = Path.GetFileNameWithoutExtension(fName);
             _environmentVariables["_slnx_"] = _slnxDirectory;
+            _environmentVariables["_slnx_name_"] = _slnxName;
 
             _slnx = ReadSlnx(fName);
 
@@ -62,15 +64,15 @@ namespace Slnx
 
             FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip);
             ExtendDictionary(_packages, _slnx.package, true);
+
+            LoadNugetPackageInformation(_slnx.nuget);
         }
 
         public string ProjectsSearchPath
         {
             get
             {
-                if (_slnx?.searchPath != null)
-                    return Environment.ExpandEnvironmentVariables(_slnx?.searchPath);
-                return null;
+                return SafeExpandEnvironmentVariables(_slnx?.searchPath);
             }
         }
 
@@ -78,9 +80,7 @@ namespace Slnx
         {
             get
             {
-                if (_slnx?.packagesPath != null)
-                    return Environment.ExpandEnvironmentVariables(_slnx?.packagesPath);
-                return Path.Combine(SlnxDirectory, DefaultPackagesFolderName);
+                return SafeExpandEnvironmentVariables(_slnx?.packagesPath, Path.Combine(SlnxDirectory, DefaultPackagesFolderName));
             }
         }
 
@@ -134,6 +134,8 @@ namespace Slnx
             }
         }
 
+        public NugetHelper.Nuspec Nuget { get; private set; }
+
         public static SlnXType ReadSlnx(string slnxFile)
         {
             var xmlSer = new XmlSerializer(typeof(SlnXType));
@@ -186,7 +188,7 @@ namespace Slnx
             if (!string.IsNullOrEmpty(skip))
             {
                 foreach (var s in skip.Split(';'))
-                    skipList.Add(Environment.ExpandEnvironmentVariables(s));
+                    skipList.Add(SafeExpandEnvironmentVariables(s));
             }
 
             List<ProjectType> requestedProjects = new List<ProjectType>();
@@ -230,7 +232,7 @@ namespace Slnx
                 var p = new Project(knownProject[0], requestedProject.container);
                 _projects.Add(p);
 
-                if (p.Item != null)
+                if (p.Item?.Container != null)
                 {
                     var containers = p.Item.Container.Split('/');
 
@@ -287,7 +289,7 @@ namespace Slnx
                     Assert(string.IsNullOrEmpty(import.path) ^ string.IsNullOrEmpty(import.bundle), "path and bundle are exclusive attributes in an import element");
                     if (!string.IsNullOrEmpty(import.path)) //File import
                     {
-                        var slnxImportFile = Path.GetFullPath(Environment.ExpandEnvironmentVariables(import.path));
+                        var slnxImportFile = Path.GetFullPath(SafeExpandEnvironmentVariables(import.path));
 
                         if (!File.Exists(slnxImportFile))
                             throw new Exception(string.Format("SLNX import not found, file path: {0}", slnxImportFile));
@@ -333,6 +335,23 @@ namespace Slnx
             }
         }
         
+        private string SafeExpandEnvironmentVariables(string value, string defaultValue = null)
+        {
+            if (value == null)
+                return defaultValue;
+            return Environment.ExpandEnvironmentVariables(value);
+        }
+
+        private string GetExpandedTrimmedValue(string value, string defaulValue)
+        {
+            var ret = SafeExpandEnvironmentVariables(value?.Trim());
+            if (string.IsNullOrEmpty(ret))
+            {
+                return defaulValue;
+            }
+            return ret;
+        }
+
         private void ExpandAll(Dictionary<string, string> env)
         {
             foreach (var e in env)
@@ -342,7 +361,7 @@ namespace Slnx
                     var value = Environment.GetEnvironmentVariable(e.Key); //e.Value;
 
                     //System.Diagnostics.Debug.WriteLine("{0}={1}", e.Key, Environment.ExpandEnvironmentVariables(value));
-                    Environment.SetEnvironmentVariable(e.Key, Environment.ExpandEnvironmentVariables(value));
+                    Environment.SetEnvironmentVariable(e.Key, SafeExpandEnvironmentVariables(value));
                 }
                 catch (Exception ex)
                 {
@@ -399,6 +418,65 @@ namespace Slnx
             }
         }
 
+        private void LoadNugetPackageInformation(NugetType nuget)
+        {
+            var id = GetExpandedTrimmedValue(nuget?.id, SlnxName);
+            var versionString = GetExpandedTrimmedValue(nuget?.id, null);
+            var targetConfig = GetExpandedTrimmedValue(nuget?.targetConfig, "Release");
+            var readmeFile = GetExpandedTrimmedValue(nuget?.readme, null);
+            string additionalInformation = null;
+            var additionalInformationList = nuget?.info?.Any?.Select(x => x.OuterXml);
+
+            if (additionalInformationList != null)
+            {
+                additionalInformation = SafeExpandEnvironmentVariables(string.Join(Environment.NewLine, additionalInformationList));
+            }
+
+            var csProjects = Projects.Where(x => x.Item is CsProject);
+
+            Version version = null;
+            if (versionString == null)
+            {
+                if (csProjects.Count() == 0)
+                {
+                    throw new Exception("Error while loading the nuget information. No Cs project found.");
+                }
+
+                var p = csProjects.First();
+                var assemblyPath = ((CsProject)p.Item).GetAssemblyPath(targetConfig);
+                if (File.Exists(assemblyPath))
+                {
+                    var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
+                    version = assemblyName.Version;
+                }
+                else
+                {
+                    throw new Exception(string.Format("Unable to automatically retrieve the package version. Assembly {0} not found", assemblyPath));
+                }
+            }
+            else
+            {
+                version = new Version(versionString);
+            }
+            Nuget = new Nuspec(id, version, readmeFile, additionalInformation);
+
+            foreach (var p in csProjects.Select(x => x.Item as CsProject))
+            {
+                Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
+                var pdb = p.GetPdbPath(targetConfig);
+                if (File.Exists(pdb))
+                {
+                    Nuget.AddLibraryFile(p.Framework, pdb);
+                }
+            }
+
+            foreach (var p in Packages)
+            {
+                Nuget.AddDependeciesPacket(p);
+            }
+        }
+
+
         /// <summary>
         /// If field not specified, assume that it is a .NET lib
         /// </summary>
@@ -419,7 +497,7 @@ namespace Slnx
                 if (Environment.GetEnvironmentVariable(e.Key) == null)
                     Environment.SetEnvironmentVariable(e.Key, e.Value);
             }
-        }
+        }        
 
         //This application runs in a ST apartment state, this seems to cause issue on long operation in the SVN client.
         //For this reason, these kind of operation have to be execute in a MT apartment state

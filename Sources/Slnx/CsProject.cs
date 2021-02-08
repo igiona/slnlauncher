@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.IO;
+using System.Xml;
 using NugetHelper;
 
 namespace Slnx
@@ -40,7 +41,7 @@ namespace Slnx
 
             if (!File.Exists(FullPath))
                 throw new Exception(string.Format("The project '{0}' does not exist!", FullPath));
-
+            
             _name = Path.GetFileNameWithoutExtension(FullPath);
 
             _container = FormatContainer(container);
@@ -57,44 +58,64 @@ namespace Slnx
             }
 
             var projectContent = File.ReadAllText(FullPath);
-            var m = _guidRegex.Match(projectContent);
-            if (m.Success)
+
+            XmlDocument xml = new XmlDocument();
+            xml.LoadXml(projectContent);
+
+            string framework = null;
+            var projectSdk = xml.DocumentElement.GetAttribute("Sdk");
+            
+            if (projectSdk == "Microsoft.NET.Sdk")
             {
-                _projectGuid = m.Groups["guid"].Value.ToUpper(); 
+                _projectGuid = Guid.NewGuid().ToString();
+                Platform = PlatformType.AnyCpu; //?
+
+                Framework = TryGetFramework(xml, "TargetFramework");
                 
             }
             else
             {
-                _projectGuid = Guid.NewGuid().ToString();
-            }
+                Framework = TryGetFramework(xml, "TargetFrameworkVersion");
 
-            m = _platformRegex.Match(projectContent);
-            Platform = PlatformType.AnyCpu;
-            if (m.Success)
-            {
-                var p = m.Groups["platform"].Value.ToLower();
-                if (p.Contains("any"))
-                    Platform = PlatformType.AnyCpu;
-                else if (p.Contains("mix"))
-                    Platform = PlatformType.Mixed;
-            }
-            //else
-            //throw new Exception(string.Format("The project '{0}' does not contain a valid Platform tag!", FullPath));
-
-            m = _projectRefRegex.Match(projectContent);
-            while (m.Success)
-            {
-                var p = m.Groups["reference"].Value;
-                var pName = Path.GetFileNameWithoutExtension(p);
-                var expectedRef = string.Format(ProjectReferenceTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(pName), pName, FileExtension);
-                if (p != expectedRef) //Invalid project reference. Update it.
+                var m = _guidRegex.Match(projectContent);
+                if (m.Success)
                 {
-                    projectContent = projectContent.Replace(p, expectedRef);
-                    projectContentModified = true;
+                    _projectGuid = m.Groups["guid"].Value.ToUpper();
                 }
-                m = m.NextMatch();
-            }
+                else
+                {
+                    throw new Exception(string.Format("Invalid GUID in project {0}", FullPath));
+                }
 
+                m = _platformRegex.Match(projectContent);
+                Platform = PlatformType.AnyCpu;
+                if (m.Success)
+                {
+                    var p = m.Groups["platform"].Value.ToLower();
+                    if (p.Contains("any"))
+                        Platform = PlatformType.AnyCpu;
+                    else if (p.Contains("mix"))
+                        Platform = PlatformType.Mixed;
+                }
+                else
+                {
+                    throw new Exception(string.Format("The project '{0}' does not contain a valid Platform tag!", FullPath));
+                }
+
+                m = _projectRefRegex.Match(projectContent);
+                while (m.Success)
+                {
+                    var p = m.Groups["reference"].Value;
+                    var pName = Path.GetFileNameWithoutExtension(p);
+                    var expectedRef = string.Format(ProjectReferenceTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(pName), pName, FileExtension);
+                    if (p != expectedRef) //Invalid project reference. Update it.
+                    {
+                        projectContent = projectContent.Replace(p, expectedRef);
+                        projectContentModified = true;
+                    }
+                    m = m.NextMatch();
+                }
+            }
             if (projectContentModified)
             {
                 File.WriteAllText(FullPath, projectContent);
@@ -119,6 +140,11 @@ namespace Slnx
             get { return _fullPath; }
         }
 
+        public string FullDir
+        {
+            get { return Path.GetDirectoryName(FullPath); }
+        }
+        
         public override string Container
         {
             get { return _container; }
@@ -127,6 +153,12 @@ namespace Slnx
         public override string Name
         {
             get { return _name; }
+        }
+
+        public string Framework
+        {
+            get;
+            private set;
         }
 
         public PlatformType Platform
@@ -163,9 +195,50 @@ namespace Slnx
 		{{{0}}}.Release|x86.Build.0 = Release|{1}", ProjectGuid, PlatformString);
         }
 
+        public string GetAssemblyPath(string targetConfiguration)
+        {
+            return Path.Combine(FullDir, "bin", targetConfiguration, Framework, string.Format("{0}.dll", Name));
+        }
+
+        public string GetPdbPath(string targetConfiguration)
+        {
+            return Path.Combine(FullDir, "bin", targetConfiguration, Framework, string.Format("{0}.pdb", Name));
+        }
+
         public override string ToString()
         {
             return string.Format("\nProject(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"\nEndProject", TypeGuid, Name, FullPath, ProjectGuid);
+        }
+
+        private string TryGetFramework(XmlDocument xml, string tag)
+        {
+            var element = xml.GetElementsByTagName(tag);
+
+            if (element.Count == 1)
+            {
+                var frameworks = element.Item(0).InnerText;
+                var frameworksList = frameworks?.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
+                if (frameworksList?.Length == 1)
+                {
+                    return frameworksList.First();
+                }
+                else if (frameworksList?.Length > 1)
+                {
+                    throw new Exception(string.Format("Multi framework compilation found in the project {1}. Currently not supported.", tag, FullPath));
+                }
+                else
+                {
+                    throw new Exception(string.Format("Invalid framework value for {0} in the project {1}.", tag, FullPath));
+                }
+            }
+            else if (element.Count == 0)
+            {
+                throw new Exception(string.Format("Could not find the element {0} in the project {1}.", tag, FullPath));
+            }
+            else
+            {
+                throw new Exception(string.Format("Multiple definition of the {0} element in the project {1}.", tag, FullPath));
+            }
         }
     }
 }
