@@ -42,6 +42,7 @@ namespace Slnx
             _slnxFile = Path.GetFileName(fName);
             _slnxName = Path.GetFileNameWithoutExtension(fName);
             _environmentVariables["_slnx_"] = _slnxDirectory;
+            _environmentVariables["_slnx_name_"] = _slnxName;
 
             _slnx = ReadSlnx(fName);
 
