@@ -49,6 +49,7 @@ namespace SlnLauncher
             _createMsBuild = false;
             var quiteExecution = false;
             var autoNuget = true;
+            string nuspecDir = null;            
             var dump = false;
             string slnxFile = null;
             _pythonEnvVarsPath = null;
@@ -61,6 +62,7 @@ namespace SlnLauncher
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the EXE directory will be created. [Default: false]", v => { if (v != null) { _logger.SetLog(Path.Combine(typeof(Program).Assembly.Location + ".log"), LogLevel.Debug); } })
+              .Add("ns=|nuspec=", "If set (-ns/-ns+), creates the NuGet package for the current solution in the specified directory. [Default: not set]", v => nuspecDir = v)
               .Add("ng|nuget", "If set (-ng/-ng+), the defined NuGet packages will be automatically downloaded. [Default: true]", v => autoNuget = v != null);
 
             try
@@ -101,6 +103,13 @@ namespace SlnLauncher
                 {
                     DownloadPackages(slnx, quiteExecution);
                 }
+                
+                if (!string.IsNullOrEmpty(nuspecDir))
+                {
+                    nuspecDir = Path.GetFullPath(Environment.ExpandEnvironmentVariables(nuspecDir));
+                    NugetHelper.NuspecGenerator.Generate(nuspecDir, slnx.Nuget);
+                }
+                
                 MakeSln(slnx);
 
                 if (_openSolution)

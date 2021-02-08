@@ -9,6 +9,7 @@
 	</xs:element>
 	<xs:complexType name="SlnXType">
 		<xs:sequence>
+			<xs:element name="nuget" type="NugetType"/>
 			<xs:element name="env" type="EnvType" minOccurs="0" maxOccurs="5000"/>
 			<xs:element name="project" type="ProjectType" minOccurs="0" maxOccurs="5000"/>
 			<xs:element name="import" type="ImportType" minOccurs="0" maxOccurs="5000"/>
@@ -19,6 +20,22 @@
 		<xs:attribute name="searchPath"/>
 		<xs:attribute name="packagesPath" use="optional"/>
 		<xs:attribute name="skip" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="NugetType">
+		<xs:all>
+			<xs:element name="id" type="xs:string" />
+			<xs:element name="version" type="xs:string"/>
+			<xs:element name="readme" type="xs:string"/>
+			<xs:element name="targetConfig" type="xs:string"/>	
+			<xs:element name="info">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:any minOccurs="0" maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		
+		</xs:all>
 	</xs:complexType>
 	<xs:complexType name="EnvType">
 		<xs:simpleContent>
