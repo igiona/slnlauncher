@@ -15,13 +15,32 @@
     <Content Include="SlnLauncher.ico" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="$(NugetHelper)\NugetHelper.csproj" />
-    <ProjectReference Include="$(Slnx)\Slnx.csproj" />
-  </ItemGroup>
 
+  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+   <!-- if requested to debug NugetHelper package 
+        the tool will create a list of 
+            <ProjectReference Include="$(NugetHelper_blabla)\NugetHelper_blabla.csproj" />
+		in the debug.debug, and it set NugetHelper_Debug = 1 so the the package is not referenced
+	-->
   <ItemGroup>
-    <Reference Include="NDesk.Options">
+    <ProjectReference Include="$(Slnx)\Slnx.csproj" />
+	<PackageReference Condition="$(NugetHelper_Debug) == 0" Include="NugetHelper" Version="$(NugetHelper_version)" />
+
+  </ItemGroup>
+	
+  <!--
+  <Reference Include="NugetHelper">
+      <HintPath>C:\Nugetcache\NugetHelper.0.0.1\lib\netstandard2.0\NugetHelper.dll</HintPath>
+  </Reference>
+<PackageReference Include="NugetHelper" Version="0.0.1" />
+  <Reference Include="NugetHelper">
+      <HintPath>C:\Nugetcache\NugetHelper.0.0.1\lib\netstandard2.0\NugetHelper.dll</HintPath>
+  </Reference>
+
+  -->
+	
+  <ItemGroup>
+	  <Reference Include="NDesk.Options">
       <HintPath>$(NDesk_Options)\NDesk.Options.dll</HintPath>
     </Reference>
   </ItemGroup>
@@ -41,4 +60,35 @@
     </EmbeddedResource>
   </ItemGroup>
 
+
+
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(Newtonsoft_Json)\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Common">
+      <HintPath>$(NuGet_Common)\NuGet.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Configuration">
+      <HintPath>$(NuGet_Configuration)\NuGet.Configuration.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Frameworks">
+      <HintPath>$(NuGet_Frameworks)\NuGet.Frameworks.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Packaging">
+      <HintPath>$(NuGet_Packaging)\NuGet.Packaging.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Packaging.Core">
+      <HintPath>$(NuGet_Packaging_Core)\NuGet.Packaging.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Protocol">
+      <HintPath>$(NuGet_Protocol)\NuGet.Protocol.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Resolver">
+      <HintPath>$(NuGet_Resolver)\NuGet.Resolver.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Versioning">
+      <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>

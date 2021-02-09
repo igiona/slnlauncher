@@ -112,6 +112,8 @@ namespace SlnLauncher
                 
                 MakeSln(slnx);
 
+                //NugetHelper.ConfigGenerator.Generate(slnx.SlnxFolder, slnx.Packages);
+
                 if (_openSolution)
                 {
                     OpenSln(slnx.SlnPath);
@@ -166,7 +168,7 @@ namespace SlnLauncher
             List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
             var keys = projects.Where((x) => !x.IsContainer).Select((x) => ((CsProject)x).EnvironmentVariableKey).ToList();
             keys.AddRange(slnx.EnvironementVariables.Keys);
-            keys.AddRange(slnx.Packages.Select(x => x.EnvironmentVariableKey));
+            keys.AddRange(slnx.Packages.SelectMany(x => x.EnvironmentVariableKeys));
             keys.AddRange(slnx.Packages.Where(x => x.EnvironmentVariableAdditionalKey != null).Select(x => x.EnvironmentVariableAdditionalKey));
             return keys;
         }
@@ -223,7 +225,12 @@ namespace SlnLauncher
 
                 foreach (var key in keys)
                 {
-                    var value = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                    var envVar = Environment.GetEnvironmentVariable(key);
+                    string value = null;
+                    if (envVar != null)
+                    {
+                        value = Environment.ExpandEnvironmentVariables(envVar);
+                    }
                     f.WriteLine("{0} = {1}", key, value);
                 }
             }

@@ -93,6 +93,11 @@ namespace Slnx
             get { return _slnxPath; }
         }
 
+        public string SlnxFolder
+        {
+            get { return Path.GetDirectoryName(SlnxPath); }
+        }
+
         public string SlnxName
         {
             get { return _slnxName; }
@@ -102,7 +107,7 @@ namespace Slnx
         {
             get
             {
-                var slnFile = string.Format("{0}\\{1}{2}", Path.GetDirectoryName(SlnxPath), Path.GetFileNameWithoutExtension(SlnxPath), SlnExtension);
+                var slnFile = string.Format("{0}\\{1}{2}", SlnxFolder, Path.GetFileNameWithoutExtension(SlnxPath), SlnExtension);
                 if (!string.IsNullOrEmpty(_slnx?.sln))
                     slnFile = _slnx.sln;
                 return slnFile;
