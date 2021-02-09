@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using System.Reflection;
 using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 using Slnx.Generated;
@@ -435,26 +434,7 @@ namespace Slnx
             var csProjects = Projects.Where(x => x.Item is CsProject);
 
             Version version = null;
-            if (versionString == null)
-            {
-                if (csProjects.Count() == 0)
-                {
-                    throw new Exception("Error while loading the nuget information. No Cs project found.");
-                }
-
-                var p = csProjects.First();
-                var assemblyPath = ((CsProject)p.Item).GetAssemblyPath(targetConfig);
-                if (File.Exists(assemblyPath))
-                {
-                    var assemblyName = AssemblyName.GetAssemblyName(assemblyPath);
-                    version = assemblyName.Version;
-                }
-                else
-                {
-                    throw new Exception(string.Format("Unable to automatically retrieve the package version. Assembly {0} not found", assemblyPath));
-                }
-            }
-            else
+            if (versionString != null)
             {
                 version = new Version(versionString);
             }
