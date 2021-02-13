@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<SlnX searchPath="%__SLN_LAUNCHER_PROJECT_SEARCH_PATH%" packagesPath="C:\Nugetcache">
+<SlnX searchPath="$(slnx)" packagesPath="C:\Nugetcache">
     <!-- Local -->
 
     <!-- 
@@ -10,7 +10,6 @@
     -->   
 
     <env name="__SLN_LAUNCHER_NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
-    <env name="__SLN_LAUNCHER_PROJECT_SEARCH_PATH">%_slnx_%\Sources</env>     
     
     <package id="NDesk.Options" version="0.2.1" targetFramework="" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="System.Management.Automation.dll" version="10.0.10586.0" targetFramework="net40" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
@@ -25,7 +24,7 @@
     <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
-    <package id="NugetHelper" version="0.0.1" targetFramework="netstandard2.0" source="D:\GitRepositories" />
+    <package id="NugetHelper" version="0.0.2" targetFramework="netstandard2.0" source="D:\GitRepositories" />
 
     <!-- Projects -->
     <project name="SlnLauncher" container="" />
