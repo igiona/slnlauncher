@@ -10,14 +10,14 @@ namespace Slnx
     {
         string _internalFullPath;
 
-        public Project(string fullpath, string container)
+        public Project(string fullpath, string container, bool isPackable)
         {
             FullPath = fullpath;
             _internalFullPath = fullpath.Replace("\\", "/");
 
             if (fullpath.ToLower().EndsWith(CsProject.DotExtension))
             {
-                Item = new CsProject(fullpath, container, null);
+                Item = new CsProject(fullpath, container, null, isPackable);
             }
             else
             {

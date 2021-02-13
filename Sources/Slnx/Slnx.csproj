@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Slnx</AssemblyName>
   </PropertyGroup>
-
   <ItemGroup>
-    <ProjectReference Include="$(NugetHelper)\NugetHelper.csproj" />
+    <!--<ProjectReference Include="..\..\..\nugethelper\Sources\NugetHelper\NugetHelper.csproj" />-->
+    <Reference Include="NugetHelper" Condition="$(NugetHelper_debug) != 1">
+      <HintPath>$(NugetHelper)\NugetHelper.dll</HintPath>
+    </Reference>
   </ItemGroup>
-
 </Project>

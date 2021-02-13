@@ -49,6 +49,7 @@
 			<xs:extension base="xs:string">
 				<xs:attribute name="name" use="required"/>
 				<xs:attribute name="container" use="optional"/>
+				<xs:attribute name="packable" type="xs:boolean"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>

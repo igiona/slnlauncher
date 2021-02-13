@@ -3,4 +3,21 @@
    <AssemblyVersion>0.0.1</AssemblyVersion>
    <Version>0.0.1</Version> <!-- If repacked, it might be required to set this as the NuGet SDK. -->
  </PropertyGroup>
+
+  <!-- Auto add the necessary package in case of a .Test project -->
+  <ItemGroup Condition="$(ProjectName.EndsWith('.Test'))">
+    <PackageReference Include="nunit" Version="3.13.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+
+    <!-- Microsoft.NET.Test.Sdk has a potential dependency issue on NuGet Framework, because it depends on:
+            Microsoft.TestPlatform.ObjectModel
+              which depends on
+              Microsoft.TestPlatform.TestHost
+                which depends on NuGet.Frameworks
+    -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.8.3" /> 
+  </ItemGroup>
+  
+  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+
 </Project>

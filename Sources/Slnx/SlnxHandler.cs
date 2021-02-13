@@ -93,6 +93,11 @@ namespace Slnx
             get { return _slnxPath; }
         }
 
+        public string SlnxFolder
+        {
+            get { return Path.GetDirectoryName(SlnxPath); }
+        }
+
         public string SlnxName
         {
             get { return _slnxName; }
@@ -102,7 +107,7 @@ namespace Slnx
         {
             get
             {
-                var slnFile = string.Format("{0}\\{1}{2}", Path.GetDirectoryName(SlnxPath), Path.GetFileNameWithoutExtension(SlnxPath), SlnExtension);
+                var slnFile = string.Format("{0}\\{1}{2}", SlnxFolder, Path.GetFileNameWithoutExtension(SlnxPath), SlnExtension);
                 if (!string.IsNullOrEmpty(_slnx?.sln))
                     slnFile = _slnx.sln;
                 return slnFile;
@@ -114,6 +119,14 @@ namespace Slnx
             get
             {
                 return _projects;
+            }
+        }
+
+        public IEnumerable<CsProject> CsProjects
+        {
+            get
+            {
+                return Projects.Where(x => x.Item is CsProject).Select(x => x.Item as CsProject);
             }
         }
 
@@ -152,6 +165,23 @@ namespace Slnx
             using (var streamWriter = new StreamWriter(slnxFile))
             {
                 xmlSer.Serialize(streamWriter, slnx);
+            }
+        }
+
+        public void TryFixProjectFiles()
+        {
+            _logger.Info($"Trying to fix the Assembly and Project of the known projects");
+            if (Packages.Count() == 0)
+            {
+                _logger.Warn($"No NuGet package found. If this is not correct, it might be because this method was called before installing the NuGet packages.");
+            }
+
+            foreach (var csProj in CsProjects)
+            {
+                _logger.Info($"Trying to fix the Assembly and Project reference of {csProj.Name}");
+                csProj.GatherAndFixAssemblyReferences(Packages);
+                csProj.GatherAndFixProjectReferences();
+                csProj.SaveCsProjectToFile();
             }
         }
 
@@ -228,7 +258,7 @@ namespace Slnx
                 if (knownProject.Count > 1)
                     throw new Exception(string.Format("Project '{0}' is ambiguous!\n\n{1}", requestedProject.name, string.Join("\n\n", knownProject)));
 
-                var p = new Project(knownProject[0], requestedProject.container);
+                var p = new Project(knownProject[0], requestedProject.container, !requestedProject.packableSpecified || requestedProject.packable);
                 _projects.Add(p);
 
                 if (p.Item?.Container != null)
@@ -247,7 +277,7 @@ namespace Slnx
                             currentFullPath = string.Format("{0}/{1}", currentFullPath, c);
 
                         if (_projects.Where((x) => x.Item != null && x.Item.IsContainer && x.FullPath == currentFullPath).Count() == 0) //Need to create the container
-                            _projects.Add(new Project(c, parent));
+                            _projects.Add(new Project(c, parent, false));
 
                         parent = currentFullPath;
                     }
@@ -431,8 +461,6 @@ namespace Slnx
                 additionalInformation = SafeExpandEnvironmentVariables(string.Join(Environment.NewLine, additionalInformationList));
             }
 
-            var csProjects = Projects.Where(x => x.Item is CsProject);
-
             Version version = null;
             if (versionString != null)
             {
@@ -440,13 +468,16 @@ namespace Slnx
             }
             Nuget = new Nuspec(id, version, readmeFile, additionalInformation);
 
-            foreach (var p in csProjects.Select(x => x.Item as CsProject))
+            foreach (var p in CsProjects)
             {
-                Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
-                var pdb = p.GetPdbPath(targetConfig);
-                if (File.Exists(pdb))
+                if (p.IsPackable)
                 {
-                    Nuget.AddLibraryFile(p.Framework, pdb);
+                    Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
+                    var pdb = p.GetPdbPath(targetConfig);
+                    if (File.Exists(pdb))
+                    {
+                        Nuget.AddLibraryFile(p.Framework, pdb);
+                    }
                 }
             }
 
