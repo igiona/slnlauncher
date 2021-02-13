@@ -20,24 +20,10 @@ namespace Slnx.Generated {
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
-    [System.Xml.Serialization.XmlRootAttribute("Reference", Namespace="", IsNullable=false)]
-    public partial class AssemblyReference {
-        
-        private string hintPathField;
+    [System.Xml.Serialization.XmlRootAttribute(Namespace="", IsNullable=false)]
+    public partial class ProjectReference {
         
         private string includeField;
-        
-        private string conditionField;
-        
-        /// <remarks/>
-        public string HintPath {
-            get {
-                return this.hintPathField;
-            }
-            set {
-                this.hintPathField = value;
-            }
-        }
         
         /// <remarks/>
         [System.Xml.Serialization.XmlAttributeAttribute()]
@@ -47,17 +33,6 @@ namespace Slnx.Generated {
             }
             set {
                 this.includeField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string Condition {
-            get {
-                return this.conditionField;
-            }
-            set {
-                this.conditionField = value;
             }
         }
     }

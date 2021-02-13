@@ -1,33 +1,29 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-	<OutputType>WinExe</OutputType>
-	<TargetFramework>net5.0-windows</TargetFramework>
-	<UseWindowsForms>true</UseWindowsForms>
-	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-
   <ItemGroup>
     <None Remove="SlnLauncher.ico" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="SlnLauncher.ico" />
   </ItemGroup>
-
-
   <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
-   <!-- if requested to debug NugetHelper package 
+  <!-- if requested to debug NugetHelper package 
         the tool will create a list of 
             <ProjectReference Include="$(NugetHelper_blabla)\NugetHelper_blabla.csproj" />
-		in the debug.debug, and it set NugetHelper_Debug = 1 so the the package is not referenced
+		in the debug.debug, and it set NugetHelper = 1 so the the package is not referenced
 	-->
   <ItemGroup>
     <ProjectReference Include="$(Slnx)\Slnx.csproj" />
-	<PackageReference Condition="$(NugetHelper_Debug) == 0" Include="NugetHelper" Version="$(NugetHelper_version)" />
-
+    <!--<PackageReference Condition="$(NugetHelper) != 1" Include="NugetHelper" Version="$(NugetHelper_version)" /> -->
+    <Reference Include="NugetHelper" Condition="$(NugetHelper_debug) != 1">
+      <HintPath>$(NugetHelper)\NugetHelper.dll</HintPath>
+    </Reference>
   </ItemGroup>
-	
   <!--
   <Reference Include="NugetHelper">
       <HintPath>C:\Nugetcache\NugetHelper.0.0.1\lib\netstandard2.0\NugetHelper.dll</HintPath>
@@ -38,13 +34,11 @@
   </Reference>
 
   -->
-	
   <ItemGroup>
-	  <Reference Include="NDesk.Options">
+    <Reference Include="NDesk.Options" Condition="$(NDesk_Options_debug) != 1">
       <HintPath>$(NDesk_Options)\NDesk.Options.dll</HintPath>
     </Reference>
   </ItemGroup>
-
   <ItemGroup>
     <Compile Update="ProgressDialog.cs">
       <SubType>Form</SubType>
@@ -53,41 +47,37 @@
       <DependentUpon>ProgressDialog.cs</DependentUpon>
     </Compile>
   </ItemGroup>
-
   <ItemGroup>
     <EmbeddedResource Update="ProgressDialog.resx">
       <DependentUpon>ProgressDialog.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
-
-
-
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
+    <Reference Include="Newtonsoft.Json" Condition="$(Newtonsoft_Json_debug) != 1">
       <HintPath>$(Newtonsoft_Json)\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Common">
+    <Reference Include="NuGet.Common" Condition="$(NuGet_Common_debug) != 1">
       <HintPath>$(NuGet_Common)\NuGet.Common.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Configuration">
+    <Reference Include="NuGet.Configuration" Condition="$(NuGet_Configuration_debug) != 1">
       <HintPath>$(NuGet_Configuration)\NuGet.Configuration.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Frameworks">
+    <Reference Include="NuGet.Frameworks" Condition="$(NuGet_Frameworks_debug) != 1">
       <HintPath>$(NuGet_Frameworks)\NuGet.Frameworks.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Packaging">
+    <Reference Include="NuGet.Packaging" Condition="$(NuGet_Packaging_debug) != 1">
       <HintPath>$(NuGet_Packaging)\NuGet.Packaging.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Packaging.Core">
+    <Reference Include="NuGet.Packaging.Core" Condition="$(NuGet_Packaging_Core_debug) != 1">
       <HintPath>$(NuGet_Packaging_Core)\NuGet.Packaging.Core.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Protocol">
+    <Reference Include="NuGet.Protocol" Condition="$(NuGet_Protocol_debug) != 1">
       <HintPath>$(NuGet_Protocol)\NuGet.Protocol.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Resolver">
+    <Reference Include="NuGet.Resolver" Condition="$(NuGet_Resolver_debug) != 1">
       <HintPath>$(NuGet_Resolver)\NuGet.Resolver.dll</HintPath>
     </Reference>
-    <Reference Include="NuGet.Versioning">
+    <Reference Include="NuGet.Versioning" Condition="$(NuGet_Versioning_debug) != 1">
       <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
     </Reference>
   </ItemGroup>

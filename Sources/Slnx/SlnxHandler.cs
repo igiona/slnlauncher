@@ -170,11 +170,19 @@ namespace Slnx
 
         public void TryFixProjectFiles()
         {
-            foreach(var csProj in CsProjects)
+            _logger.Info($"Trying to fix the Assembly and Project of the known projects");
+            if (Packages.Count() == 0)
             {
-                csProj.GatherAndFixReferences(Packages);
+                _logger.Warn($"No NuGet package found. If this is not correct, it might be because this method was called before installing the NuGet packages.");
             }
 
+            foreach (var csProj in CsProjects)
+            {
+                _logger.Info($"Trying to fix the Assembly and Project reference of {csProj.Name}");
+                csProj.GatherAndFixAssemblyReferences(Packages);
+                csProj.GatherAndFixProjectReferences();
+                csProj.SaveCsProjectToFile();
+            }
         }
 
         void FindProjects(ProjectType[] requestedGlobalSettingsProjects, string searchPath, string skip)

@@ -8,7 +8,6 @@
         Additionally, define environment variables here with a very specific name, to avoid to override the one in the 
         opened SlnX during debugging.
     -->   
-    <env name="NugetHelper_Debug">1</env>
 
     <env name="__SLN_LAUNCHER_NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
     <env name="__SLN_LAUNCHER_PROJECT_SEARCH_PATH">%_slnx_%\Sources</env>     

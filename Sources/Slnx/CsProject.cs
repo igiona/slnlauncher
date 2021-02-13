@@ -27,11 +27,14 @@ namespace Slnx
         const string GuidPattern = @"<ProjectGuid>{(?<guid>.*)}<\/ProjectGuid>";
         const string PlatformPattern = @"<Platform .*>(?<platform>.*)<\/Platform>";
         const string ProjectReferencePattern = "<ProjectReference Include=\"(?<reference>.*)\">";
-        const string ProjectReferenceTemplate = @"$({0})\{1}.{2}";
 
-        const string KeyAsMsBuildVariableTemplate = @"$({0})";
+        const string DebugEnvironmentVariableKeyTemplate = "{0}_debug";
+        const string KeyAsMsBuildProjectVariableTemplate = @"$({0})";       
+        const string ProjectReferenceIncludeTemplate = @"$({0})\{1}.{2}";
+        readonly string AssemblyReferenceConditionTemplate = string.Format("$({0}) != 1", string.Format(DebugEnvironmentVariableKeyTemplate, "{0}"));
 
         const string AssemblyReferenceTag = "Reference";
+        const string ProjectReferenceTag = "ProjectReference";
 
         static Regex _guidRegex = new Regex(GuidPattern);
         static Regex _platformRegex = new Regex(PlatformPattern);
@@ -51,7 +54,7 @@ namespace Slnx
 
             if (!File.Exists(FullPath))
                 throw new Exception(string.Format("The project '{0}' does not exist!", FullPath));
-            
+
             _name = Path.GetFileNameWithoutExtension(FullPath);
 
             _container = FormatContainer(container);
@@ -68,13 +71,13 @@ namespace Slnx
             }
 
             _projectOriginalContent = File.ReadAllText(FullPath);
-            
+
             _xml = new XmlDocument();
             _xml.LoadXml(_projectOriginalContent);
 
             string framework = null;
             var projectSdk = _xml.DocumentElement.GetAttribute("Sdk");
-            
+
             if (projectSdk == "Microsoft.NET.Sdk")
             {
                 _projectGuid = Guid.NewGuid().ToString();
@@ -117,7 +120,7 @@ namespace Slnx
                 {
                     var p = m.Groups["reference"].Value;
                     var pName = Path.GetFileNameWithoutExtension(p);
-                    var expectedRef = string.Format(ProjectReferenceTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(pName), pName, FileExtension);
+                    var expectedRef = string.Format(ProjectReferenceIncludeTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(pName), pName, FileExtension);
                     if (p != expectedRef) //Invalid project reference. Update it.
                     {
                         projectNewContent = projectNewContent.Replace(p, expectedRef);
@@ -132,6 +135,7 @@ namespace Slnx
             }
 
             EnvironmentVariableKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
+            EnvironmentVariableDebugKey = string.Format(DebugEnvironmentVariableKeyTemplate, EnvironmentVariableKey);
             Environment.SetEnvironmentVariable(EnvironmentVariableKey, Path.GetDirectoryName(FullPath));
         }
 
@@ -188,6 +192,12 @@ namespace Slnx
             private set;
         }
 
+        public string EnvironmentVariableDebugKey
+        {
+            get;
+            private set;
+        }
+
         public bool IsPackable
         {
             get;
@@ -226,7 +236,7 @@ namespace Slnx
             return string.Format("\nProject(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"\nEndProject", TypeGuid, Name, FullPath, ProjectGuid);
         }
 
-        public List<Generated.AssemblyReference> GatherAndFixReferences(IEnumerable<NugetPackage> packages)
+        public List<Generated.AssemblyReference> GatherAndFixAssemblyReferences(IEnumerable<NugetPackage> packages)
         {
             var xmlSer = new XmlSerializer(typeof(Generated.AssemblyReference));
             var ret = new List<Generated.AssemblyReference>();
@@ -238,25 +248,48 @@ namespace Slnx
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
                     if (packages.Where((x) => x.Id == candidatePackageName).Count() > 0)
                     {
-                        var candidatePackageKey = string.Format(KeyAsMsBuildVariableTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackageName));
-                        
-                        if (!assemblyRef.HintPath.StartsWith(candidatePackageKey))
+                        var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackageName);
+                        var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
+                        var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
+                        assemblyRef.HintPath = assemblyRef.HintPath.Replace(assemblyRoot, candidatePackageMsBuilVar);
+                        assemblyRef.Condition = string.Format(AssemblyReferenceConditionTemplate, candidatePackageKey);
+                        r["HintPath"].InnerText = assemblyRef.HintPath;
+
+                        var conditionAttr = _xml.CreateAttribute("Condition");
+                        if (r.Attributes.GetNamedItem(conditionAttr.Name) == null)
                         {
-                            var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
-                            assemblyRef.HintPath = assemblyRef.HintPath.Replace(assemblyRoot, candidatePackageKey);
-                            r["HintPath"].InnerText = assemblyRef.HintPath;
+                            r.Attributes.Append(conditionAttr);
                         }
+                        r.Attributes[conditionAttr.Name].Value = assemblyRef.Condition;
+
                         ret.Add(assemblyRef);
                     }
                 }
             }
 
-            SaveCsProjectToFile();
-
             return ret;
         }
 
-        private void SaveCsProjectToFile()
+        public List<Generated.ProjectReference> GatherAndFixProjectReferences()
+        {
+            var xmlSer = new XmlSerializer(typeof(Generated.ProjectReference));
+            var ret = new List<Generated.ProjectReference>();
+            foreach (XmlNode r in _xml.GetElementsByTagName(ProjectReferenceTag))
+            {
+                var projectRef = (Generated.ProjectReference)xmlSer.Deserialize(new StringReader(r.OuterXml));
+                if (!string.IsNullOrEmpty(projectRef.Include))
+                {
+                    var candidateProjectName = Path.GetFileNameWithoutExtension(projectRef.Include);
+                    var candidatePackageKey = string.Format(KeyAsMsBuildProjectVariableTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidateProjectName));
+                    projectRef.Include = string.Format(ProjectReferenceIncludeTemplate, candidatePackageKey, candidateProjectName, FileExtension);
+
+                    ret.Add(projectRef);
+                }
+            }
+            return ret;
+        }
+
+        public void SaveCsProjectToFile()
         {
             string projectNewContent = XDocument.Parse(_xml.OuterXml).ToString();
             if (projectNewContent != _projectOriginalContent)
