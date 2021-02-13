@@ -33,6 +33,7 @@ namespace SlnLauncher
         static bool _openSolution = false;
         static bool _createMsBuild = false;
         static string _pythonEnvVarsPath = null;
+        static string _batchEnvVarsPath = null;
         static Logger _logger = null;
         
         /// <summary>
@@ -60,6 +61,7 @@ namespace SlnLauncher
               .Add("o|openSln", "If set (-o/-o+) opens the generated Sln file. If not set (-o-), the generated Sln will not be opened. [Default: set]", v => _openSolution = v != null)
               .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location . [Default: not set]", v => dump = v != null)
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
+              .Add("b=|batchModule=", "Path for the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the EXE directory will be created. [Default: false]", v => { if (v != null) { _logger.SetLog(Path.Combine(typeof(Program).Assembly.Location + ".log"), LogLevel.Debug); } })
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
@@ -93,7 +95,11 @@ namespace SlnLauncher
                 {
                     CreatePythonnModule(slnx, Path.Combine(slnx.SlnxDirectory, _pythonEnvVarsPath));
                 }
-
+                if (!string.IsNullOrEmpty(_batchEnvVarsPath))
+                {
+                    CreateBatchModule(slnx, Path.Combine(slnx.SlnxDirectory, _batchEnvVarsPath));
+                }
+                
                 if (dump)
                 {
                     Dump(slnx);
@@ -107,6 +113,10 @@ namespace SlnLauncher
                 if (!string.IsNullOrEmpty(nuspecDir))
                 {
                     nuspecDir = Path.GetFullPath(Environment.ExpandEnvironmentVariables(nuspecDir));
+                    if (!Directory.Exists(nuspecDir))
+                    {
+                        throw new Exception($"The provided nuspec directory doesn't exists: '{nuspecDir}'");
+                    }
                     NugetHelper.NuspecGenerator.Generate(nuspecDir, slnx.Nuget);
                 }
                 
@@ -252,6 +262,24 @@ namespace SlnLauncher
                 {
                     var value = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
                     f.WriteLine("os.environ['{0}'] = r'{1}'", key, value);
+                }
+            }
+            _logger.Info("Done!");
+        }
+
+        static void CreateBatchModule(SlnxHandler slnx, string outDir)
+        {
+            _logger.Info("Creating Batch module in {0}", outDir);
+            List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
+
+            using (var f = new StreamWriter(Path.Combine(outDir, "SetEnvVars.bat")))
+            {
+                var keys = GetAllKeys(slnx);
+
+                foreach (var key in keys)
+                {
+                    var value = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                    f.WriteLine("set {0}={1}", key, value);
                 }
             }
             _logger.Info("Done!");
