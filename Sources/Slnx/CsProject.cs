@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.IO;
 using System.Xml;
+using System.Xml.Linq;
+using System.Xml.Serialization;
 using NugetHelper;
 
 namespace Slnx
@@ -27,9 +29,16 @@ namespace Slnx
         const string ProjectReferencePattern = "<ProjectReference Include=\"(?<reference>.*)\">";
         const string ProjectReferenceTemplate = @"$({0})\{1}.{2}";
 
+        const string KeyAsMsBuildVariableTemplate = @"$({0})";
+
+        const string AssemblyReferenceTag = "Reference";
+
         static Regex _guidRegex = new Regex(GuidPattern);
         static Regex _platformRegex = new Regex(PlatformPattern);
         static Regex _projectRefRegex = new Regex(ProjectReferencePattern);
+
+        XmlDocument _xml;
+        string _projectOriginalContent;
 
         public CsProject(string fullpath, string container, string defaultContainer, bool isPackable)
         {
@@ -58,27 +67,27 @@ namespace Slnx
                 }
             }
 
-            var projectContent = File.ReadAllText(FullPath);
-
-            XmlDocument xml = new XmlDocument();
-            xml.LoadXml(projectContent);
+            _projectOriginalContent = File.ReadAllText(FullPath);
+            
+            _xml = new XmlDocument();
+            _xml.LoadXml(_projectOriginalContent);
 
             string framework = null;
-            var projectSdk = xml.DocumentElement.GetAttribute("Sdk");
+            var projectSdk = _xml.DocumentElement.GetAttribute("Sdk");
             
             if (projectSdk == "Microsoft.NET.Sdk")
             {
                 _projectGuid = Guid.NewGuid().ToString();
                 Platform = PlatformType.AnyCpu; //?
 
-                Framework = TryGetFramework(xml, "TargetFramework");
-                
+                Framework = TryGetFramework(_xml, "TargetFramework");
             }
             else
             {
-                Framework = TryGetFramework(xml, "TargetFrameworkVersion");
+                var projectNewContent = _projectOriginalContent;
+                Framework = TryGetFramework(_xml, "TargetFrameworkVersion");
 
-                var m = _guidRegex.Match(projectContent);
+                var m = _guidRegex.Match(projectNewContent);
                 if (m.Success)
                 {
                     _projectGuid = m.Groups["guid"].Value.ToUpper();
@@ -88,7 +97,7 @@ namespace Slnx
                     throw new Exception(string.Format("Invalid GUID in project {0}", FullPath));
                 }
 
-                m = _platformRegex.Match(projectContent);
+                m = _platformRegex.Match(projectNewContent);
                 Platform = PlatformType.AnyCpu;
                 if (m.Success)
                 {
@@ -103,7 +112,7 @@ namespace Slnx
                     throw new Exception(string.Format("The project '{0}' does not contain a valid Platform tag!", FullPath));
                 }
 
-                m = _projectRefRegex.Match(projectContent);
+                m = _projectRefRegex.Match(projectNewContent);
                 while (m.Success)
                 {
                     var p = m.Groups["reference"].Value;
@@ -111,15 +120,15 @@ namespace Slnx
                     var expectedRef = string.Format(ProjectReferenceTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(pName), pName, FileExtension);
                     if (p != expectedRef) //Invalid project reference. Update it.
                     {
-                        projectContent = projectContent.Replace(p, expectedRef);
+                        projectNewContent = projectNewContent.Replace(p, expectedRef);
                         projectContentModified = true;
                     }
                     m = m.NextMatch();
                 }
-            }
-            if (projectContentModified)
-            {
-                File.WriteAllText(FullPath, projectContent);
+                if (projectContentModified)
+                {
+                    File.WriteAllText(FullPath, projectNewContent);
+                }
             }
 
             EnvironmentVariableKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
@@ -215,6 +224,46 @@ namespace Slnx
         public override string ToString()
         {
             return string.Format("\nProject(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"\nEndProject", TypeGuid, Name, FullPath, ProjectGuid);
+        }
+
+        public List<Generated.AssemblyReference> GatherAndFixReferences(IEnumerable<NugetPackage> packages)
+        {
+            var xmlSer = new XmlSerializer(typeof(Generated.AssemblyReference));
+            var ret = new List<Generated.AssemblyReference>();
+            foreach (XmlNode r in _xml.GetElementsByTagName(AssemblyReferenceTag))
+            {
+                var assemblyRef = (Generated.AssemblyReference)xmlSer.Deserialize(new StringReader(r.OuterXml));
+                if (!string.IsNullOrEmpty(assemblyRef.HintPath))
+                {
+                    var candidatePackageName = assemblyRef.Include.Split(',').First();
+                    if (packages.Where((x) => x.Id == candidatePackageName).Count() > 0)
+                    {
+                        var candidatePackageKey = string.Format(KeyAsMsBuildVariableTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackageName));
+                        
+                        if (!assemblyRef.HintPath.StartsWith(candidatePackageKey))
+                        {
+                            var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
+                            assemblyRef.HintPath = assemblyRef.HintPath.Replace(assemblyRoot, candidatePackageKey);
+                            r["HintPath"].InnerText = assemblyRef.HintPath;
+                        }
+                        ret.Add(assemblyRef);
+                    }
+                }
+            }
+
+            SaveCsProjectToFile();
+
+            return ret;
+        }
+
+        private void SaveCsProjectToFile()
+        {
+            string projectNewContent = XDocument.Parse(_xml.OuterXml).ToString();
+            if (projectNewContent != _projectOriginalContent)
+            {
+                File.WriteAllText(FullPath, projectNewContent);
+                _projectOriginalContent = projectNewContent;
+            }
         }
 
         private string TryGetFramework(XmlDocument xml, string tag)

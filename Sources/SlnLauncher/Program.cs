@@ -109,6 +109,8 @@ namespace SlnLauncher
                 {
                     DownloadPackages(slnx, quiteExecution);
                 }
+
+                slnx.TryFixProjectFiles();
                 
                 if (!string.IsNullOrEmpty(nuspecDir))
                 {

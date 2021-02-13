@@ -122,6 +122,14 @@ namespace Slnx
             }
         }
 
+        public IEnumerable<CsProject> CsProjects
+        {
+            get
+            {
+                return Projects.Where(x => x.Item is CsProject).Select(x => x.Item as CsProject);
+            }
+        }
+
         public IEnumerable<NugetPackage> Packages
         {
             get
@@ -158,6 +166,15 @@ namespace Slnx
             {
                 xmlSer.Serialize(streamWriter, slnx);
             }
+        }
+
+        public void TryFixProjectFiles()
+        {
+            foreach(var csProj in CsProjects)
+            {
+                csProj.GatherAndFixReferences(Packages);
+            }
+
         }
 
         void FindProjects(ProjectType[] requestedGlobalSettingsProjects, string searchPath, string skip)
@@ -436,8 +453,6 @@ namespace Slnx
                 additionalInformation = SafeExpandEnvironmentVariables(string.Join(Environment.NewLine, additionalInformationList));
             }
 
-            var csProjects = Projects.Where(x => x.Item is CsProject);
-
             Version version = null;
             if (versionString != null)
             {
@@ -445,7 +460,7 @@ namespace Slnx
             }
             Nuget = new Nuspec(id, version, readmeFile, additionalInformation);
 
-            foreach (var p in csProjects.Select(x => x.Item as CsProject))
+            foreach (var p in CsProjects)
             {
                 if (p.IsPackable)
                 {
