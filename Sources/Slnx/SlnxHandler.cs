@@ -233,7 +233,7 @@ namespace Slnx
                 if (knownProject.Count > 1)
                     throw new Exception(string.Format("Project '{0}' is ambiguous!\n\n{1}", requestedProject.name, string.Join("\n\n", knownProject)));
 
-                var p = new Project(knownProject[0], requestedProject.container);
+                var p = new Project(knownProject[0], requestedProject.container, !requestedProject.packableSpecified || requestedProject.packable);
                 _projects.Add(p);
 
                 if (p.Item?.Container != null)
@@ -252,7 +252,7 @@ namespace Slnx
                             currentFullPath = string.Format("{0}/{1}", currentFullPath, c);
 
                         if (_projects.Where((x) => x.Item != null && x.Item.IsContainer && x.FullPath == currentFullPath).Count() == 0) //Need to create the container
-                            _projects.Add(new Project(c, parent));
+                            _projects.Add(new Project(c, parent, false));
 
                         parent = currentFullPath;
                     }
@@ -447,11 +447,14 @@ namespace Slnx
 
             foreach (var p in csProjects.Select(x => x.Item as CsProject))
             {
-                Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
-                var pdb = p.GetPdbPath(targetConfig);
-                if (File.Exists(pdb))
+                if (p.IsPackable)
                 {
-                    Nuget.AddLibraryFile(p.Framework, pdb);
+                    Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
+                    var pdb = p.GetPdbPath(targetConfig);
+                    if (File.Exists(pdb))
+                    {
+                        Nuget.AddLibraryFile(p.Framework, pdb);
+                    }
                 }
             }
 

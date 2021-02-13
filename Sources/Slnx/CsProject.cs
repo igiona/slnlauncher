@@ -31,9 +31,10 @@ namespace Slnx
         static Regex _platformRegex = new Regex(PlatformPattern);
         static Regex _projectRefRegex = new Regex(ProjectReferencePattern);
 
-        public CsProject(string fullpath, string container, string defaultContainer)
+        public CsProject(string fullpath, string container, string defaultContainer, bool isPackable)
         {
             bool projectContentModified = false;
+            IsPackable = isPackable;
 
             _typeGuid = CsProjectTypeGuid.ToUpper();
 
@@ -171,13 +172,19 @@ namespace Slnx
         {
             get { return PlatformTypeNames[(int)Platform]; }
         }
-        
+
         public string EnvironmentVariableKey
         {
             get;
             private set;
         }
 
+        public bool IsPackable
+        {
+            get;
+            private set;
+        }
+        
         public override string GetBuildConfiguration()
         {
             return string.Format(@"
