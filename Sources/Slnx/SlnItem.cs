@@ -42,13 +42,18 @@ namespace Slnx
             get;
         }
 
+        public abstract bool IsTestProject
+        {
+            get;
+        }
+
         public abstract string GetBuildConfiguration();
 
         public bool IsContainer
         {
             get { return TypeGuid == SolutionFolderProjectTypeGuid; }
         }
-        
+
         protected string FormatContainer(string container)
         {
             if (container != null)

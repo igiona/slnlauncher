@@ -35,6 +35,8 @@ namespace Slnx.Generated {
         
         private PackageType[] packageField;
         
+        private DebugType[] debugField;
+        
         private string slnField;
         
         private string searchPathField;
@@ -105,6 +107,17 @@ namespace Slnx.Generated {
             }
             set {
                 this.packageField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute("debug")]
+        public DebugType[] debug {
+            get {
+                return this.debugField;
+            }
+            set {
+                this.debugField = value;
             }
         }
         
@@ -239,6 +252,53 @@ namespace Slnx.Generated {
             }
             set {
                 this.anyField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.8.3928.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    public partial class DebugType {
+        
+        private string packageField;
+        
+        private string slnxField;
+        
+        private string valueField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string package {
+            get {
+                return this.packageField;
+            }
+            set {
+                this.packageField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string slnx {
+            get {
+                return this.slnxField;
+            }
+            set {
+                this.slnxField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlTextAttribute()]
+        public string Value {
+            get {
+                return this.valueField;
+            }
+            set {
+                this.valueField = value;
             }
         }
     }

@@ -17,7 +17,7 @@ namespace Slnx
 
             if (fullpath.ToLower().EndsWith(CsProject.DotExtension))
             {
-                Item = new CsProject(fullpath, container, null, isPackable);
+                Item = new CsProject(fullpath, container, isPackable);
             }
             else
             {

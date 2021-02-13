@@ -50,6 +50,11 @@ namespace Slnx
             get { return _name; }
         }
 
+        public override bool IsTestProject
+        {
+            get { return false; }
+        }
+
         public override string GetBuildConfiguration()
         {
             return null;

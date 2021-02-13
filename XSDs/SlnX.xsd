@@ -10,11 +10,12 @@
 	<xs:complexType name="SlnXType">
 		<xs:sequence>
 			<xs:element name="nuget" type="NugetType"/>
-			<xs:element name="env" type="EnvType" minOccurs="0" maxOccurs="5000"/>
-			<xs:element name="project" type="ProjectType" minOccurs="0" maxOccurs="5000"/>
-			<xs:element name="import" type="ImportType" minOccurs="0" maxOccurs="5000"/>
-			<xs:element name="bundle" type="BundleType" minOccurs="0" maxOccurs="5000"/>
+			<xs:element name="env" type="EnvType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="project" type="ProjectType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="import" type="ImportType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="bundle" type="BundleType" minOccurs="0" maxOccurs="unbounded"/>
 			<xs:element name="package" type="PackageType" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="debug" type="DebugType" minOccurs="0" maxOccurs="unbounded"/>
 		</xs:sequence>
 		<xs:attribute name="sln" use="optional"/>
 		<xs:attribute name="searchPath"/>
@@ -64,6 +65,14 @@
 			<xs:extension base="xs:string">
 				<xs:attribute name="path" use="optional"/>
 				<xs:attribute name="bundle" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="DebugType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="package" use="required"/>
+				<xs:attribute name="slnx" use="required"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>
