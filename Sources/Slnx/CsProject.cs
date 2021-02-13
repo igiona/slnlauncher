@@ -28,10 +28,9 @@ namespace Slnx
         const string PlatformPattern = @"<Platform .*>(?<platform>.*)<\/Platform>";
         const string ProjectReferencePattern = "<ProjectReference Include=\"(?<reference>.*)\">";
 
-        const string DebugEnvironmentVariableKeyTemplate = "{0}_debug";
         const string KeyAsMsBuildProjectVariableTemplate = @"$({0})";       
         const string ProjectReferenceIncludeTemplate = @"$({0})\{1}.{2}";
-        readonly string AssemblyReferenceConditionTemplate = string.Format("$({0}) != 1", string.Format(DebugEnvironmentVariableKeyTemplate, "{0}"));
+        readonly string AssemblyReferenceConditionTemplate = string.Format("$({0}) != 1", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey("{0}"));
 
         const string AssemblyReferenceTag = "Reference";
         const string ProjectReferenceTag = "ProjectReference";
@@ -42,8 +41,9 @@ namespace Slnx
 
         XmlDocument _xml;
         string _projectOriginalContent;
+        bool _isTestProject = false;
 
-        public CsProject(string fullpath, string container, string defaultContainer, bool isPackable)
+        public CsProject(string fullpath, string container, bool isPackable)
         {
             bool projectContentModified = false;
             IsPackable = isPackable;
@@ -56,18 +56,12 @@ namespace Slnx
                 throw new Exception(string.Format("The project '{0}' does not exist!", FullPath));
 
             _name = Path.GetFileNameWithoutExtension(FullPath);
+            _isTestProject = Name.EndsWith(".Test");
 
             _container = FormatContainer(container);
-            if (_container == null) //No specific container specified 
+            if (_container == null && IsTestProject) //Test project, add the Test container under the default container
             {
-                if (Name.EndsWith(".Test") && container == null) //Test project, add the Test container under the default container
-                {
-                    _container = FormatContainer(string.Format("{0}/Test", defaultContainer));
-                }
-                else
-                {
-                    _container = FormatContainer(defaultContainer);
-                }
+                _container = FormatContainer(string.Format("Test"));
             }
 
             _projectOriginalContent = File.ReadAllText(FullPath);
@@ -75,7 +69,6 @@ namespace Slnx
             _xml = new XmlDocument();
             _xml.LoadXml(_projectOriginalContent);
 
-            string framework = null;
             var projectSdk = _xml.DocumentElement.GetAttribute("Sdk");
 
             if (projectSdk == "Microsoft.NET.Sdk")
@@ -135,7 +128,7 @@ namespace Slnx
             }
 
             EnvironmentVariableKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
-            EnvironmentVariableDebugKey = string.Format(DebugEnvironmentVariableKeyTemplate, EnvironmentVariableKey);
+            EnvironmentVariableDebugKey = NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(EnvironmentVariableKey);
             Environment.SetEnvironmentVariable(EnvironmentVariableKey, Path.GetDirectoryName(FullPath));
         }
 
@@ -167,6 +160,11 @@ namespace Slnx
         public override string Name
         {
             get { return _name; }
+        }
+
+        public override bool IsTestProject
+        {
+            get { return _isTestProject; }
         }
 
         public string Framework

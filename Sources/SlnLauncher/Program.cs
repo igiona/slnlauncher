@@ -7,6 +7,8 @@ using System.Xml.Serialization;
 using System.IO;
 using Microsoft.Win32;
 using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 using System.Reflection;
 using Slnx;
 using Slnx.Generated;
@@ -32,6 +34,7 @@ namespace SlnLauncher
 
         static bool _openSolution = false;
         static bool _createMsBuild = false;
+        static bool _logEnabled = false;
         static string _pythonEnvVarsPath = null;
         static string _batchEnvVarsPath = null;
         static Logger _logger = null;
@@ -63,18 +66,25 @@ namespace SlnLauncher
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
               .Add("b=|batchModule=", "Path for the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
-              .Add("log", "If set (-log/-log+), a log file location in the EXE directory will be created. [Default: false]", v => { if (v != null) { _logger.SetLog(Path.Combine(typeof(Program).Assembly.Location + ".log"), LogLevel.Debug); } })
+              .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
               .Add("ng|nuget", "If set (-ng/-ng+), the defined NuGet packages will be automatically downloaded. [Default: true]", v => autoNuget = v != null);
 
             try
             {
                 p.Parse(argv);
-                _logger.Info("Application started with parameters: {0}", string.Join("\n", argv));
 
                 if (slnxFile == null)
                     throw new ArgumentException(string.Format("Invalid parameters, no SlnX file specified.\n\n\t{0}", string.Join("\n\t", argv)));
-                
+
+                slnxFile = Path.GetFullPath(slnxFile);
+                if (File.Exists(slnxFile))
+                {
+                    Environment.CurrentDirectory = Path.GetDirectoryName(slnxFile);
+                }
+                _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), LogLevel.Debug);
+                _logger.Info("Application started with parameters: {0}", string.Join("\n", argv));
+
                 var slnxUserFile = string.Format("{0}{1}", slnxFile, SlnxHandler.SlnxUserExtension);
 
                 SlnXType slnxUser = null;
@@ -84,7 +94,7 @@ namespace SlnLauncher
                     slnxUser = SlnxHandler.ReadSlnx(slnxUserFile);
                 }
 
-                var slnx = new SlnxHandler(slnxFile, slnxUser);
+                var slnx = new SlnxHandler(slnxFile, slnxUser, null);
 
                 if (_createMsBuild)
                 {
@@ -114,7 +124,7 @@ namespace SlnLauncher
                 
                 if (!string.IsNullOrEmpty(nuspecDir))
                 {
-                    nuspecDir = Path.GetFullPath(Environment.ExpandEnvironmentVariables(nuspecDir));
+                    nuspecDir = Path.GetFullPath(slnx.SafeExpandEnvironmentVariables(nuspecDir));
                     if (!Directory.Exists(nuspecDir))
                     {
                         throw new Exception($"The provided nuspec directory doesn't exists: '{nuspecDir}'");
@@ -123,7 +133,7 @@ namespace SlnLauncher
                 }
                 
                 MakeSln(slnx);
-
+                MakeNugetDebugFile(slnx);
                 //NugetHelper.ConfigGenerator.Generate(slnx.SlnxFolder, slnx.Packages);
 
                 if (_openSolution)
@@ -198,14 +208,14 @@ namespace SlnLauncher
                 f.WriteLine("    <PropertyGroup>");
                 foreach (var key in keys)
                 {
-                    var value = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
                     f.WriteLine("        <{0}>{1}</{0}>", key, value);
                 }
                 f.WriteLine("\n        <MsBuildGeneratedProperties Condition=\" '$(MsBuildGeneratedProperties)' == '' \">");
 
                 foreach (var key in keys)
                 {
-                    var value = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
                     f.WriteLine("            {0}={1};", key, value);
                 }
 
@@ -224,10 +234,28 @@ namespace SlnLauncher
             using (var f = new StreamWriter(Path.Combine(outDir, "dump.txt")))
             {
                 f.WriteLine("CS Projects:\n");
-
                 foreach (var p in slnx.Projects.Where(x => x.Item != null && !x.Item.IsContainer))
                 {
                     f.WriteLine("{0,-40} => {1}", p.Item.Name, p.FullPath);
+                }
+
+                f.WriteLine("\nCS Projects imported for debugging:\n");
+                foreach (var p in slnx.DebugProjects.Where(x => x.Item != null && !x.Item.IsContainer))
+                {
+                    f.WriteLine("{0,-40} => {1}", p.Item.Name, p.FullPath);
+                }
+
+                f.WriteLine("------------------------------------\n");
+                f.WriteLine("NuGet packages:\n");
+                foreach (var p in slnx.Packages)
+                {
+                    f.WriteLine("{0,-40} => {1}", p, p.FullPath);
+                }
+
+                f.WriteLine("\nNuGet packages required by the projects imported for debugging:\n");
+                foreach (var p in slnx.DebugPackages)
+                {
+                    f.WriteLine("{0,-40} => {1}", p, p.FullPath);
                 }
 
                 f.WriteLine("------------------------------------\n");
@@ -241,7 +269,7 @@ namespace SlnLauncher
                     string value = null;
                     if (envVar != null)
                     {
-                        value = Environment.ExpandEnvironmentVariables(envVar);
+                        value = slnx.SafeExpandEnvironmentVariables(envVar);
                     }
                     f.WriteLine("{0} = {1}", key, value);
                 }
@@ -262,7 +290,7 @@ namespace SlnLauncher
 
                 foreach (var key in keys)
                 {
-                    var value = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
                     f.WriteLine("os.environ['{0}'] = r'{1}'", key, value);
                 }
             }
@@ -280,7 +308,7 @@ namespace SlnLauncher
 
                 foreach (var key in keys)
                 {
-                    var value = Environment.ExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
                     f.WriteLine("set {0}={1}", key, value);
                 }
             }
@@ -313,6 +341,8 @@ namespace SlnLauncher
         static void MakeSln(SlnxHandler slnx)
         {
             List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
+            projects.AddRange(slnx.DebugProjects.Where(x => x.Item != null).Select(x => x.Item));
+
             string outFile = slnx.SlnPath;
             _logger.Info("Creating solution file: {0}", outFile);
 
@@ -384,6 +414,31 @@ EndGlobal
 ", Guid.NewGuid().ToString());
             File.WriteAllText(outFile, slnSb.ToString());
             _logger.Info("Done!");
+        }
+
+        static void MakeNugetDebugFile(SlnxHandler slnx)
+        {
+            var nugetDebugXml = new XmlDocument();
+            var root = nugetDebugXml.CreateNode(XmlNodeType.Element, "Project", null);
+            nugetDebugXml.AppendChild(root);
+
+            foreach (var item in slnx.DebugSlnxItems)
+            {
+                var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
+                root.AppendChild(propertyGroup);
+                propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key));
+
+                var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
+                root.AppendChild(itemGroup);
+                itemGroup.InnerXml = "";
+                foreach (var p in item.Value.CsProjects.Where(x => !x.IsTestProject))
+                {
+                    itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, p.FullPath);
+                }
+            }
+
+            string prettyContent = XDocument.Parse(nugetDebugXml.OuterXml).ToString();
+            File.WriteAllText(Path.Join(slnx.SlnxDirectory, "nuget.debug"), prettyContent);
         }
     }
 }

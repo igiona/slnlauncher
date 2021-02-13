@@ -24,54 +24,97 @@ namespace Slnx
         SlnXType _slnx;
         Logger _logger = Logger.Instance;
 
+        Dictionary<string, string> _specialSlnxKeys = new Dictionary<string, string>();
         Dictionary<string, string> _environmentVariables = new Dictionary<string, string>();
         Dictionary<string, List<PackageType>> _packageBundles = new Dictionary<string, List<PackageType>>();
         List<SlnxHandler> _imports = new List<SlnxHandler>();
         List<Project> _projects = null;
         Dictionary<string, NugetPackage> _packages = new Dictionary<string, NugetPackage>();
+        Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
+        Dictionary<string, SlnxHandler> _debugSlnxItems = new Dictionary<string, SlnxHandler>();
 
-        public SlnxHandler(string fName) : this(fName, null)
+        public SlnxHandler(string fName, string debugPackageId = null) : this(fName, null, debugPackageId)
         {
         }
 
-        public SlnxHandler(string fName, SlnXType userSettings)
+        public SlnxHandler(string fName, SlnXType userSettings, string debugPackageId)
         {
+            if (!string.IsNullOrEmpty(debugPackageId))
+            {
+                userSettings = null; //Ignore use settings in case of an import via <debug package.../>
+            }
             _slnxPath = Path.GetFullPath(fName);
             Assert(File.Exists(_slnxPath), "The provided SlnX file '{0}' is not a file or it doesn't exists", _slnxPath);
             _slnxDirectory = Path.GetDirectoryName(_slnxPath);
             _slnxFile = Path.GetFileName(fName);
             _slnxName = Path.GetFileNameWithoutExtension(fName);
-            _environmentVariables["_slnx_"] = _slnxDirectory;
-            _environmentVariables["_slnx_name_"] = _slnxName;
+            _specialSlnxKeys["$(slnx)"] = _slnxDirectory;
+            //_environmentVariables["_slnx_"] = _slnxDirectory;
+            //_environmentVariables["_slnx_name_"] = _slnxName;
 
             _slnx = ReadSlnx(fName);
 
             ExtendDictionary(_environmentVariables, _slnx.env, true);
             ExtendDictionary(_packageBundles, _slnx.bundle, true);
 
-            TryApplyUserPreferences(_environmentVariables, userSettings); //Eventually apply user settings
-
+            TryApplyUserEnvironmentValues(userSettings); //Eventually apply user settings
+            
             SetAll(_environmentVariables); // to allow import having env variable in the path
 
             ExpandAll(_environmentVariables); // to allow import having env variable with special keys in the path
 
             ReadImports(_environmentVariables, _packageBundles, _packages);
 
-            TryApplyUserPreferences(_environmentVariables, userSettings); //re-Apply, to override value from the imports
+            TryApplyUserEnvironmentValues(userSettings); //re-Apply, to override value from the imports
 
             ExpandAll(_environmentVariables); // to apply imports & user env vars 
 
-            FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip);
-            ExtendDictionary(_packages, _slnx.package, true);
+            string enforcedContainer = null;
+            if (!string.IsNullOrEmpty(debugPackageId))
+            {
+                enforcedContainer = $"_DEBUG/{debugPackageId}";
+            }
+
+            FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
+            ExtendDictionary(_packages, _slnx.package, false);
 
             LoadNugetPackageInformation(_slnx.nuget);
+
+            if (string.IsNullOrEmpty(debugPackageId))
+            { 
+                EvalueteDebugPackages(_slnx.debug);
+                EvalueteDebugPackages(userSettings?.debug);
+
+                foreach (var item in _packagesToDebug)
+                {
+                    var slnxItem = new SlnxHandler(item.Value, item.Key);
+                    _debugSlnxItems[item.Key] = slnxItem;
+
+                    foreach (var candidate in Packages)
+                    {
+                        var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
+
+                        if (known == null)
+                        {
+                            _logger.Warn($"The package {candidate.Id} required by the package {item.Key} selected for debug, is not presend in the current SlnX file {_slnxName}");
+                        }
+                        else
+                        {
+                            Assert(known.Version == candidate.Version &&
+                                   known.TargetFramework == candidate.TargetFramework &&
+                                   known.IsDontNetLib == candidate.IsDontNetLib,
+                                   $"The provided package {candidate} does not match the known one {known}");
+                        }
+                    }
+                }
+            }
         }
 
         public string ProjectsSearchPath
         {
             get
             {
-                return SafeExpandEnvironmentVariables(_slnx?.searchPath);
+                return SafeExpandAndTrimEnvironmentVariables(_slnx?.searchPath);
             }
         }
 
@@ -79,7 +122,7 @@ namespace Slnx
         {
             get
             {
-                return SafeExpandEnvironmentVariables(_slnx?.packagesPath, Path.Combine(SlnxDirectory, DefaultPackagesFolderName));
+                return SafeExpandAndTrimEnvironmentVariables(_slnx?.packagesPath, Path.Combine(SlnxDirectory, DefaultPackagesFolderName));
             }
         }
 
@@ -138,6 +181,27 @@ namespace Slnx
             }
         }
 
+        public IEnumerable<Project> DebugProjects
+        {
+            get
+            {
+                return _debugSlnxItems.Values.SelectMany(x => x.Projects.Where(p => !p.Item.IsTestProject));
+            }
+        }
+
+        public IEnumerable<NugetPackage> DebugPackages
+        {
+            get
+            {
+                return _debugSlnxItems.Values.SelectMany(x => x.Packages);
+            }
+        }
+
+        public Dictionary<string, SlnxHandler> DebugSlnxItems
+        {
+            get { return _debugSlnxItems; }
+        }
+
         public Dictionary<string, string> EnvironementVariables
         {
             get
@@ -185,7 +249,7 @@ namespace Slnx
             }
         }
 
-        void FindProjects(ProjectType[] requestedGlobalSettingsProjects, string searchPath, string skip)
+        void FindProjects(ProjectType[] requestedGlobalSettingsProjects, string searchPath, string skip, string enforcedContainer)
         {
             _projects = new List<Project>();
             if (requestedGlobalSettingsProjects != null)
@@ -207,11 +271,11 @@ namespace Slnx
                 }
                 Assert(knownProjects != null, "Unable to find the path/url: '{0}'", searchPath);
 
-                InspectProjects(requestedGlobalSettingsProjects, knownProjects, skip);
+                InspectProjects(requestedGlobalSettingsProjects, knownProjects, skip, enforcedContainer);
             }
         }
 
-        void InspectProjects(ProjectType[] requestedProjectsXmlType, IEnumerable<string> knownProjects, string skip)
+        void InspectProjects(ProjectType[] requestedProjectsXmlType, IEnumerable<string> knownProjects, string skip, string enforcedContainer)
         {
             List<string> skipList = new List<string>();
             if (!string.IsNullOrEmpty(skip))
@@ -258,7 +322,13 @@ namespace Slnx
                 if (knownProject.Count > 1)
                     throw new Exception(string.Format("Project '{0}' is ambiguous!\n\n{1}", requestedProject.name, string.Join("\n\n", knownProject)));
 
-                var p = new Project(knownProject[0], requestedProject.container, !requestedProject.packableSpecified || requestedProject.packable);
+                var container = requestedProject.container;
+                if (!string.IsNullOrEmpty(enforcedContainer))
+                {
+                    container = enforcedContainer;
+                }
+
+                var p = new Project(knownProject[0], container, !requestedProject.packableSpecified || requestedProject.packable);
                 _projects.Add(p);
 
                 if (p.Item?.Container != null)
@@ -318,7 +388,7 @@ namespace Slnx
                     Assert(string.IsNullOrEmpty(import.path) ^ string.IsNullOrEmpty(import.bundle), "path and bundle are exclusive attributes in an import element");
                     if (!string.IsNullOrEmpty(import.path)) //File import
                     {
-                        var slnxImportFile = Path.GetFullPath(SafeExpandEnvironmentVariables(import.path));
+                        var slnxImportFile = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(import.path));
 
                         if (!File.Exists(slnxImportFile))
                             throw new Exception(string.Format("SLNX import not found, file path: {0}", slnxImportFile));
@@ -346,39 +416,66 @@ namespace Slnx
         /// <param name="env"></param>
         /// <param name="slnxFile"></param>
         /// <returns></returns>
-        private void TryApplyUserPreferences(Dictionary<string, string> env, SlnXType slnxUser)
+        private void TryApplyUserEnvironmentValues(SlnXType slnxUser)
         {
-            if (slnxUser != null)
+            if (slnxUser?.env != null)
             {
-                if (slnxUser.env != null)
+                foreach (var e in slnxUser.env)
                 {
-                    foreach (var e in slnxUser.env)
+                    if (_environmentVariables.ContainsKey(e.name))
                     {
-                        if (env.ContainsKey(e.name))
-                        {
-                            env[e.name] = e.Value; //Override the local value with the user one
-                            Environment.SetEnvironmentVariable(e.name, e.Value); //Override the already set value with the user one
-                        }
+                        _environmentVariables[e.name] = e.Value; //Override the local value with the user one
+                        Environment.SetEnvironmentVariable(e.name, e.Value); //Override the already set value with the user one
                     }
                 }
             }
         }
-        
-        private string SafeExpandEnvironmentVariables(string value, string defaultValue = null)
+
+        private void EvalueteDebugPackages(DebugType[] debug)
+        {
+            if (debug != null)
+            {
+                foreach (var d in debug)
+                {
+                    var slnxToImport = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(d.slnx));
+                    if (slnxToImport == null || !File.Exists(slnxToImport))
+                    {
+                        throw new Exception($"The provided debug SlnX file '{slnxToImport}' for the package {d.package} doesn't exists");
+                    }
+
+                    if (_packagesToDebug.ContainsKey(d.package))
+                    {
+                        if (_packagesToDebug[d.package] != slnxToImport)
+                        {
+                            throw new Exception($"The provided debug SlnX file for the package {d.package} is duplicate.\n{_packagesToDebug[d.package]} and {slnxToImport}");
+                        }
+                    }
+                    else
+                    {
+                        _packagesToDebug.Add(d.package, slnxToImport);
+                    }
+                }
+            }
+        }
+
+        public string SafeExpandEnvironmentVariables(string value, string defaultValue = null)
         {
             if (value == null)
                 return defaultValue;
-            return Environment.ExpandEnvironmentVariables(value);
-        }
-
-        private string GetExpandedTrimmedValue(string value, string defaulValue)
-        {
-            var ret = SafeExpandEnvironmentVariables(value?.Trim());
-            if (string.IsNullOrEmpty(ret))
+            var ret = Environment.ExpandEnvironmentVariables(value);
+            foreach (var s in _specialSlnxKeys)
             {
-                return defaulValue;
+                if (ret.Contains(s.Key))
+                {
+                    ret = ret.Replace(s.Key, s.Value);
+                }
             }
             return ret;
+        }
+
+        public string SafeExpandAndTrimEnvironmentVariables(string value, string defaulValue = null)
+        {
+            return SafeExpandEnvironmentVariables(value?.Trim(), defaulValue);
         }
 
         private void ExpandAll(Dictionary<string, string> env)
@@ -387,8 +484,7 @@ namespace Slnx
             {
                 try
                 {
-                    var value = Environment.GetEnvironmentVariable(e.Key); //e.Value;
-
+                    var value = Environment.GetEnvironmentVariable(e.Key);
                     //System.Diagnostics.Debug.WriteLine("{0}={1}", e.Key, Environment.ExpandEnvironmentVariables(value));
                     Environment.SetEnvironmentVariable(e.Key, SafeExpandEnvironmentVariables(value));
                 }
@@ -439,9 +535,10 @@ namespace Slnx
             {
                 foreach (var e in importedValues)
                 {
+                    var candidate = new NugetPackage(e.id, e.version, e.targetFramework, e.source, e.var, IsDotNet(e), PackagesPath);
                     if (!packages.ContainsKey(e.id) || overrideValues)
                     {
-                        packages[e.id] = new NugetPackage(e.id, e.version, e.targetFramework, e.source, e.var, IsDotNet(e), PackagesPath);
+                        packages[e.id] = candidate;
                     }
                 }
             }
@@ -449,10 +546,10 @@ namespace Slnx
 
         private void LoadNugetPackageInformation(NugetType nuget)
         {
-            var id = GetExpandedTrimmedValue(nuget?.id, SlnxName);
-            var versionString = GetExpandedTrimmedValue(nuget?.id, null);
-            var targetConfig = GetExpandedTrimmedValue(nuget?.targetConfig, "Release");
-            var readmeFile = GetExpandedTrimmedValue(nuget?.readme, null);
+            var id = SafeExpandAndTrimEnvironmentVariables(nuget?.id, SlnxName);
+            var versionString = SafeExpandAndTrimEnvironmentVariables(nuget?.id, null);
+            var targetConfig = SafeExpandAndTrimEnvironmentVariables(nuget?.targetConfig, "Release");
+            var readmeFile = SafeExpandAndTrimEnvironmentVariables(nuget?.readme, null);
             string additionalInformation = null;
             var additionalInformationList = nuget?.info?.Any?.Select(x => x.OuterXml);
 
