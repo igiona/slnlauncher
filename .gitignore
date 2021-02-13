@@ -356,3 +356,5 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
+# SlnLauncher generated file, required to debug nuget packages
+nuget.debug
