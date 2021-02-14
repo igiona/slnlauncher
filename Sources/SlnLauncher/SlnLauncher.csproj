@@ -4,35 +4,15 @@
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <StartupObject>SlnLauncher.Program</StartupObject>
+    <ApplicationIcon>SlnLauncher.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="SlnLauncher.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="SlnLauncher.ico" />
-  </ItemGroup>
-  <!-- if requested to debug NugetHelper package 
-        the tool will create a list of 
-            <ProjectReference Include="$(NugetHelper_blabla)\NugetHelper_blabla.csproj" />
-		in the debug.debug, and it set NugetHelper = 1 so the the package is not referenced
-	-->
-  <ItemGroup>
     <ProjectReference Include="$(Slnx)\Slnx.csproj" />
-    <!--<PackageReference Condition="$(NugetHelper) != 1" Include="NugetHelper" Version="$(NugetHelper_version)" /> -->
     <Reference Include="NugetHelper" Condition="$(NugetHelper_debug) != 1">
       <HintPath>$(NugetHelper)\NugetHelper.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <!--
-  <Reference Include="NugetHelper">
-      <HintPath>C:\Nugetcache\NugetHelper.0.0.1\lib\netstandard2.0\NugetHelper.dll</HintPath>
-  </Reference>
-<PackageReference Include="NugetHelper" Version="0.0.1" />
-  <Reference Include="NugetHelper">
-      <HintPath>C:\Nugetcache\NugetHelper.0.0.1\lib\netstandard2.0\NugetHelper.dll</HintPath>
-  </Reference>
-
-  -->
   <ItemGroup>
     <Reference Include="NDesk.Options" Condition="$(NDesk_Options_debug) != 1">
       <HintPath>$(NDesk_Options)\NDesk.Options.dll</HintPath>
