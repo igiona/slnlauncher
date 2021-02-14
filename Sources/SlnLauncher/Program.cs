@@ -125,9 +125,20 @@ namespace SlnLauncher
                 if (!string.IsNullOrEmpty(nuspecDir))
                 {
                     nuspecDir = Path.GetFullPath(slnx.SafeExpandEnvironmentVariables(nuspecDir));
+                    if (nuspecDir == slnx.SlnxDirectory)
+                    {
+                        throw new Exception($"The provided nuspec directory is the same as the slnx folder. Please specify a sub folder.");
+                    }
                     if (!Directory.Exists(nuspecDir))
                     {
-                        throw new Exception($"The provided nuspec directory doesn't exists: '{nuspecDir}'");
+                        Directory.CreateDirectory(nuspecDir);
+                    }
+                    else
+                    {
+                        if (Directory.EnumerateFileSystemEntries(nuspecDir).Any())
+                        {
+                            throw new Exception($"The provided nuspec directory is not empty: '{nuspecDir}'");
+                        }
                     }
                     NugetHelper.NuspecGenerator.Generate(nuspecDir, slnx.Nuget);
                 }
