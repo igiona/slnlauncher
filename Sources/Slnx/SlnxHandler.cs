@@ -442,7 +442,10 @@ namespace Slnx
                     {
                         throw new Exception($"The provided debug SlnX file '{slnxToImport}' for the package {d.package} doesn't exists");
                     }
-
+                    if (d?.package == null || d?.slnx == null)
+                    {
+                        throw new Exception($"The provided debug element is missing the package or slnx attribute");
+                    }
                     if (_packagesToDebug.ContainsKey(d.package))
                     {
                         if (_packagesToDebug[d.package] != slnxToImport)
