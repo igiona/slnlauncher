@@ -45,6 +45,10 @@ namespace Slnx
         {
             lock (_lock)
             {
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
                 _filePath = filePath;
                 _enabledLevel = level;
             }
