@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <SlnX searchPath="$(slnx)" packagesPath="C:\Nugetcache">
-    <!-- Local -->
 
     <!-- 
         ! DO NOT IMPORT COMMONS IN THIS SLNX ! 
@@ -8,6 +7,21 @@
         Additionally, define environment variables here with a very specific name, to avoid to override the one in the 
         opened SlnX during debugging.
     -->   
+    <nuget>
+        <targetConfig>Debug</targetConfig>
+        <readme>README.md</readme>
+        <info>
+            <description>The SlnLauncher is a tool that allows to perform actions based on the information contained in .slnx files.</description>
+            <owners>Giona Imperatori</owners>-->
+            <authors>Giona Imperatori</authors>
+            <projectUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</projectUrl>
+            <docsUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</docsUrl>
+            <iconUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/blob/master/Icon/SlnLauncher.png</iconUrl>
+            <tags>.NET c# NuGet visual studio git multi repo </tags>
+            <requireLicenseAcceptance>true</requireLicenseAcceptance>
+            <license type="expression">MIT</license>
+        </info>
+    </nuget>   
 
     <env name="__SLN_LAUNCHER_NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
     

@@ -52,7 +52,8 @@ namespace SlnLauncher
             _openSolution = true;
             _createMsBuild = false;
             var quiteExecution = false;
-            var autoNuget = true;
+            var autoUpdateNugetDependencies = false;
+            var nugetForceMinVersion = true;
             string nuspecDir = null;            
             var dump = false;
             string slnxFile = null;
@@ -68,7 +69,8 @@ namespace SlnLauncher
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
-              .Add("ng|nuget", "If set (-ng/-ng+), the defined NuGet packages will be automatically downloaded. [Default: true]", v => autoNuget = v != null);
+              .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: false]", v => autoUpdateNugetDependencies = v != null)
+              .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fullfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
 
             try
             {
@@ -95,7 +97,9 @@ namespace SlnLauncher
                 }
 
                 var slnx = new SlnxHandler(slnxFile, slnxUser, null);
-
+                
+                DownloadPackages(slnx, quiteExecution, autoUpdateNugetDependencies);                
+                
                 if (_createMsBuild)
                 {
                     CreateMsBuildPropertiesTarget(slnx);
@@ -115,11 +119,10 @@ namespace SlnLauncher
                     Dump(slnx);
                 }
 
-                if (autoNuget)
-                {
-                    DownloadPackages(slnx, quiteExecution);
-                }
+                _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}");
+                NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages, nugetForceMinVersion);
 
+                _logger.Info($"Fixing project files");
                 slnx.TryFixProjectFiles();
                 
                 if (!string.IsNullOrEmpty(nuspecDir))
@@ -145,7 +148,6 @@ namespace SlnLauncher
                 
                 MakeSln(slnx);
                 MakeNugetDebugFile(slnx);
-                //NugetHelper.ConfigGenerator.Generate(slnx.SlnxFolder, slnx.Packages);
 
                 if (_openSolution)
                 {
@@ -154,9 +156,15 @@ namespace SlnLauncher
             }
             catch (Exception ex)
             {
-                string exText = string.Join("\n", new AggregateException(ex).InnerExceptions.Select(x => x.Message));
+                string exText = "";
+                var stackTrace = ex.StackTrace;
+                while (ex != null)
+                {
+                    exText = string.Join("\n", ex.Message);
+                    ex = ex.InnerException;
+                }
                 _logger.Error(exText);
-                _logger.Error(ex.StackTrace);
+                _logger.Error(stackTrace);
 
                 if (!quiteExecution)
                     MessageBox.Show(string.Format("Run the command with the option --log for more information\n\n{0}", exText), "Error");
@@ -165,7 +173,7 @@ namespace SlnLauncher
             }
         }
 
-        static void DownloadPackages(SlnxHandler slnx, bool quite)
+        static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies)
         {
             _logger.Info("Downloading NuGet packages...");
             ProgressDialog progress = null;
@@ -186,11 +194,13 @@ namespace SlnLauncher
             th?.SetApartmentState(System.Threading.ApartmentState.STA);
             th?.Start();
             while (th != null && progress == null) System.Threading.Thread.Sleep(100);
-            NugetHelper.NugetHelper.InstallPackages(slnx.Packages, false, (message) => 
+
+            NugetHelper.NugetHelper.InstallPackages(slnx.Packages, autoUpdateDependencies, (message) => 
                 {
                     _logger.Info("Package {0} successefully installed", message.ToString());
                     progress?.IncrementProgress();
                 });
+
             _logger.Info("Done!");
             progress?.Close();
             th?.Join();
@@ -261,12 +271,20 @@ namespace SlnLauncher
                 foreach (var p in slnx.Packages)
                 {
                     f.WriteLine("{0,-40} => {1}", p, p.FullPath);
+                    foreach (var d in p.Dependencies)
+                    {
+                        f.WriteLine("    | {0,-20} => {1}", d.Id, d.VersionRange);
+                    }
                 }
 
                 f.WriteLine("\nNuGet packages required by the projects imported for debugging:\n");
                 foreach (var p in slnx.DebugPackages)
                 {
                     f.WriteLine("{0,-40} => {1}", p, p.FullPath);
+                    foreach (var d in p.Dependencies)
+                    {
+                        f.WriteLine("    | {0,-20} => {1}", d.Id, d.VersionRange);
+                    }
                 }
 
                 f.WriteLine("------------------------------------\n");

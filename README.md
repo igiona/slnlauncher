@@ -1,7 +1,6 @@
 # SlnLauncher
 
 <img src="https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/raw/master/Icon/SlnLauncher.png" width="100"> \*...from developers for developers...\*
-
 The SlnLauncher is a tool that allows to perform actions based on the information contained in .slnx files.
 A SlnX file contains all the information required to generated a solution file for VisualStudio (.sln).
 The SlnLauncher takes care of finding the C# projects and downloading the NuGet packages of your projects, it ensures packages versions consistency and automatically format .csproj for a seamless integration.
@@ -63,7 +62,7 @@ This is one of the reasons why with the SlnLauncher [NuGet package are not used 
 
 - - -
 
-**NOTE**: the tool doesn't download the NuGet packages dependencies automatically although it has all the capabilities to do so. It's a design decision. You should know to which package you application depends on!
+**NOTE**: By default the tool doesn't download the NuGet packages dependencies automatically although it has all the capabilities to do so (see parameter *-nd*). It's a design decision. You should know to which package you application depends on!
 
 - - -
 
@@ -136,7 +135,7 @@ With these information, the SlnLauncher will search for the additional projects 
 
 But thre is more to it: the tool will also create a file called <span class="colour" style="color:var(--vscode-unotes-wsyText)">nuget.debug, this file contains all the msbuild properties necessary to properly and **automatically** update the project dependencies in your solution. </span>It works seamlessy for you.
 
-## Known limitations
+## Known limitations and issues
 
 * Only projects in the Microsoft.NET.Sdk format are supported.
 Workaround: Update your project files, you and your team will only profit of it :-)
@@ -158,6 +157,12 @@ Additionally, it could be adding the import statement in the csproject automatic
 Who is up to the challange? :-)
 * If you want to build on your build server using (for example) dotnet, you need to prepare the command shell with all the necessary environment variable.
 No worries, that's why the tool allows you to create a Batch/Python/MsBuild file exactly to do so :-) !
+* The tool ensures that the specified NuGet package target framework is compatible with all the dependencies of the package itself.
+There seem to be packages (e.g. Newtonsoft.Json) that have invalid dependencies settings:
+Newtonsoft.Json 9.0.1 -> .netstandard1.0 depends on Microsoft.CSharp 4.01 -> netstandard1.3
+Workaround:
+For now, the tool allow dependencies starting with "Microsoft." and "System." to have a non-match in the framework.
+The assumption here is that the dependency is probably coming from a nuget package delivered with .Net framework itself, and therefore do not have to be referenced manually in the projects (at least it is the case with Microsoft.CSharp)
 
 Possible limitation?
 
@@ -207,10 +212,11 @@ by the current luancher version.
 | msbuildModule | msb | boolean | No | false | If set, a MSBuild target file (MsBuildGeneratedProperties.targets) containing all defined environment variables is created in the SlnX file location. |
 | pythonModule | py | string | No | null | If set, \<value> is used as relative (to the SlnX file) folder path for the creation of the python module (SetEnvVars.py) containing all defined environment variables. |
 | batchModule | b | string | No | null | If set, \<value> is used as relative (to the SlnX file) folder path for the creation of the python module (SetEnvVars.bat) containing all defined environment variables. |
-| nuspec | ns | string | No | null | If set, \<value> is used as relative (to the SlnX file) folder path in which all required files for a NuGet package will be copied and generated based on the current solution (projects DLLs/PDBs, .nusepc, dependencies).<br>Afterwards, the following command can be execute to create the NuGet package of the solution: >nuget pack \<value>\\\<SlnxName>.nuspec  |
+| nuspec | ns | string | No | null | If set, \<value> is used as relative (to the SlnX file) folder path in which all required files for a NuGet package will be copied and generated based on the current solution (projects DLLs/PDBs, .nusepc, dependencies).<br>Afterwards, the following command can be execute to create the NuGet package of the solution: >nuget pack \<value>\\\<SlnxName>.nuspec |
 | choco | c | string | No | null | To be implemented.... |
 | openSln | o | boolean | No | true | If set, it will open the generated Sln (with the default operating system tool) file before exiting the launcher. |
-| nuget | ng | boolean | No | true | If set, the defined NuGet packages will be automatically downloaded.<br><br>WARNING: if not set, some features like NuGet packages dependency consistency check will not work as expected! |
+| nugetDependencies | nd | boolean | No | false | If set, the dependencies of the provided packages will be also automatically downloaded. |
+| nugetForceMinVersion | nf | boolean | No | true | If set, the tool will check that all the packages dependencies fullfill the min-version provided in the NuGet package (not allowing newer versions).<br>If not, the version simply has to satisfy the [version range](https://docs.microsoft.com/en-us/nuget/concepts/package-versioning) required by the package. |
 |  |  | string | Yes | null | Any "unnamed" argument will be used a file path to the SlnX file to be parsed.<br>The last "unnamed" argument will be used as SlnX file path. All others will be ignored. |
 
 # Environment variables and special keys
