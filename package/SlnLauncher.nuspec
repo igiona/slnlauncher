@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package>
+  <metadata>
+    <id>slnlauncher</id>
+    <version>2.0.0</version>
+    <title>SlnLauncher (Portable)</title>
+    <summary>The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).</summary>
+    <description>The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).
+As input, it takes a SlnX file that contains all the required information.
+The SlnLauncher takes care of finding the C# projects, downloading the NuGet packages of your projects while ensuring package versions consistency and automatically formatting .csproj for a seamless integration.</description>
+    <owners>Giona Imperatori</owners>
+    <authors>Giona Imperatori</authors>
+    <packageSourceUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</packageSourceUrl>
+    <releaseNotes>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</releaseNotes>
+    <projectUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</projectUrl>
+    <docsUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</docsUrl>
+    <iconUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/blob/master/Icon/SlnLauncher.png</iconUrl>
+    <tags>.NET c# NuGet visual studio git multi repo </tags>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
+
+    <dependencies>
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="../README.md" target="" />
+    <file src="LICENSE.txt" target="tools" />
+    <file src="VERIFICATION.txt" target="tools" />
+    <file src="..\Sources\SlnLauncher\bin\Debug\net5.0-windows\*.exe" target="tools" />
+    <file src="..\Sources\SlnLauncher\bin\Debug\net5.0-windows\SlnLauncher.runtimeconfig.json" target="tools" />
+    <file src="..\Sources\SlnLauncher\bin\Debug\net5.0-windows\*.dll" target="tools" />
+  </files>    
+</package>
