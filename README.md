@@ -1,9 +1,14 @@
 # SlnLauncher
 
-<img src="https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/raw/master/Icon/SlnLauncher.png" width="100"> \*...from developers for developers...\*
-The SlnLauncher is a tool that allows to perform actions based on the information contained in .slnx files.
-A SlnX file contains all the information required to generated a solution file for VisualStudio (.sln).
-The SlnLauncher takes care of finding the C# projects and downloading the NuGet packages of your projects, it ensures packages versions consistency and automatically format .csproj for a seamless integration.
+<img src="https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/raw/master/Icon/SlnLauncher.png" width="100">
+
+*...from developers for developers...*
+
+The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).
+
+As input, it takes a SlnX file that contains all the required information.
+
+The SlnLauncher takes care of finding the C# projects, downloading the NuGet packages of your projects while ensuring package versions consistency and automatically formatting .csproj for a seamless integration.
 
 The SlnLauncher allows developers to forget once for all issues related to VisualStudio like:
 

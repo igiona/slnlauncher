@@ -1,0 +1,17 @@
+﻿
+VERIFICATION
+Verification is intended to assist the Chocolatey moderators and community
+in verifying that this package's contents are trustworthy.
+ 
+The owner of this package is also the author of the following binaries: Sln.dll, SlnLauncher.dll, NugetHelper.dll, SlnLauncher.exe
+The following binaries are part of publicly distributed NuGet packages licensed either under the MIT or the Aapache2.0 licenses.
+    package id="NDesk.Options" version="0.2.1"   
+    package id="Newtonsoft.Json" version="9.0.1"
+    package id="NuGet.Common" version="5.8.1"
+    package id="NuGet.Configuration" version="5.8.1"
+    package id="NuGet.Frameworks" version="5.8.1"
+    package id="NuGet.Packaging" version="5.8.1"
+    package id="NuGet.Packaging.Core" version="5.8.1"
+    package id="NuGet.Protocol" version="5.8.1"
+    package id="NuGet.Resolver" version="5.8.1"
+    package id="NuGet.Versioning" version="5.8.1"
