@@ -25,7 +25,7 @@
 
     <env name="__SLN_LAUNCHER_NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
     
-    <package id="NDesk.Options" version="0.2.1" targetFramework="" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NDesk.Options" version="0.2.1" targetFramework="lib" IsDotNetLib="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     
     <package id="Newtonsoft.Json" version="9.0.1" targetFramework="netstandard1.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
@@ -37,7 +37,7 @@
     <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
-    <package id="NugetHelper" version="0.0.2" targetFramework="netstandard2.0" source="D:\GitRepositories" />
+    <package id="NugetHelper" version="0.0.3" targetFramework="netstandard2.0" source="D:\GitRepositories" />
 
     <!-- Projects -->
     <project name="SlnLauncher" container="" />

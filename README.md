@@ -67,7 +67,7 @@ This is one of the reasons why with the SlnLauncher [NuGet package are not used 
 
 - - -
 
-**NOTE**: By default the tool doesn't download the NuGet packages dependencies automatically although it has all the capabilities to do so (see parameter *-nd*). It's a design decision. You should know to which package you application depends on!
+**NOTE**: By default the tool downloads the NuGet packages dependencies automatically (see parameter *-nd*). In the log files warnings/infos will be generated for the packages not defined in the SlnX file.
 
 - - -
 
@@ -220,7 +220,7 @@ by the current luancher version.
 | nuspec | ns | string | No | null | If set, \<value> is used as relative (to the SlnX file) folder path in which all required files for a NuGet package will be copied and generated based on the current solution (projects DLLs/PDBs, .nusepc, dependencies).<br>Afterwards, the following command can be execute to create the NuGet package of the solution: >nuget pack \<value>\\\<SlnxName>.nuspec |
 | choco | c | string | No | null | To be implemented.... |
 | openSln | o | boolean | No | true | If set, it will open the generated Sln (with the default operating system tool) file before exiting the launcher. |
-| nugetDependencies | nd | boolean | No | false | If set, the dependencies of the provided packages will be also automatically downloaded. |
+| nugetDependencies | nd | boolean | No | true | If set, the dependencies of the provided packages will be also automatically downloaded. |
 | nugetForceMinVersion | nf | boolean | No | true | If set, the tool will check that all the packages dependencies fullfill the min-version provided in the NuGet package (not allowing newer versions).<br>If not, the version simply has to satisfy the [version range](https://docs.microsoft.com/en-us/nuget/concepts/package-versioning) required by the package. |
 |  |  | string | Yes | null | Any "unnamed" argument will be used a file path to the SlnX file to be parsed.<br>The last "unnamed" argument will be used as SlnX file path. All others will be ignored. |
 
@@ -245,7 +245,7 @@ Example: "NuGet.Protocol" will become "NuGet\_Protocol"
 
 | Key | Value |
 | --- | ----- |
-| \<package-id> <a name="PackageIdFormat"></a> | If the package attribute *IsDotNetLib* is set: \<packagesPath>\lib\\\<targetFramewok><br>Otherwise: \<packagesPath>\\\<targetFramewok> |
+| \<package-id> | Set to the directory containing the package assemblies. See [PackageIdFormat](#PackageIdFormat) |
 | \<package-id>\_version | *version* of the specified NuGet package. (Currently not really used) |
 | \<package-id>\_framework | The *targetFramework* of the specified NuGet package. |
 | \<package-id>\_debug | 1: if the NuGet package is markjed to be compiled via source code.<br>0: otherwise |
@@ -329,8 +329,8 @@ Defintion of a NuGet package to be installed.
 | version | - | Version of the NuGet package |
 | targetFramework | *none* | Target .NET framework version of the NuGet package, that the application is going to link to. |
 | source | - | The URI or local path in which the NuGet package will be searched. |
-| IsDoNetLib | true | See [Generated environment variables - package id](#PackageIdFormat) |
-| var | *none* | Deprecated. |
+| IsDoNetLib | true | The tool will set the \<package-id> environment variable (assemblies path) based on this parameter.<br>If the package attribute IsDotNetLib is set, the path will be se to:<br>"\<package-install-path>\lib\\\<targetFramewok>" if the package is recognised as "implementation assembly" package<br>"\<package-install-path>\ref\\\<targetFramewok>" if the package is recognised as "compile time assembly" package<br>Otherwise to:<br>\<package-install-path>\\\<targetFramework><br><br>**NOTE:**<br>For packages not following the standard .NET NuGet package format, set this field to False and use \<targetFramework> to point to the disered directory. |
+| var | *none* | Deprecated. Will be removed in future releases. |
 
 ### project
 
