@@ -26,6 +26,7 @@ The SlnLauncher takes care of finding the C# projects, downloading the NuGet pac
     <file src="../README.md" target="" />
     <file src="LICENSE.txt" target="tools" />
     <file src="VERIFICATION.txt" target="tools" />
+    <file src="*.ps1" target="tools" />
     <file src="..\Sources\SlnLauncher\bin\Debug\net5.0-windows\*.exe" target="tools" />
     <file src="..\Sources\SlnLauncher\bin\Debug\net5.0-windows\SlnLauncher.runtimeconfig.json" target="tools" />
     <file src="..\Sources\SlnLauncher\bin\Debug\net5.0-windows\*.dll" target="tools" />
