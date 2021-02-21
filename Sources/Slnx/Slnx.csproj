@@ -5,6 +5,9 @@
   </PropertyGroup>
   <ItemGroup>
     <!--<ProjectReference Include="..\..\..\nugethelper\Sources\NugetHelper\NugetHelper.csproj" />-->
+    <Reference Include="NuGet.Versioning" Condition="$(NuGet_Versioning_debug) != 1">
+      <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
+    </Reference>
     <Reference Include="NugetHelper" Condition="$(NugetHelper_debug) != 1">
       <HintPath>$(NugetHelper)\NugetHelper.dll</HintPath>
     </Reference>

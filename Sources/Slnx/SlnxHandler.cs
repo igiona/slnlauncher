@@ -29,7 +29,7 @@ namespace Slnx
         Dictionary<string, List<PackageType>> _packageBundles = new Dictionary<string, List<PackageType>>();
         List<SlnxHandler> _imports = new List<SlnxHandler>();
         List<Project> _projects = null;
-        Dictionary<string, NugetPackage> _packages = new Dictionary<string, NugetPackage>();
+        List<NugetPackage> _packages = new List<NugetPackage>();
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
         Dictionary<string, SlnxHandler> _debugSlnxItems = new Dictionary<string, SlnxHandler>();
 
@@ -76,7 +76,7 @@ namespace Slnx
             }
 
             FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
-            ExtendDictionary(_packages, _slnx.package, false);
+            ExtendList(_packages, _slnx.package);
 
             LoadNugetPackageInformation(_slnx.nuget);
 
@@ -100,10 +100,10 @@ namespace Slnx
                         }
                         else
                         {
-                            Assert(known.Version == candidate.Version &&
+                            Assert(known.MinVersion == candidate.MinVersion &&
                                    known.TargetFramework == candidate.TargetFramework &&
-                                   known.IsDontNetLib == candidate.IsDontNetLib,
-                                   $"The provided package {candidate} does not match the known one {known}");
+                                   known.PackageType == candidate.PackageType,
+                                   $"The provided package {candidate} does not match the already known one {known}");
                         }
                     }
                 }
@@ -177,7 +177,12 @@ namespace Slnx
         {
             get
             {
-                return _packages.Values;
+                return _packages;
+            }
+            set
+            {
+                _packages.Clear();
+                _packages.AddRange(value);
             }
         }
 
@@ -378,7 +383,7 @@ namespace Slnx
         /// The imported environment variables do NOT override eventually already present values.
         /// Projects or other settings cannot be imported !
         /// </summary>
-        private void ReadImports(Dictionary<string, string> env, Dictionary<string, List<PackageType>> bundle, Dictionary<string, NugetPackage> packages)
+        private void ReadImports(Dictionary<string, string> env, Dictionary<string, List<PackageType>> bundle, List<NugetPackage> packages)
         {
             //Evaluate eventually defined import(s)
             if (_slnx.import != null)
@@ -403,7 +408,7 @@ namespace Slnx
                     else //if (!string.IsNullOrEmpty(import.bundle))
                     {
                         Assert(_packageBundles.ContainsKey(import.bundle), "Missing bundle with key '{0}'", import.bundle);
-                        ExtendDictionary(packages, bundle[import.bundle].ToArray(), false);
+                        ExtendList(packages, bundle[import.bundle].ToArray());
                     }
                 }
             }
@@ -532,16 +537,17 @@ namespace Slnx
             }
         }
 
-        private void ExtendDictionary(Dictionary<string, NugetPackage> packages, PackageType[] importedValues, bool overrideValues)
+        private void ExtendList(List<NugetPackage> packages, PackageType[] importedValues)
         {
             if (importedValues != null)
             {
                 foreach (var e in importedValues)
                 {
                     var candidate = new NugetPackage(e.id, e.version, e.targetFramework, e.source, e.var, IsDotNet(e), PackagesPath);
-                    if (!packages.ContainsKey(e.id) || overrideValues)
+                    var alreadyPresent = packages.Where((x) => x.Id == candidate.Id);
+                    if (alreadyPresent.Count() == 0)
                     {
-                        packages[e.id] = candidate;
+                        packages.Add(candidate);
                     }
                 }
             }
@@ -561,12 +567,7 @@ namespace Slnx
                 additionalInformation = SafeExpandEnvironmentVariables(string.Join(Environment.NewLine, additionalInformationList));
             }
 
-            Version version = null;
-            if (versionString != null)
-            {
-                version = new Version(versionString);
-            }
-            Nuget = new Nuspec(id, version, readmeFile, additionalInformation);
+            Nuget = new Nuspec(id, versionString, readmeFile, additionalInformation);
 
             foreach (var p in CsProjects)
             {
@@ -589,11 +590,16 @@ namespace Slnx
 
 
         /// <summary>
-        /// If field not specified, assume that it is a .NET lib
+        /// If field not specified, assume that it is a .NET lib.
+        /// This function assumes that the provided package is either "other" or a .NET implementation assembly.
         /// </summary>
-        private static bool IsDotNet(PackageType p)
+        private static NugetPackageType IsDotNet(PackageType p)
         {
-            return !p.IsDotNetLibSpecified || p.IsDotNetLib; 
+            if (!p.IsDotNetLibSpecified || p.IsDotNetLib)
+            {
+                return NugetPackageType.DotNetImplementationAssembly;
+            }
+            return NugetPackageType.Other;
         }
 
         /// <summary>

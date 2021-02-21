@@ -52,7 +52,7 @@ namespace SlnLauncher
             _openSolution = true;
             _createMsBuild = false;
             var quiteExecution = false;
-            var autoUpdateNugetDependencies = false;
+            var autoUpdateNugetDependencies = true;
             var nugetForceMinVersion = true;
             string nuspecDir = null;            
             var dump = false;
@@ -69,9 +69,9 @@ namespace SlnLauncher
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
-              .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: false]", v => autoUpdateNugetDependencies = v != null)
+              .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNugetDependencies = v != null)
               .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fullfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
-
+            
             try
             {
                 p.Parse(argv);
@@ -97,7 +97,8 @@ namespace SlnLauncher
                 }
 
                 var slnx = new SlnxHandler(slnxFile, slnxUser, null);
-                
+                var originalPackageList = new List<NugetHelper.NugetPackage>(slnx.Packages);
+
                 DownloadPackages(slnx, quiteExecution, autoUpdateNugetDependencies);                
                 
                 if (_createMsBuild)
@@ -120,8 +121,24 @@ namespace SlnLauncher
                 }
 
                 _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}");
-                NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages, nugetForceMinVersion);
+                NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion);
 
+                _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
+                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetImplementationAssembly))
+                {
+                    if (originalPackageList.Where((x) => x.Id == package.Id).FirstOrDefault() == null)
+                    {
+                        _logger.Warn($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly.");
+                    }
+                }
+                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetCompileTimeAssembly))
+                {
+                    if (originalPackageList.Where((x) => x.Id == package.Id).FirstOrDefault() == null)
+                    {
+                        _logger.Info($"The .NET compilte time package {package} has been installed as dependency.");
+                    }
+                }
+                
                 _logger.Info($"Fixing project files");
                 slnx.TryFixProjectFiles();
                 
@@ -195,11 +212,11 @@ namespace SlnLauncher
             th?.Start();
             while (th != null && progress == null) System.Threading.Thread.Sleep(100);
 
-            NugetHelper.NugetHelper.InstallPackages(slnx.Packages, autoUpdateDependencies, (message) => 
+            slnx.Packages = NugetHelper.NugetHelper.InstallPackages(slnx.Packages.ToList(), autoUpdateDependencies, (message) => 
                 {
                     _logger.Info("Package {0} successefully installed", message.ToString());
                     progress?.IncrementProgress();
-                });
+                }).ToList();
 
             _logger.Info("Done!");
             progress?.Close();
@@ -270,20 +287,20 @@ namespace SlnLauncher
                 f.WriteLine("NuGet packages:\n");
                 foreach (var p in slnx.Packages)
                 {
-                    f.WriteLine("{0,-40} => {1}", p, p.FullPath);
+                    f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
                     {
-                        f.WriteLine("    | {0,-20} => {1}", d.Id, d.VersionRange);
+                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.Id, d.VersionRange, p.PackageType);
                     }
                 }
 
                 f.WriteLine("\nNuGet packages required by the projects imported for debugging:\n");
                 foreach (var p in slnx.DebugPackages)
                 {
-                    f.WriteLine("{0,-40} => {1}", p, p.FullPath);
+                    f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
                     {
-                        f.WriteLine("    | {0,-20} => {1}", d.Id, d.VersionRange);
+                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.Id, d.VersionRange, p.PackageType);
                     }
                 }
 
