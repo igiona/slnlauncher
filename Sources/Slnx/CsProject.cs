@@ -68,10 +68,9 @@ namespace Slnx
 
             _xml = new XmlDocument();
             _xml.LoadXml(_projectOriginalContent);
-
             var projectSdk = _xml.DocumentElement.GetAttribute("Sdk");
 
-            if (projectSdk == "Microsoft.NET.Sdk")
+            if (projectSdk.StartsWith("Microsoft.NET.Sdk"))
             {
                 _projectGuid = Guid.NewGuid().ToString();
                 Platform = PlatformType.AnyCpu; //?
@@ -240,7 +239,7 @@ namespace Slnx
             var ret = new List<Generated.AssemblyReference>();
             foreach (XmlNode r in _xml.GetElementsByTagName(AssemblyReferenceTag))
             {
-                var assemblyRef = (Generated.AssemblyReference)xmlSer.Deserialize(new StringReader(r.OuterXml));
+                var assemblyRef = (Generated.AssemblyReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
                 if (!string.IsNullOrEmpty(assemblyRef.HintPath))
                 {
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
@@ -274,7 +273,7 @@ namespace Slnx
             var ret = new List<Generated.ProjectReference>();
             foreach (XmlNode r in _xml.GetElementsByTagName(ProjectReferenceTag))
             {
-                var projectRef = (Generated.ProjectReference)xmlSer.Deserialize(new StringReader(r.OuterXml));
+                var projectRef = (Generated.ProjectReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
                 if (!string.IsNullOrEmpty(projectRef.Include))
                 {
                     var candidateProjectName = Path.GetFileNameWithoutExtension(projectRef.Include);
@@ -326,6 +325,13 @@ namespace Slnx
             {
                 throw new Exception(string.Format("Multiple definition of the {0} element in the project {1}.", tag, FullPath));
             }
+        }
+
+        string StripOuterXmlNamespace(XmlNode node)
+        {
+            return System.Text.RegularExpressions.Regex.Replace(
+            node.OuterXml, @"(xmlns:?[^=]*=[""][^""]*[""])", "",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Multiline);
         }
     }
 }
