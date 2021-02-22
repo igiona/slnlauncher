@@ -543,7 +543,13 @@ namespace Slnx
             {
                 foreach (var e in importedValues)
                 {
-                    var candidate = new NugetPackage(e.id, e.version, e.targetFramework, e.source, e.var, IsDotNet(e), PackagesPath);
+                    var candidate = new NugetPackage(SafeExpandEnvironmentVariables(e.id),
+                                                     SafeExpandEnvironmentVariables(e.version), 
+                                                     SafeExpandEnvironmentVariables(e.targetFramework), 
+                                                     SafeExpandEnvironmentVariables(e.source),
+                                                     SafeExpandEnvironmentVariables(e.var), 
+                                                     IsDotNet(e), PackagesPath);
+
                     var alreadyPresent = packages.Where((x) => x.Id == candidate.Id);
                     if (alreadyPresent.Count() == 0)
                     {
