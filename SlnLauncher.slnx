@@ -37,7 +37,7 @@
     <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
-    <package id="NugetHelper" version="0.0.3" targetFramework="netstandard2.0" source="D:\GitRepositories" />
+    <package id="NugetHelper" version="0.0.4" targetFramework="netstandard2.0" source="$(slnx)" />
 
     <!-- Projects -->
     <project name="SlnLauncher" container="" />

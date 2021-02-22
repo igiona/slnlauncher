@@ -84,7 +84,10 @@ namespace SlnLauncher
                 {
                     Environment.CurrentDirectory = Path.GetDirectoryName(slnxFile);
                 }
-                _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), LogLevel.Debug);
+                if (_logEnabled)
+                {
+                    _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), LogLevel.Debug);
+                }
                 _logger.Info("Application started with parameters: {0}", string.Join("\n", argv));
 
                 var slnxUserFile = string.Format("{0}{1}", slnxFile, SlnxHandler.SlnxUserExtension);
