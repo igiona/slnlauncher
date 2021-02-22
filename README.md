@@ -23,10 +23,12 @@ Addtionally, the "[Package Debug Feature](#PackageDebugFeature)" allows to seaml
 This great feature can be exploited to reduce the burdens of a multi-repo code base, leaving to the developers only the benefits of it!
 
 # Definitions
-<br>
+
 | Name | Defintion |
 | ---- | --------- |
-| Test projectE | Every project with the name ending with ".Test.csproj", is treated as a Test project. |
+| Test project | Every project with the name ending with ".Test.csproj", is treated as a Test project. |
+
+<br>
 
 # How it works?
 
@@ -326,7 +328,7 @@ Defintion of a NuGet package to be installed.
 | Attribute | Default | Description |
 | --------- | ------- | ----------- |
 | id | - | Name of the NuGet package |
-| version | - | Version of the NuGet package |
+| version | - | Version of the NuGet package (see [Version specification](https://docs.microsoft.com/en-us/nuget/concepts/package-versioning)) |
 | targetFramework | *none* | Target .NET framework version of the NuGet package, that the application is going to link to. |
 | source | - | The URI or local path in which the NuGet package will be searched. |
 | IsDoNetLib | true | The tool will set the \<package-id> environment variable (assemblies path) based on this parameter.<br>If the package attribute IsDotNetLib is set, the path will be se to:<br>"\<package-install-path>\lib\\\<targetFramewok>" if the package is recognised as "implementation assembly" package<br>"\<package-install-path>\ref\\\<targetFramewok>" if the package is recognised as "compile time assembly" package<br>Otherwise to:<br>\<package-install-path>\\\<targetFramework><br><br>**NOTE:**<br>For packages not following the standard .NET NuGet package format, set this field to False and use \<targetFramework> to point to the disered directory. |
