@@ -243,7 +243,20 @@ namespace Slnx
                 if (!string.IsNullOrEmpty(assemblyRef.HintPath))
                 {
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
-                    if (packages.Where((x) => x.Id == candidatePackageName).Count() > 0)
+                    var match = (packages.Where((x) => x.Id == candidatePackageName).Count() > 0);
+
+                    if (!match)
+                    {
+                        var candidateAssmblyName = Path.GetFileName(assemblyRef.HintPath);
+                        var candidatePackage = packages.Where(x => x.Libraries.Where(y => y.EndsWith(candidateAssmblyName)).FirstOrDefault() != null).FirstOrDefault();
+                        if (candidatePackage != null)
+                        {
+                            match = true;
+                            candidatePackageName = candidatePackage.Id;
+                        }
+                    }
+
+                    if (match)
                     {
                         var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackageName);
                         var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
