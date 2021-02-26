@@ -468,7 +468,7 @@ Global
 	EndGlobalSection
 EndGlobal
 ", Guid.NewGuid().ToString());
-            File.WriteAllText(outFile, slnSb.ToString());
+            WriteAllText(outFile, slnSb.ToString());
             _logger.Info("Done!");
         }
 
@@ -494,7 +494,21 @@ EndGlobal
             }
 
             string prettyContent = XDocument.Parse(nugetDebugXml.OuterXml).ToString();
-            File.WriteAllText(Path.Join(slnx.SlnxDirectory, "nuget.debug"), prettyContent);
+            WriteAllText(Path.Join(slnx.SlnxDirectory, "nuget.debug"), prettyContent);
+        }
+
+        /// <summary>
+        /// File.WriteAllText writes to the filesystem cache.
+        /// The file is written to the disk by the OS at a later stage.
+        /// This can be a problem, if the generated output is required by some other SW.
+        /// This method makes use of the StreamWriter, which behaves differently.
+        /// </summary>
+        static void WriteAllText(string path, string text)
+        {
+            using (var f = new StreamWriter(path))
+            {
+                f.Write(text);
+            }
         }
     }
 }
