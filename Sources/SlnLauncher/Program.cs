@@ -51,6 +51,7 @@ namespace SlnLauncher
 
             _openSolution = true;
             _createMsBuild = false;
+            var _printVersion = false;
             var quiteExecution = false;
             var autoUpdateNugetDependencies = true;
             var nugetForceMinVersion = true;
@@ -60,6 +61,7 @@ namespace SlnLauncher
             _pythonEnvVarsPath = null;
 
             OptionSet p = new OptionSet()
+              .Add("v|version", "Prints the tool version in the standard output and exits.", v => _printVersion = v != null)
               .Add("q|quite", "If set (-q/-q+) no popups will be shown in case of exceptions. [Default: not set]", v => quiteExecution = v != null)
               .Add("<>", "SlnX file path", v => slnxFile = v)
               .Add("o|openSln", "If set (-o/-o+) opens the generated Sln file. If not set (-o-), the generated Sln will not be opened. [Default: set]", v => _openSolution = v != null)
@@ -75,6 +77,11 @@ namespace SlnLauncher
             try
             {
                 p.Parse(argv);
+                if (_printVersion)
+                {
+                    Console.WriteLine("SlnLauncher v{0}", typeof(SlnxHandler).Assembly.GetName().Version.ToString(3));
+                    return;
+                }
 
                 if (slnxFile == null)
                     throw new ArgumentException(string.Format("Invalid parameters, no SlnX file specified.\n\n\t{0}", string.Join("\n\t", argv)));

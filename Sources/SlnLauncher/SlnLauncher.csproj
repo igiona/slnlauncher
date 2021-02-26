@@ -1,9 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Exe</OutputType>
     <TargetFramework>net5.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
     <StartupObject>SlnLauncher.Program</StartupObject>
     <ApplicationIcon>SlnLauncher.ico</ApplicationIcon>
   </PropertyGroup>
