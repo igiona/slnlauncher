@@ -174,7 +174,7 @@ namespace SlnLauncher
                 }
                 
                 MakeSln(slnx);
-                MakeNugetDebugFile(slnx);
+                MakeAndCleanNugetDebugFile(slnx);
 
                 if (_openSolution)
                 {
@@ -472,29 +472,61 @@ EndGlobal
             _logger.Info("Done!");
         }
 
-        static void MakeNugetDebugFile(SlnxHandler slnx)
+        static void MakeAndCleanNugetDebugFile(SlnxHandler slnx)
         {
-            var nugetDebugXml = new XmlDocument();
-            var root = nugetDebugXml.CreateNode(XmlNodeType.Element, "Project", null);
-            nugetDebugXml.AppendChild(root);
-
-            foreach (var item in slnx.DebugSlnxItems)
+            foreach (string f in Directory.EnumerateFiles(slnx.SlnxDirectory, CsProject.ImportDebugProjectName, new EnumerationOptions() { RecurseSubdirectories = true }))
             {
-                var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
-                root.AppendChild(propertyGroup);
-                propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key));
-
-                var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
-                root.AppendChild(itemGroup);
-                itemGroup.InnerXml = "";
-                foreach (var p in item.Value.CsProjects.Where(x => !x.IsTestProject))
-                {
-                    itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, p.FullPath);
-                }
+                File.Delete(f);
             }
 
-            string prettyContent = XDocument.Parse(nugetDebugXml.OuterXml).ToString();
-            WriteAllText(Path.Join(slnx.SlnxDirectory, "nuget.debug"), prettyContent);
+            var debugInfo = new Dictionary<CsProject, XmlDocument>();
+            foreach (var item in slnx.DebugSlnxItems)
+            {
+                var nugetPackage = slnx.Packages.Where(x => x.Id == item.Key).FirstOrDefault();
+                if (nugetPackage == null)
+                {
+                    throw new Exception($"The debug package {item.Key} is not defined as NuGet package in the current SlnX file.");
+                }
+
+                foreach (var p in slnx.CsProjects)
+                {
+                    foreach (var r in p.AssemblyReferences)
+                    {
+                        if (nugetPackage.Libraries.Any(x => Path.GetFileName(x) == Path.GetFileName(r.HintPath)))
+                        {                           
+                            if (!debugInfo.ContainsKey(p))
+                            {
+                                var newDocument = new XmlDocument();
+                                var root = newDocument.CreateNode(XmlNodeType.Element, "Project", null);
+                                newDocument.AppendChild(root);
+                                debugInfo[p] = newDocument;
+                            }
+                            AppendDebugElement(debugInfo[p], item);
+                            break;
+                        }
+                    }
+                }
+            }
+            foreach(var di in debugInfo)
+            {
+                string prettyContent = XDocument.Parse(di.Value.OuterXml).ToString();
+                WriteAllText(Path.Join(di.Key.FullDir, CsProject.ImportDebugProjectName), prettyContent);
+            }
+        }
+
+        static void AppendDebugElement(XmlDocument nugetDebugXml, KeyValuePair<string, SlnxHandler> item)
+        {
+            var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
+            nugetDebugXml.DocumentElement.AppendChild(propertyGroup);
+            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key));
+
+            var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
+            nugetDebugXml.DocumentElement.AppendChild(itemGroup);
+            itemGroup.InnerXml = "";
+            foreach (var p in item.Value.CsProjects.Where(x => !x.IsTestProject))
+            {
+                itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, p.FullPath);
+            }
         }
 
         /// <summary>

@@ -37,7 +37,7 @@ namespace Slnx
         const string ConditionAttributeTag = "Condition";
         const string ProjectAttributeTag = "Project";
         const string ImportTag = "Import";
-        const string ImportDebugProjectName = "nuget.debug";
+        public const string ImportDebugProjectName = "nuget.debug";
         static readonly string ImportDebugCondition = $"Exists('{ImportDebugProjectName}')";
 
         static Regex _guidRegex = new Regex(GuidPattern);
@@ -47,6 +47,8 @@ namespace Slnx
         XmlDocument _xml;
         string _projectOriginalContent;
         bool _isTestProject = false;
+        List<Generated.AssemblyReference> _assemblyReferences = null;
+        List<Generated.ProjectReference> _projectReferences = null;
 
         public CsProject(string fullpath, string container, bool isPackable)
         {
@@ -205,7 +207,17 @@ namespace Slnx
             get;
             private set;
         }
-        
+
+        public List<Generated.AssemblyReference> AssemblyReferences
+        {
+            get { return _assemblyReferences; }
+        }
+
+        public List<Generated.ProjectReference> ProjectReferences
+        {
+            get { return _projectReferences; }
+        }
+
         public override string GetBuildConfiguration()
         {
             return string.Format(@"
@@ -240,8 +252,8 @@ namespace Slnx
 
         public void TryFixProjectFile(IEnumerable<NugetPackage> packages)
         { 
-            GatherAndFixAssemblyReferences(packages);
-            GatherAndFixProjectReferences();
+            _assemblyReferences = GatherAndFixAssemblyReferences(packages);
+            _projectReferences = GatherAndFixProjectReferences();
             FixDebugImport();
         }
 
