@@ -94,29 +94,9 @@ One of the biggest hassle of using NuGet packages in application is their debugg
 But what about refactorings?
 
 A simple change of method name can involve quite some work: fix the library, test it, create the nuget package for it, update (manually!) all piece of code that called that method.
-That SlnX launcher helps you here in two simple steps.
+That SlnX launcher helps you here in one single simple step.
 
-### 1 Update your Directory.Build.props file
-
-Manually (once!) add the following element to your Directory.Build.props file.
-
-``` XML
-<Import Project="<slnx-directory>\nuget.debug" Condition="Exists('<slnx-directory>\nuget.debug')" />
-```
-
-Usually, yoiur Directory.Build.props file will look like this:
-<br>
-``` XML
-<Project>
- <PropertyGroup>
-   <AssemblyVersion>1.2.3</AssemblyVersion>
-   <Version>1.2.3</Version>
- </PropertyGroup>
- <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
-</Project>
-```
-
-### 2 Add a \<debug> tag for the NuGet package
+### 1 Add a \<debug> tag for the NuGet package
 
 Add the debug element to your SlnX file, for all packages you intendend to debug/refactor.
 
@@ -140,7 +120,7 @@ With these information, the SlnLauncher will search for the additional projects 
 
 - - -
 
-But thre is more to it: the tool will also create a file called <span class="colour" style="color:var(--vscode-unotes-wsyText)">nuget.debug, this file contains all the msbuild properties necessary to properly and **automatically** update the project dependencies in your solution. </span>It works seamlessy for you.
+But thre is more to it: the tool will also create a file called *nuget.debug* for each relevant project. This file contains all the properties necessary to properly and **automatically** update the project dependencies in your solution. Don't worry, the tool takes care of adding a properly formatted import statement in all your CsProj files.<br>It works seamlessy for you.
 
 ## Known limitations and issues
 
@@ -155,13 +135,7 @@ Workaround:
 * Woks best Git, can be troublesome with SVN
 If you have an SVN repo with trunk/ branches/ tags/ in the *searchPath*, the tool will find multiple versions of the specified projects. Therefore it will not be able to produce the sln file.
 Workaround 1: check out only the branch your currently working on
-Workarounf 2: migrate to Git :-)
-* <span class="colour" style="color:var(--vscode-unotes-wsyText)">Currently all projects in the solution will be getting a reference to the projects loaded via a debug package, not only the one that are really referencing it.
-Workaround: not really needed.
-Enhancement:
-The tool could be enhanced to create the package.debug more </span>specifically (e.g. \<project>.debug) in the project's folder for all projects referencing a DLL from that package.
-Additionally, it could be adding the import statement in the csproject automatically. As a nice result, the [manual Step1](#PackageDebugFeature) will become obsolete!
-Who is up to the challange? :-)
+Workaround 2: migrate to Git :-)
 * If you want to build on your build server using (for example) dotnet, you need to prepare the command shell with all the necessary environment variable.
 No worries, that's why the tool allows you to create a Batch/Python/MsBuild file exactly to do so :-) !
 * The tool ensures that the specified NuGet package target framework is compatible with all the dependencies of the package itself.
