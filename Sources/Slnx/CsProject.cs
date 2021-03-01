@@ -34,6 +34,11 @@ namespace Slnx
 
         const string AssemblyReferenceTag = "Reference";
         const string ProjectReferenceTag = "ProjectReference";
+        const string ConditionAttributeTag = "Condition";
+        const string ProjectAttributeTag = "Project";
+        const string ImportTag = "Import";
+        const string ImportDebugProjectName = "nuget.debug";
+        static readonly string ImportDebugCondition = $"Exists('{ImportDebugProjectName}')";
 
         static Regex _guidRegex = new Regex(GuidPattern);
         static Regex _platformRegex = new Regex(PlatformPattern);
@@ -75,12 +80,12 @@ namespace Slnx
                 _projectGuid = Guid.NewGuid().ToString();
                 Platform = PlatformType.AnyCpu; //?
 
-                Framework = TryGetFramework(_xml, "TargetFramework");
+                Framework = TryGetFramework("TargetFramework");
             }
             else
             {
                 var projectNewContent = _projectOriginalContent;
-                Framework = TryGetFramework(_xml, "TargetFrameworkVersion");
+                Framework = TryGetFramework("TargetFrameworkVersion");
 
                 var m = _guidRegex.Match(projectNewContent);
                 if (m.Success)
@@ -233,7 +238,48 @@ namespace Slnx
             return string.Format("\nProject(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"\nEndProject", TypeGuid, Name, FullPath, ProjectGuid);
         }
 
-        public List<Generated.AssemblyReference> GatherAndFixAssemblyReferences(IEnumerable<NugetPackage> packages)
+        public void TryFixProjectFile(IEnumerable<NugetPackage> packages)
+        { 
+            GatherAndFixAssemblyReferences(packages);
+            GatherAndFixProjectReferences();
+            FixDebugImport();
+        }
+
+        public void SaveCsProjectToFile()
+        {
+            string projectNewContent = XDocument.Parse(_xml.OuterXml).ToString();
+            if (projectNewContent != _projectOriginalContent)
+            {
+                File.WriteAllText(FullPath, projectNewContent);
+                _projectOriginalContent = projectNewContent;
+            }
+        }
+
+        private void FixDebugImport()
+        {
+            //var xmlSer = new XmlSerializer(typeof(Generated.ProjectReference));
+            var ret = new List<Generated.ProjectReference>();
+            XmlNode importNode = null;
+            foreach (XmlNode r in _xml.GetElementsByTagName(ImportTag))
+            {
+                if (r.Attributes.GetNamedItem(ProjectAttributeTag)?.Value == ImportDebugProjectName)
+                {
+                    importNode = r;
+                    break;
+                }
+            }
+            if (importNode == null)
+            {
+                importNode = _xml.CreateElement(ImportTag);
+                importNode.Attributes.Append(_xml.CreateAttribute(ProjectAttributeTag));
+                importNode.Attributes.Append(_xml.CreateAttribute(ConditionAttributeTag));
+                _xml.DocumentElement.PrependChild(importNode);
+            }
+            importNode.Attributes[ProjectAttributeTag].Value = ImportDebugProjectName;
+            importNode.Attributes[ConditionAttributeTag].Value = ImportDebugCondition;
+        }
+
+        private List<Generated.AssemblyReference> GatherAndFixAssemblyReferences(IEnumerable<NugetPackage> packages)
         {
             var xmlSer = new XmlSerializer(typeof(Generated.AssemblyReference));
             var ret = new List<Generated.AssemblyReference>();
@@ -265,7 +311,7 @@ namespace Slnx
                         assemblyRef.Condition = string.Format(AssemblyReferenceConditionTemplate, candidatePackageKey);
                         r["HintPath"].InnerText = assemblyRef.HintPath;
 
-                        var conditionAttr = _xml.CreateAttribute("Condition");
+                        var conditionAttr = _xml.CreateAttribute(ConditionAttributeTag);
                         if (r.Attributes.GetNamedItem(conditionAttr.Name) == null)
                         {
                             r.Attributes.Append(conditionAttr);
@@ -280,7 +326,7 @@ namespace Slnx
             return ret;
         }
 
-        public List<Generated.ProjectReference> GatherAndFixProjectReferences()
+        private List<Generated.ProjectReference> GatherAndFixProjectReferences()
         {
             var xmlSer = new XmlSerializer(typeof(Generated.ProjectReference));
             var ret = new List<Generated.ProjectReference>();
@@ -299,19 +345,9 @@ namespace Slnx
             return ret;
         }
 
-        public void SaveCsProjectToFile()
+        private string TryGetFramework(string tag)
         {
-            string projectNewContent = XDocument.Parse(_xml.OuterXml).ToString();
-            if (projectNewContent != _projectOriginalContent)
-            {
-                File.WriteAllText(FullPath, projectNewContent);
-                _projectOriginalContent = projectNewContent;
-            }
-        }
-
-        private string TryGetFramework(XmlDocument xml, string tag)
-        {
-            var element = xml.GetElementsByTagName(tag);
+            var element = _xml.GetElementsByTagName(tag);
 
             if (element.Count == 1)
             {
@@ -340,7 +376,7 @@ namespace Slnx
             }
         }
 
-        string StripOuterXmlNamespace(XmlNode node)
+        private string StripOuterXmlNamespace(XmlNode node)
         {
             return System.Text.RegularExpressions.Regex.Replace(
             node.OuterXml, @"(xmlns:?[^=]*=[""][^""]*[""])", "",
