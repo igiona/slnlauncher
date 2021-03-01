@@ -213,6 +213,7 @@ by the current luancher version.
 
 | Argument name | Alias | Type | Mandatory | Default | Description |
 | ------------- | ----- | ---- | --------- | ------- | ----------- |
+| version | v | boolean | No | false | If set, it displays the tool's version and exists. |
 | dump | d | boolean | No | false | If set it dumps all project&packages information as well as the environment variables in dump.txt located in the SlnX location. |
 | log |  | boolean | No | false | If set, it enables the logging to a file. If the SlnX file location exists, the log file will be create in there. Otherwise the location of the SlnLauncher.exe will be used. |
 | quite | q | boolean | No | false | No pop-ups or windows will be shown (e.g. in case of exceptions, while loading NuGet packages, etc.) |
