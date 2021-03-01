@@ -248,8 +248,7 @@ namespace Slnx
             foreach (var csProj in CsProjects)
             {
                 _logger.Info($"Trying to fix the Assembly and Project reference of {csProj.Name}");
-                csProj.GatherAndFixAssemblyReferences(Packages);
-                csProj.GatherAndFixProjectReferences();
+                csProj.TryFixProjectFile(Packages);
                 csProj.SaveCsProjectToFile();
             }
         }
