@@ -103,7 +103,7 @@ But what about refactorings?
 A simple change of method name can involve quite some work: fix the library, test it, create the nuget package for it, update (manually!) all piece of code that called that method.
 That SlnX launcher helps you here in one single simple step.
 
-### 1 Add a \<debug> tag for the NuGet package
+### 1) Add a \<debug> tag for the NuGet package
 
 Add the debug element to your SlnX file, for all packages you intendend to debug/refactor.
 
@@ -140,17 +140,11 @@ Workaround:
     * Use unique environment variable names or use them only with static values, for example your company NuGet server, etc.
     * Do not use environment variable in the *searchPath* or similar elements, the chances of collision are big (developers love the Copy&Paste feature :-) )
 * Woks best Git, can be troublesome with SVN
-If you have an SVN repo with trunk/ branches/ tags/ in the *searchPath*, the tool will find multiple versions of the specified projects. Therefore it will not be able to produce the sln file.
-Workaround 1: check out only the branch your currently working on
+If you have an SVN repo with trunk/ branches/ tags/ in the *searchPath*, the tool will find multiple versions of the specified projects. Therefore it will not be able to produce the sln file.<br>
+Workaround 1: check out only the branch your currently working on<br>
 Workaround 2: migrate to Git :-)
-* If you want to build on your build server using (for example) dotnet, you need to prepare the command shell with all the necessary environment variable.
+* If you want to build on your build server using (for example) dotnet, you need to prepare the command shell with all the necessary environment variable.<br>
 No worries, that's why the tool allows you to create a Batch/Python/MsBuild file exactly to do so :-) !
-* The tool ensures that the specified NuGet package target framework is compatible with all the dependencies of the package itself.
-There seem to be packages (e.g. Newtonsoft.Json) that have invalid dependencies settings:
-Newtonsoft.Json 9.0.1 -> .netstandard1.0 depends on Microsoft.CSharp 4.01 -> netstandard1.3
-Workaround:
-For now, the tool allow dependencies starting with "Microsoft." and "System." to have a non-match in the framework.
-The assumption here is that the dependency is probably coming from a nuget package delivered with .Net framework itself, and therefore do not have to be referenced manually in the projects (at least it is the case with Microsoft.CSharp)
 
 Possible limitation?
 
