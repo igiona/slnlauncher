@@ -49,6 +49,7 @@ namespace Slnx
         bool _isTestProject = false;
         List<Generated.AssemblyReference> _assemblyReferences = null;
         List<Generated.ProjectReference> _projectReferences = null;
+        Logger _logger = Logger.Instance;
 
         public CsProject(string fullpath, string container, bool isPackable)
         {
@@ -79,6 +80,7 @@ namespace Slnx
 
             if (projectSdk.StartsWith("Microsoft.NET.Sdk"))
             {
+                LegacyProjectStyle = false;
                 _projectGuid = Guid.NewGuid().ToString();
                 Platform = PlatformType.AnyCpu; //?
 
@@ -86,6 +88,9 @@ namespace Slnx
             }
             else
             {
+                LegacyProjectStyle = true;
+                _logger.Warn($"The current solution contains a legacy project {Name}, the Debug feature might not work as expected!");
+
                 var projectNewContent = _projectOriginalContent;
                 Framework = TryGetFramework("TargetFrameworkVersion");
 
@@ -218,6 +223,12 @@ namespace Slnx
             get { return _projectReferences; }
         }
 
+        public bool LegacyProjectStyle
+        {
+            get; 
+            private set;
+        }
+
         public override string GetBuildConfiguration()
         {
             return string.Format(@"
@@ -251,10 +262,13 @@ namespace Slnx
         }
 
         public void TryFixProjectFile(IEnumerable<NugetPackage> packages)
-        { 
+        {
             _assemblyReferences = GatherAndFixAssemblyReferences(packages);
             _projectReferences = GatherAndFixProjectReferences();
-            FixDebugImport();
+            if (!LegacyProjectStyle)
+            {
+                FixDebugImport();
+            }
         }
 
         public void SaveCsProjectToFile()

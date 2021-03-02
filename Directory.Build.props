@@ -1,7 +1,7 @@
 <Project>
  <PropertyGroup>
-   <AssemblyVersion>2.2.0</AssemblyVersion>
-   <Version>2.2.0</Version> <!-- If repacked, it might be required to set this as the NuGet SDK. -->
+   <AssemblyVersion>2.2.1</AssemblyVersion>
+   <Version>2.2.1</Version> <!-- If repacked, it might be required to set this as the NuGet SDK. -->
  </PropertyGroup>
 
   <!-- Auto add the necessary package in case of a .Test project -->
