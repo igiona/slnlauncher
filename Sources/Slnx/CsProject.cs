@@ -53,6 +53,8 @@ namespace Slnx
 
         public CsProject(string fullpath, string container, bool isPackable)
         {
+            _logger.Debug($"Processing project: {fullpath}");
+
             bool projectContentModified = false;
             IsPackable = isPackable;
 
@@ -263,6 +265,8 @@ namespace Slnx
 
         public void TryFixProjectFile(IEnumerable<NugetPackage> packages)
         {
+            _logger.Debug($"Fixing project: {Name}");
+
             _assemblyReferences = GatherAndFixAssemblyReferences(packages);
             _projectReferences = GatherAndFixProjectReferences();
             if (!LegacyProjectStyle)
@@ -362,9 +366,9 @@ namespace Slnx
                 if (!string.IsNullOrEmpty(projectRef.Include))
                 {
                     var candidateProjectName = Path.GetFileNameWithoutExtension(projectRef.Include);
-                    var candidatePackageKey = string.Format(KeyAsMsBuildProjectVariableTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidateProjectName));
+                    var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidateProjectName);
                     projectRef.Include = string.Format(ProjectReferenceIncludeTemplate, candidatePackageKey, candidateProjectName, FileExtension);
-
+                    r.Attributes["Include"].InnerText = projectRef.Include;
                     ret.Add(projectRef);
                 }
             }

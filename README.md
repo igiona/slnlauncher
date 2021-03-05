@@ -22,6 +22,18 @@ It doesn't matter anymore where a repository is locally checked out, the SlnLaun
 Addtionally, the "[Package Debug Feature](#PackageDebugFeature)" allows to seamlessly debug your own NuGet packages from source code by simply adding one element in the SlnX file.
 This great feature can be exploited to reduce the burdens of a multi-repo code base, leaving to the developers only the benefits of it!
 
+# Installation
+
+The SlnLauncher is currently packetized in a Choco package.<br>
+It's currently not available under chocolatey.org (approval pending).<br>
+The choco package can be download from GitLab, and installed from the local source.<br>
+The latest version can be find here: https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/releases
+
+``` PowerShell 
+curl https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/package_files/8/download -O -J
+choco install slnlauncher --source .
+```
+
 # Definitions
 
 | Name | Defintion |
@@ -139,7 +151,7 @@ Workaround: use multiple SlnX files, one per application. It's anyway the better
 Workaround:
     * Use unique environment variable names or use them only with static values, for example your company NuGet server, etc.
     * Do not use environment variable in the *searchPath* or similar elements, the chances of collision are big (developers love the Copy&Paste feature :-) )
-* Woks best Git, can be troublesome with SVN
+* Works best Git, can be troublesome with SVN
 If you have an SVN repo with trunk/ branches/ tags/ in the *searchPath*, the tool will find multiple versions of the specified projects. Therefore it will not be able to produce the sln file.<br>
 Workaround 1: check out only the branch your currently working on<br>
 Workaround 2: migrate to Git :-)
