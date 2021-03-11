@@ -16,6 +16,7 @@ namespace Slnx
         public const string SlnxUserExtension = ".user";
         public const string SlnExtension = ".sln";
         public const string DefaultPackagesFolderName = "pack";
+        public const string SpecialKeyFormat = "$({0})";
 
         string _slnxPath;
         string _slnxDirectory;
@@ -48,17 +49,16 @@ namespace Slnx
             _slnxDirectory = Path.GetDirectoryName(_slnxPath);
             _slnxFile = Path.GetFileName(fName);
             _slnxName = Path.GetFileNameWithoutExtension(fName);
-            _specialSlnxKeys["$(slnx)"] = _slnxDirectory;
-            //_environmentVariables["_slnx_"] = _slnxDirectory;
-            //_environmentVariables["_slnx_name_"] = _slnxName;
+            _specialSlnxKeys["slnx"] = _slnxDirectory;
 
             _slnx = ReadSlnx(fName);
 
+            AppendSpecialKeys(false);
             ExtendDictionary(_environmentVariables, _slnx.env, true);
             ExtendDictionary(_packageBundles, _slnx.bundle, true);
 
             TryApplyUserEnvironmentValues(userSettings); //Eventually apply user settings
-            
+
             SetAll(_environmentVariables); // to allow import having env variable in the path
 
             ExpandAll(_environmentVariables); // to allow import having env variable with special keys in the path
@@ -81,7 +81,7 @@ namespace Slnx
             LoadNugetPackageInformation(_slnx.nuget);
 
             if (string.IsNullOrEmpty(debugPackageId))
-            { 
+            {
                 EvalueteDebugPackages(_slnx.debug);
                 EvalueteDebugPackages(userSettings?.debug);
 
@@ -472,9 +472,10 @@ namespace Slnx
             var ret = Environment.ExpandEnvironmentVariables(value);
             foreach (var s in _specialSlnxKeys)
             {
-                if (ret.Contains(s.Key))
+                var formattedKey = string.Format(SpecialKeyFormat, s.Key);
+                if (ret.Contains(formattedKey))
                 {
-                    ret = ret.Replace(s.Key, s.Value);
+                    ret = ret.Replace(formattedKey, s.Value);
                 }
             }
             return ret;
@@ -497,11 +498,26 @@ namespace Slnx
                 }
                 catch (Exception ex)
                 {
-                    throw new Exception(string.Format("Error expanding the variable: {0} = {1}\n", e.Key, e.Value) , ex);
+                    throw new Exception(string.Format("Error expanding the variable: {0} = {1}\n", e.Key, e.Value), ex);
                 }
-                
             }
         }
+
+        private void AppendSpecialKeys(bool overrideValues)
+        {
+            foreach (var e in _specialSlnxKeys)
+            {
+                if (_environmentVariables.ContainsKey(e.Key))
+                {
+                    if (overrideValues)
+                        _environmentVariables[e.Key] = e.Value; //Keep only the last entry in case of multiple definition of the same variable.
+                }
+                else
+                {
+                    _environmentVariables.Add(e.Key, SafeExpandEnvironmentVariables(e.Value));
+                }
+            }
+        } 
 
         private void ExtendDictionary(Dictionary<string, string> env, EnvType[] importEnvValues, bool overrideValues)
         {
@@ -521,7 +537,7 @@ namespace Slnx
                 }
             }
         }
-
+        
         private void ExtendDictionary(Dictionary<string, List<PackageType>> bundle, BundleType[] importedValues, bool overrideValues)
         {
             if (importedValues != null)
@@ -560,39 +576,72 @@ namespace Slnx
 
         private void LoadNugetPackageInformation(NugetType nuget)
         {
-            var id = SafeExpandAndTrimEnvironmentVariables(nuget?.id, SlnxName);
-            var versionString = SafeExpandAndTrimEnvironmentVariables(nuget?.id, null);
-            var targetConfig = SafeExpandAndTrimEnvironmentVariables(nuget?.targetConfig, "Release");
-            var readmeFile = SafeExpandAndTrimEnvironmentVariables(nuget?.readme, null);
+            if (nuget == null) //Nothing to do
+                return;
+
+            var id = SafeExpandAndTrimEnvironmentVariables(nuget.id, SlnxName);
+            var excludePackages = nuget.excludePackagesSpecified && nuget.excludePackages;
+            var excludeProjects = nuget.excludeProjectsSpecified && nuget.excludeProjects;
+            var versionString = SafeExpandAndTrimEnvironmentVariables(nuget.id, null);
+            var targetConfig = SafeExpandAndTrimEnvironmentVariables(nuget.targetConfig, "Release");
+            var readmeFile = SafeExpandAndTrimEnvironmentVariables(nuget.readme, null);
             string additionalInformation = null;
-            var additionalInformationList = nuget?.info?.Any?.Select(x => x.OuterXml);
+            var additionalInformationList = nuget.info?.Any?.Select(x => x.OuterXml);
 
             if (additionalInformationList != null)
             {
                 additionalInformation = SafeExpandEnvironmentVariables(string.Join(Environment.NewLine, additionalInformationList));
             }
 
-            Nuget = new Nuspec(id, versionString, readmeFile, additionalInformation);
+            Nuget = new Nuspec(id, versionString, readmeFile, additionalInformation);            
 
-            foreach (var p in CsProjects)
+            if (!excludeProjects)
             {
-                if (p.IsPackable)
+                foreach (var p in CsProjects)
                 {
-                    Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
-                    var pdb = p.GetPdbPath(targetConfig);
-                    if (File.Exists(pdb))
+                    if (p.IsPackable)
                     {
-                        Nuget.AddLibraryFile(p.Framework, pdb);
+                        Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
+                        var pdb = p.GetPdbPath(targetConfig);
+                        if (File.Exists(pdb))
+                        {
+                            Nuget.AddLibraryFile(p.Framework, pdb);
+                        }
                     }
                 }
             }
 
-            foreach (var p in Packages)
+            if (!excludeProjects)
             {
-                Nuget.AddDependeciesPacket(p);
+                foreach (var p in Packages)
+                {
+                    Nuget.AddDependeciesPacket(p);
+                }
+            }
+
+            if (nuget.content != null)
+            {
+                foreach (var assemblyRef in nuget.content)
+                {
+                    var m = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
+                    var path = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(assemblyRef.Value));
+                    var basePath = Path.GetDirectoryName(path).Split("*").First();
+                    var filter = path.Remove(0, basePath.Length).Replace("\\", "/");
+                    var escapedBasePath = basePath.Replace("\\", "/");
+                    m.AddInclude(string.Join("*", filter));
+
+                    var filtered = Microsoft.Extensions.FileSystemGlobbing.MatcherExtensions.GetResultsInFullPath(m, escapedBasePath);
+
+                    Assert(filtered?.Count() > 0, $"The provided content assembly-path in the <nuget> element did not match any file.\n{assemblyRef.Value}");
+
+                    foreach (var f in filtered)
+                    {
+                        Assert(assemblyRef.targetFramework != null, $"The targetFramework attribute in the assembly element is not set. The value is: {assemblyRef.Value}");
+                        Nuget.AddLibraryFile(assemblyRef.targetFramework, f);
+                    }
+                }
             }
         }
-
 
         /// <summary>
         /// If field not specified, assume that it is a .NET lib.

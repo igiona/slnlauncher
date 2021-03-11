@@ -1,11 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Slnx</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <!--<ProjectReference Include="..\..\..\nugethelper\Sources\NugetHelper\NugetHelper.csproj" />-->
+    <Reference Include="Microsoft.Extensions.FileSystemGlobbing" Condition="$(Microsoft_Extensions_FileSystemGlobbing_debug) != 1">
+      <HintPath>$(Microsoft_Extensions_FileSystemGlobbing)\Microsoft.Extensions.FileSystemGlobbing.dll</HintPath>
+    </Reference>
     <Reference Include="NuGet.Versioning" Condition="$(NuGet_Versioning_debug) != 1">
       <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
     </Reference>
