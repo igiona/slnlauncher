@@ -37,6 +37,8 @@
     <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
+    <package id="Microsoft.Extensions.FileSystemGlobbing" version="5.0.0" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+
     <package id="NugetHelper" version="0.0.5" targetFramework="netstandard2.0" source="https://git.immo-electronics.ch/api/v4/projects/19/packages/nuget/index.json" />
 
     <!-- Projects -->

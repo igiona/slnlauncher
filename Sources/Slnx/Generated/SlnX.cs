@@ -181,7 +181,17 @@ namespace Slnx.Generated {
         
         private string targetConfigField;
         
+        private AssemblyType[] contentField;
+        
         private NugetTypeInfo infoField;
+        
+        private bool excludeProjectsField;
+        
+        private bool excludeProjectsFieldSpecified;
+        
+        private bool excludePackagesField;
+        
+        private bool excludePackagesFieldSpecified;
         
         /// <remarks/>
         public string id {
@@ -224,12 +234,67 @@ namespace Slnx.Generated {
         }
         
         /// <remarks/>
+        [System.Xml.Serialization.XmlArrayItemAttribute("assembly", IsNullable=false)]
+        public AssemblyType[] content {
+            get {
+                return this.contentField;
+            }
+            set {
+                this.contentField = value;
+            }
+        }
+        
+        /// <remarks/>
         public NugetTypeInfo info {
             get {
                 return this.infoField;
             }
             set {
                 this.infoField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public bool excludeProjects {
+            get {
+                return this.excludeProjectsField;
+            }
+            set {
+                this.excludeProjectsField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool excludeProjectsSpecified {
+            get {
+                return this.excludeProjectsFieldSpecified;
+            }
+            set {
+                this.excludeProjectsFieldSpecified = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public bool excludePackages {
+            get {
+                return this.excludePackagesField;
+            }
+            set {
+                this.excludePackagesField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool excludePackagesSpecified {
+            get {
+                return this.excludePackagesFieldSpecified;
+            }
+            set {
+                this.excludePackagesFieldSpecified = value;
             }
         }
     }
@@ -239,19 +304,31 @@ namespace Slnx.Generated {
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
-    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true)]
-    public partial class NugetTypeInfo {
+    public partial class AssemblyType {
         
-        private System.Xml.XmlElement[] anyField;
+        private string targetFrameworkField;
+        
+        private string valueField;
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlAnyElementAttribute()]
-        public System.Xml.XmlElement[] Any {
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string targetFramework {
             get {
-                return this.anyField;
+                return this.targetFrameworkField;
             }
             set {
-                this.anyField = value;
+                this.targetFrameworkField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlTextAttribute()]
+        public string Value {
+            get {
+                return this.valueField;
+            }
+            set {
+                this.valueField = value;
             }
         }
     }
@@ -599,6 +676,28 @@ namespace Slnx.Generated {
             }
             set {
                 this.valueField = value;
+            }
+        }
+    }
+    
+    /// <remarks/>
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.8.3928.0")]
+    [System.SerializableAttribute()]
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.ComponentModel.DesignerCategoryAttribute("code")]
+    [System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true)]
+    public partial class NugetTypeInfo {
+        
+        private System.Xml.XmlElement[] anyField;
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAnyElementAttribute()]
+        public System.Xml.XmlElement[] Any {
+            get {
+                return this.anyField;
+            }
+            set {
+                this.anyField = value;
             }
         }
     }
