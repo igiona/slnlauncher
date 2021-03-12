@@ -78,8 +78,6 @@ namespace Slnx
             FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
             ExtendList(_packages, _slnx.package);
 
-            LoadNugetPackageInformation(_slnx.nuget);
-
             if (string.IsNullOrEmpty(debugPackageId))
             {
                 EvalueteDebugPackages(_slnx.debug);
@@ -214,8 +212,6 @@ namespace Slnx
                 return _environmentVariables;
             }
         }
-
-        public NugetHelper.Nuspec Nuget { get; private set; }
 
         public static SlnXType ReadSlnx(string slnxFile)
         {
@@ -574,73 +570,77 @@ namespace Slnx
             }
         }
 
-        private void LoadNugetPackageInformation(NugetType nuget)
+        public Nuspec GetNugetPackageInformation()
         {
-            if (nuget == null) //Nothing to do
-                return;
+            Nuspec nuspec = null;
+            var nuget = _slnx.nuget;
 
-            var id = SafeExpandAndTrimEnvironmentVariables(nuget.id, SlnxName);
-            var excludePackages = nuget.excludePackagesSpecified && nuget.excludePackages;
-            var excludeProjects = nuget.excludeProjectsSpecified && nuget.excludeProjects;
-            var versionString = SafeExpandAndTrimEnvironmentVariables(nuget.id, null);
-            var targetConfig = SafeExpandAndTrimEnvironmentVariables(nuget.targetConfig, "Release");
-            var readmeFile = SafeExpandAndTrimEnvironmentVariables(nuget.readme, null);
-            string additionalInformation = null;
-            var additionalInformationList = nuget.info?.Any?.Select(x => x.OuterXml);
-
-            if (additionalInformationList != null)
+            if (nuget != null)
             {
-                additionalInformation = SafeExpandEnvironmentVariables(string.Join(Environment.NewLine, additionalInformationList));
-            }
+                var id = SafeExpandAndTrimEnvironmentVariables(nuget.id, SlnxName);
+                var excludePackages = nuget.excludePackagesSpecified && nuget.excludePackages;
+                var excludeProjects = nuget.excludeProjectsSpecified && nuget.excludeProjects;
+                var versionString = SafeExpandAndTrimEnvironmentVariables(nuget.id, null);
+                var targetConfig = SafeExpandAndTrimEnvironmentVariables(nuget.targetConfig, "Release");
+                var readmeFile = SafeExpandAndTrimEnvironmentVariables(nuget.readme, null);
+                string additionalInformation = null;
+                var additionalInformationList = nuget.info?.Any?.Select(x => x.OuterXml);
 
-            Nuget = new Nuspec(id, versionString, readmeFile, additionalInformation);            
-
-            if (!excludeProjects)
-            {
-                foreach (var p in CsProjects)
+                if (additionalInformationList != null)
                 {
-                    if (p.IsPackable)
+                    additionalInformation = SafeExpandEnvironmentVariables(string.Join(Environment.NewLine, additionalInformationList));
+                }
+
+                nuspec = new Nuspec(id, versionString, readmeFile, additionalInformation);
+
+                if (!excludeProjects)
+                {
+                    foreach (var p in CsProjects)
                     {
-                        Nuget.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
-                        var pdb = p.GetPdbPath(targetConfig);
-                        if (File.Exists(pdb))
+                        if (p.IsPackable)
                         {
-                            Nuget.AddLibraryFile(p.Framework, pdb);
+                            nuspec.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
+                            var pdb = p.GetPdbPath(targetConfig);
+                            if (File.Exists(pdb))
+                            {
+                                nuspec.AddLibraryFile(p.Framework, pdb);
+                            }
+                        }
+                    }
+                }
+
+                if (!excludeProjects)
+                {
+                    foreach (var p in Packages)
+                    {
+                        nuspec.AddDependeciesPacket(p);
+                    }
+                }
+
+                if (nuget.content != null)
+                {
+                    foreach (var assemblyRef in nuget.content)
+                    {
+                        var m = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
+                        var path = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(assemblyRef.Value));
+                        var basePath = Path.GetDirectoryName(path).Split("*").First();
+                        var filter = path.Remove(0, basePath.Length).Replace("\\", "/");
+                        var escapedBasePath = basePath.Replace("\\", "/");
+                        m.AddInclude(string.Join("*", filter));
+
+                        var filtered = Microsoft.Extensions.FileSystemGlobbing.MatcherExtensions.GetResultsInFullPath(m, escapedBasePath);
+
+                        Assert(filtered?.Count() > 0, $"The provided content assembly-path in the <nuget> element did not match any file.\n{assemblyRef.Value}");
+
+                        foreach (var f in filtered)
+                        {
+                            Assert(assemblyRef.targetFramework != null, $"The targetFramework attribute in the assembly element is not set. The value is: {assemblyRef.Value}");
+                            nuspec.AddLibraryFile(assemblyRef.targetFramework, f);
                         }
                     }
                 }
             }
-
-            if (!excludeProjects)
-            {
-                foreach (var p in Packages)
-                {
-                    Nuget.AddDependeciesPacket(p);
-                }
-            }
-
-            if (nuget.content != null)
-            {
-                foreach (var assemblyRef in nuget.content)
-                {
-                    var m = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
-                    var path = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(assemblyRef.Value));
-                    var basePath = Path.GetDirectoryName(path).Split("*").First();
-                    var filter = path.Remove(0, basePath.Length).Replace("\\", "/");
-                    var escapedBasePath = basePath.Replace("\\", "/");
-                    m.AddInclude(string.Join("*", filter));
-
-                    var filtered = Microsoft.Extensions.FileSystemGlobbing.MatcherExtensions.GetResultsInFullPath(m, escapedBasePath);
-
-                    Assert(filtered?.Count() > 0, $"The provided content assembly-path in the <nuget> element did not match any file.\n{assemblyRef.Value}");
-
-                    foreach (var f in filtered)
-                    {
-                        Assert(assemblyRef.targetFramework != null, $"The targetFramework attribute in the assembly element is not set. The value is: {assemblyRef.Value}");
-                        Nuget.AddLibraryFile(assemblyRef.targetFramework, f);
-                    }
-                }
-            }
+            return nuspec;
         }
 
         /// <summary>

@@ -151,7 +151,7 @@ namespace SlnLauncher
                 
                 _logger.Info($"Fixing project files");
                 slnx.TryFixProjectFiles();
-                
+
                 if (!string.IsNullOrEmpty(nuspecDir))
                 {
                     nuspecDir = Path.GetFullPath(slnx.SafeExpandEnvironmentVariables(nuspecDir));
@@ -170,7 +170,15 @@ namespace SlnLauncher
                             throw new Exception($"The provided nuspec directory is not empty: '{nuspecDir}'");
                         }
                     }
-                    NugetHelper.NuspecGenerator.Generate(nuspecDir, slnx.Nuget);
+                    var nuspec = slnx.GetNugetPackageInformation();
+                    if (nuspec != null)
+                    {
+                        NugetHelper.NuspecGenerator.Generate(nuspecDir, nuspec);
+                    }
+                    else
+                    {
+                        throw new Exception("Missing or invalid nuget information in the provided SlnX file.");
+                    }
                 }
                 
                 MakeSln(slnx);
