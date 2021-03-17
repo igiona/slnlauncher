@@ -311,7 +311,7 @@ namespace SlnLauncher
                     f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
                     {
-                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.Id, d.VersionRange, p.PackageType);
+                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.PackageDependency.Id, d.PackageDependency.VersionRange, p.PackageType);
                     }
                 }
 
@@ -321,7 +321,7 @@ namespace SlnLauncher
                     f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
                     {
-                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.Id, d.VersionRange, p.PackageType);
+                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.PackageDependency.Id, d.PackageDependency.VersionRange, p.PackageType);
                     }
                 }
 

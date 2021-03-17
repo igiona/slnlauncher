@@ -248,6 +248,7 @@ namespace Slnx
 		{{{0}}}.Release|x86.Build.0 = Release|{1}", ProjectGuid, PlatformString);
         }
 
+        ///TODO: return string list => .exe .dll based on outputtype element in project
         public string GetAssemblyPath(string targetConfiguration)
         {
             return Path.Combine(FullDir, "bin", targetConfiguration, Framework, string.Format("{0}.dll", Name));
