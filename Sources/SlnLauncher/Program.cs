@@ -55,6 +55,7 @@ namespace SlnLauncher
             var quiteExecution = false;
             var autoUpdateNugetDependencies = true;
             var nugetForceMinVersion = true;
+            var loadUserFile = true;
             string nuspecDir = null;            
             var dump = false;
             string slnxFile = null;
@@ -65,6 +66,7 @@ namespace SlnLauncher
               .Add("q|quite", "If set (-q/-q+) no popups will be shown in case of exceptions. [Default: not set]", v => quiteExecution = v != null)
               .Add("<>", "SlnX file path", v => slnxFile = v)
               .Add("o|openSln", "If set (-o/-o+) opens the generated Sln file. If not set (-o-), the generated Sln will not be opened. [Default: set]", v => _openSolution = v != null)
+              .Add("u|user", "If set (-u/-u+) it loads an eventually present .user file. [Default: set]", v => loadUserFile = v != null)
               .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location . [Default: not set]", v => dump = v != null)
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
               .Add("b=|batchModule=", "Path for the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
@@ -101,7 +103,7 @@ namespace SlnLauncher
 
                 SlnXType slnxUser = null;
 
-                if (File.Exists(slnxUserFile))
+                if (loadUserFile && File.Exists(slnxUserFile))
                 {
                     slnxUser = SlnxHandler.ReadSlnx(slnxUserFile);
                 }
@@ -130,8 +132,9 @@ namespace SlnLauncher
                     Dump(slnx);
                 }
 
-                _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}");
-                NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion);
+                var ignoreDependencyCheck = !autoUpdateNugetDependencies;
+                _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}, and ignore dependency is {ignoreDependencyCheck}");
+                NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
 
                 _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
                 foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetImplementationAssembly))
