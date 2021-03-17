@@ -342,8 +342,6 @@ namespace Slnx.Generated {
         
         private string packageField;
         
-        private string slnxField;
-        
         private string valueField;
         
         /// <remarks/>
@@ -354,17 +352,6 @@ namespace Slnx.Generated {
             }
             set {
                 this.packageField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string slnx {
-            get {
-                return this.slnxField;
-            }
-            set {
-                this.slnxField = value;
             }
         }
         

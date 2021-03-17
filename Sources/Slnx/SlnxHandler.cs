@@ -437,25 +437,34 @@ namespace Slnx
             {
                 foreach (var d in debug)
                 {
-                    var slnxToImport = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(d.slnx));
+                    var slnxToImport = SafeExpandAndTrimEnvironmentVariables(d.Value);
+                    if (slnxToImport == null)
+                    {
+                        throw new Exception($"The provided debug element doesn't have a value.");
+                    }
+                    slnxToImport = Path.GetFullPath(slnxToImport);
+
                     if (slnxToImport == null || !File.Exists(slnxToImport))
                     {
-                        throw new Exception($"The provided debug SlnX file '{slnxToImport}' for the package {d.package} doesn't exists");
+                        throw new Exception($"The provided debug SlnX file '{slnxToImport}' doesn't exists.");
                     }
-                    if (d?.package == null || d?.slnx == null)
+
+                    var packageToDebug = Path.GetFileNameWithoutExtension(slnxToImport);
+                    if (d.package != null)
                     {
-                        throw new Exception($"The provided debug element is missing the package or slnx attribute");
+                        packageToDebug = SafeExpandAndTrimEnvironmentVariables(d.package);
                     }
-                    if (_packagesToDebug.ContainsKey(d.package))
+
+                    if (_packagesToDebug.ContainsKey(packageToDebug))
                     {
-                        if (_packagesToDebug[d.package] != slnxToImport)
+                        if (_packagesToDebug[packageToDebug] != slnxToImport)
                         {
-                            throw new Exception($"The provided debug SlnX file for the package {d.package} is duplicate.\n{_packagesToDebug[d.package]} and {slnxToImport}");
+                            throw new Exception($"The provided debug SlnX file for the package {packageToDebug} is duplicate.\n{_packagesToDebug[packageToDebug]} and {slnxToImport}");
                         }
                     }
                     else
                     {
-                        _packagesToDebug.Add(d.package, slnxToImport);
+                        _packagesToDebug.Add(packageToDebug, slnxToImport);
                     }
                 }
             }
