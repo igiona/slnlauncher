@@ -317,7 +317,8 @@ namespace Slnx
             foreach (XmlNode r in _xml.GetElementsByTagName(AssemblyReferenceTag))
             {
                 var assemblyRef = (Generated.AssemblyReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
-                if (!string.IsNullOrEmpty(assemblyRef.HintPath))
+                
+                if (!string.IsNullOrEmpty(assemblyRef.HintPath)) // && !assemblyRef.HintPath.StartsWith("$"))
                 {
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
                     var match = (packages.Where((x) => x.Id == candidatePackageName).Count() > 0);
@@ -338,7 +339,14 @@ namespace Slnx
                         var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackageName);
                         var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
                         var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
-                        assemblyRef.HintPath = assemblyRef.HintPath.Replace(assemblyRoot, candidatePackageMsBuilVar);
+                        if (string.IsNullOrEmpty(assemblyRoot))
+                        {
+                            assemblyRef.HintPath = Path.Combine(candidatePackageMsBuilVar, assemblyRef.HintPath);
+                        }
+                        else
+                        {
+                            assemblyRef.HintPath = assemblyRef.HintPath.Replace(assemblyRoot, candidatePackageMsBuilVar);
+                        }
                         assemblyRef.Condition = string.Format(AssemblyReferenceConditionTemplate, candidatePackageKey);
                         r["HintPath"].InnerText = assemblyRef.HintPath;
 
