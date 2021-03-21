@@ -31,7 +31,7 @@
 			<xs:element name="content">
 				<xs:complexType>	
 					<xs:sequence>
-						<xs:element name="assembly" type="AssemblyType" minOccurs="0" maxOccurs="unbounded"/>
+						<xs:element name="item" type="ContentItemType" minOccurs="0" maxOccurs="unbounded"/>
 					</xs:sequence>
 				</xs:complexType>
 			</xs:element>
@@ -46,7 +46,14 @@
 		<xs:attribute name="excludeProjects" type="xs:boolean" use="optional"/>		
 		<xs:attribute name="excludePackages" type="xs:boolean" use="optional"/>		
 	</xs:complexType>
-	<xs:complexType name="AssemblyType">
+	<xs:complexType name="ContentItemType">
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="targetFramework" use="required"/>
+			</xs:extension>			
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="FolderType">
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
 				<xs:attribute name="targetFramework" use="required"/>
@@ -86,8 +93,8 @@
 	<xs:complexType name="DebugType">
 		<xs:simpleContent>
 			<xs:extension base="xs:string">
-				<xs:attribute name="package" use="required"/>
-				<xs:attribute name="slnx" use="required"/>
+				<!-- If not set, the SlnX file name specified in the value will be used as package name -->
+				<xs:attribute name="package" use="optional"/>
 			</xs:extension>
 		</xs:simpleContent>
 	</xs:complexType>

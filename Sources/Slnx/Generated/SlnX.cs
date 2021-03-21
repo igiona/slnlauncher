@@ -181,7 +181,7 @@ namespace Slnx.Generated {
         
         private string targetConfigField;
         
-        private AssemblyType[] contentField;
+        private ContentItemType[] contentField;
         
         private NugetTypeInfo infoField;
         
@@ -234,8 +234,8 @@ namespace Slnx.Generated {
         }
         
         /// <remarks/>
-        [System.Xml.Serialization.XmlArrayItemAttribute("assembly", IsNullable=false)]
-        public AssemblyType[] content {
+        [System.Xml.Serialization.XmlArrayItemAttribute("item", IsNullable=false)]
+        public ContentItemType[] content {
             get {
                 return this.contentField;
             }
@@ -304,7 +304,7 @@ namespace Slnx.Generated {
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
-    public partial class AssemblyType {
+    public partial class ContentItemType {
         
         private string targetFrameworkField;
         
@@ -342,8 +342,6 @@ namespace Slnx.Generated {
         
         private string packageField;
         
-        private string slnxField;
-        
         private string valueField;
         
         /// <remarks/>
@@ -354,17 +352,6 @@ namespace Slnx.Generated {
             }
             set {
                 this.packageField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string slnx {
-            get {
-                return this.slnxField;
-            }
-            set {
-                this.slnxField = value;
             }
         }
         
@@ -396,6 +383,10 @@ namespace Slnx.Generated {
         private string sourceField;
         
         private string varField;
+        
+        private bool dependenciesForceMinVersionField;
+        
+        private bool dependenciesForceMinVersionFieldSpecified;
         
         private bool isDotNetLibField;
         
@@ -455,6 +446,28 @@ namespace Slnx.Generated {
             }
             set {
                 this.varField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public bool dependenciesForceMinVersion {
+            get {
+                return this.dependenciesForceMinVersionField;
+            }
+            set {
+                this.dependenciesForceMinVersionField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlIgnoreAttribute()]
+        public bool dependenciesForceMinVersionSpecified {
+            get {
+                return this.dependenciesForceMinVersionFieldSpecified;
+            }
+            set {
+                this.dependenciesForceMinVersionFieldSpecified = value;
             }
         }
         

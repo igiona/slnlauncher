@@ -7,6 +7,7 @@ using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 using Slnx.Generated;
 using NugetHelper;
+using Ganss.IO;
 
 namespace Slnx
 {
@@ -256,16 +257,7 @@ namespace Slnx
             {
                 IEnumerable<string> knownProjects = null;
 
-                if (searchPath.StartsWith("http://") || searchPath.StartsWith("https://"))
-                {
-                    IEnumerable<string> listing = null;
-                    _logger.Info("Listing {0}", searchPath);
-                    ExecuteLongSvnOperation(() => { /*listing = FSL.Utilities.Subversion.SvnAccess.Instance.ListRepository(searchPath, true, true);*/ });
-                    _logger.Info("Done");
-
-                    knownProjects = listing?.Where((x) => x.EndsWith(".csproj"));
-                }
-                else if (Directory.Exists(searchPath))
+                if (Directory.Exists(searchPath))
                 {
                     knownProjects = Directory.GetFiles(searchPath, "*.csproj", SearchOption.AllDirectories);
                 }
@@ -437,25 +429,34 @@ namespace Slnx
             {
                 foreach (var d in debug)
                 {
-                    var slnxToImport = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(d.slnx));
+                    var slnxToImport = SafeExpandAndTrimEnvironmentVariables(d.Value);
+                    if (slnxToImport == null)
+                    {
+                        throw new Exception($"The provided debug element doesn't have a value.");
+                    }
+                    slnxToImport = Path.GetFullPath(slnxToImport);
+
                     if (slnxToImport == null || !File.Exists(slnxToImport))
                     {
-                        throw new Exception($"The provided debug SlnX file '{slnxToImport}' for the package {d.package} doesn't exists");
+                        throw new Exception($"The provided debug SlnX file '{slnxToImport}' doesn't exists.");
                     }
-                    if (d?.package == null || d?.slnx == null)
+
+                    var packageToDebug = Path.GetFileNameWithoutExtension(slnxToImport);
+                    if (d.package != null)
                     {
-                        throw new Exception($"The provided debug element is missing the package or slnx attribute");
+                        packageToDebug = SafeExpandAndTrimEnvironmentVariables(d.package);
                     }
-                    if (_packagesToDebug.ContainsKey(d.package))
+
+                    if (_packagesToDebug.ContainsKey(packageToDebug))
                     {
-                        if (_packagesToDebug[d.package] != slnxToImport)
+                        if (_packagesToDebug[packageToDebug] != slnxToImport)
                         {
-                            throw new Exception($"The provided debug SlnX file for the package {d.package} is duplicate.\n{_packagesToDebug[d.package]} and {slnxToImport}");
+                            throw new Exception($"The provided debug SlnX file for the package {packageToDebug} is duplicate.\n{_packagesToDebug[packageToDebug]} and {slnxToImport}");
                         }
                     }
                     else
                     {
-                        _packagesToDebug.Add(d.package, slnxToImport);
+                        _packagesToDebug.Add(packageToDebug, slnxToImport);
                     }
                 }
             }
@@ -559,7 +560,8 @@ namespace Slnx
                                                      SafeExpandEnvironmentVariables(e.targetFramework), 
                                                      SafeExpandEnvironmentVariables(e.source),
                                                      SafeExpandEnvironmentVariables(e.var), 
-                                                     IsDotNet(e), PackagesPath);
+                                                     IsDotNet(e), PackagesPath,
+                                                     !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion);
 
                     var alreadyPresent = packages.Where((x) => x.Id == candidate.Id);
                     if (alreadyPresent.Count() == 0)
@@ -599,11 +601,11 @@ namespace Slnx
                     {
                         if (p.IsPackable)
                         {
-                            nuspec.AddLibraryFile(p.Framework, p.GetAssemblyPath(targetConfig));
+                            nuspec.AddLibraryElements(p.Framework, p.GetAssemblyPath(targetConfig));
                             var pdb = p.GetPdbPath(targetConfig);
                             if (File.Exists(pdb))
                             {
-                                nuspec.AddLibraryFile(p.Framework, pdb);
+                                nuspec.AddLibraryElements(p.Framework, pdb);
                             }
                         }
                     }
@@ -619,29 +621,51 @@ namespace Slnx
 
                 if (nuget.content != null)
                 {
-                    foreach (var assemblyRef in nuget.content)
+                    foreach (var item in nuget.content)
                     {
-                        var m = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
-                        var path = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(assemblyRef.Value));
-                        var basePath = Path.GetDirectoryName(path).Split("*").First();
-                        var filter = path.Remove(0, basePath.Length).Replace("\\", "/");
-                        var escapedBasePath = basePath.Replace("\\", "/");
-                        m.AddInclude(string.Join("*", filter));
+                        Assert(!string.IsNullOrEmpty(item.Value), $"The value of the item element is not set");
+                        Assert(item.targetFramework != null, $"The targetFramework attribute in the item element is not set. The value of the element is: {item.Value}");
 
-                        var filtered = Microsoft.Extensions.FileSystemGlobbing.MatcherExtensions.GetResultsInFullPath(m, escapedBasePath);
+                        var filtered = Glob.Expand(item.Value);
 
-                        Assert(filtered?.Count() > 0, $"The provided content assembly-path in the <nuget> element did not match any file.\n{assemblyRef.Value}");
+                        Assert(filtered.Any(), $"The provided content item-path in the <nuget> element did not match any file.\n{item.Value}");
 
                         foreach (var f in filtered)
                         {
-                            Assert(assemblyRef.targetFramework != null, $"The targetFramework attribute in the assembly element is not set. The value is: {assemblyRef.Value}");
-                            nuspec.AddLibraryFile(assemblyRef.targetFramework, f);
+                            nuspec.AddLibraryElements(item.targetFramework, f.FullName);
                         }
                     }
                 }
             }
             return nuspec;
         }
+
+        /*private IEnumerable<string> Glob(string globPath, bool recursive)
+        {
+            var m = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
+            var path = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(globPath));
+            var basePath = Path.GetDirectoryName(path).Replace("\\", "/");
+            var escapedPath = path.Replace("\\", "/");
+
+            var basePathElments = new List<string>();
+            foreach (var s in basePath.Split("/"))
+            {
+                if (s.Contains("*"))
+                {
+                    break;
+                }
+                basePathElments.Add(s);
+            }
+            var escapedBasePath = string.Join("/", basePathElments);
+            var filter = escapedPath.Remove(0, escapedBasePath.Length).Replace("\\", "/");
+            if (recursive)
+            {*/
+                //filter = string.Format($"{filter}/**/*.*");
+            /*}
+            m.AddInclude(filter);
+
+            return Microsoft.Extensions.FileSystemGlobbing.MatcherExtensions.GetResultsInFullPath(m, escapedBasePath);
+        }*/
 
         /// <summary>
         /// If field not specified, assume that it is a .NET lib.

@@ -8,6 +8,7 @@
 				<xs:attribute name="targetFramework" use="optional"/>
 				<xs:attribute name="source" use="optional"/> <!-- URL of the package-feed containing the packages. -->
 				<xs:attribute name="var" use="optional"/> <!-- Additional (optional) environment variable name that will be used to locate the package -->
+				<xs:attribute name="dependenciesForceMinVersion" type="xs:boolean"/>
 				<xs:attribute name="IsDotNetLib" type="xs:boolean"/>
 			</xs:extension>
 		</xs:simpleContent>
