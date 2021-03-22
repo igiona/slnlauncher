@@ -623,10 +623,11 @@ namespace Slnx
                 {
                     foreach (var item in nuget.content)
                     {
-                        Assert(!string.IsNullOrEmpty(item.Value), $"The value of the item element is not set");
+                        var value = SafeExpandAndTrimEnvironmentVariables(item.Value);
+                        Assert(!string.IsNullOrEmpty(value), $"The value of the item element is not set");
                         Assert(item.targetFramework != null, $"The targetFramework attribute in the item element is not set. The value of the element is: {item.Value}");
 
-                        var filtered = Glob.Expand(item.Value);
+                        var filtered = Glob.Expand(value);
 
                         Assert(filtered.Any(), $"The provided content item-path in the <nuget> element did not match any file.\n{item.Value}");
 
