@@ -17,7 +17,7 @@ namespace Slnx
         Trace
     }
 
-    public class Logger
+    public class Logger : NuGet.Common.ILogger
     {
         private LogLevel _enabledLevel = LogLevel.None;
         private string _filePath;
@@ -96,6 +96,84 @@ namespace Slnx
                     System.IO.File.AppendAllText(_filePath, logContent);
                 }
             }
+        }
+
+        void NuGet.Common.ILogger.LogDebug(string data)
+        {
+            Instance.Debug(data);
+        }
+
+        void NuGet.Common.ILogger.LogVerbose(string data)
+        {
+            Instance.Trace(data);
+        }
+
+        void NuGet.Common.ILogger.LogInformation(string data)
+        {
+            Instance.Info(data);
+        }
+
+        void NuGet.Common.ILogger.LogMinimal(string data)
+        {
+            Instance.Info(data);
+        }
+
+        void NuGet.Common.ILogger.LogWarning(string data)
+        {
+            Instance.Warn(data);
+        }
+
+        void NuGet.Common.ILogger.LogError(string data)
+        {
+            Instance.Error(data);
+        }
+
+        void NuGet.Common.ILogger.LogInformationSummary(string data)
+        {
+            Instance.Info(data);
+        }
+
+        void NuGet.Common.ILogger.Log(NuGet.Common.LogLevel level, string data)
+        {
+            switch (level)
+            {
+                case NuGet.Common.LogLevel.Debug:
+                    ((NuGet.Common.ILogger)this).LogDebug(data);
+                    break;
+                case NuGet.Common.LogLevel.Error:
+                    ((NuGet.Common.ILogger)this).LogError(data);
+                    break;
+                case NuGet.Common.LogLevel.Information:
+                    ((NuGet.Common.ILogger)this).LogInformation(data);
+                    break;
+                case NuGet.Common.LogLevel.Minimal:
+                    ((NuGet.Common.ILogger)this).LogMinimal(data);
+                    break;
+                case NuGet.Common.LogLevel.Warning:
+                    ((NuGet.Common.ILogger)this).LogWarning(data);
+                    break;
+                case NuGet.Common.LogLevel.Verbose:
+                    ((NuGet.Common.ILogger)this).LogVerbose(data);
+                    break;
+                default:
+                    ((NuGet.Common.ILogger)this).LogVerbose(data);
+                    break;
+            }
+        }
+
+        Task NuGet.Common.ILogger.LogAsync(NuGet.Common.LogLevel level, string data)
+        {
+            throw new NotImplementedException();
+        }
+
+        void NuGet.Common.ILogger.Log(NuGet.Common.ILogMessage message)
+        {
+            ((NuGet.Common.ILogger)this).Log(message.Level, $"{message.Time} - {message.Code} - {message.Message}");
+        }
+
+        Task NuGet.Common.ILogger.LogAsync(NuGet.Common.ILogMessage message)
+        {
+            throw new NotImplementedException();
         }
     }
 }

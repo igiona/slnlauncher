@@ -95,7 +95,8 @@ namespace SlnLauncher
                 }
                 if (_logEnabled)
                 {
-                    _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), LogLevel.Debug);
+                    _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), LogLevel.Trace);
+                    NugetHelper.NugetHelper.SetLogger(_logger);
                 }
                 _logger.Info("Application started with parameters: {0}", string.Join("\n", argv));
 
