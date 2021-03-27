@@ -20,9 +20,12 @@ namespace Slnx
     public class Logger : NuGet.Common.ILogger
     {
         private LogLevel _enabledLevel = LogLevel.None;
+        private LogLevel _higestLevelDetected = LogLevel.None;
+
         private string _filePath;
         private object _lock = new object();
-
+        private object _locMaxLevel = new object();
+        
         private static Logger _instance;
 
         public static Logger Instance
@@ -41,6 +44,16 @@ namespace Slnx
         {
         }
 
+        public LogLevel MaxLogLevelDetected
+        {
+            get { return _higestLevelDetected; }
+        }
+
+        public string LogPath
+        {
+            get { return _filePath; }
+        }
+
         public void SetLog(string filePath, LogLevel level)
         {
             lock (_lock)
@@ -56,40 +69,45 @@ namespace Slnx
 
         public void Fatal(string msg, params object[] args)
         {
-            LogTryAppend(LogLevel.Fatal, msg, args);
+            LogTryAppend(LogLevel.Fatal, "SlnLauncher", msg, args);
         }
 
         public void Error(string msg, params object[] args)
         {
-            LogTryAppend(LogLevel.Error, msg, args);
+            LogTryAppend(LogLevel.Error, "SlnLauncher", msg, args);
         }
 
         public void Warn(string msg, params object[] args)
         {
-            LogTryAppend(LogLevel.Warning, msg, args);
+            LogTryAppend(LogLevel.Warning, "SlnLauncher", msg, args);
         }
 
         public void Info(string msg, params object[] args)
         {
-            LogTryAppend(LogLevel.Info, msg, args);
+            LogTryAppend(LogLevel.Info, "SlnLauncher", msg, args);
         }
 
         public void Debug(string msg, params object[] args)
         {
-            LogTryAppend(LogLevel.Debug, msg, args);
+            LogTryAppend(LogLevel.Debug, "SlnLauncher", msg, args);
         }
 
         public void Trace(string msg, params object[] args)
         {
-            LogTryAppend(LogLevel.Trace, msg, args);
+            LogTryAppend(LogLevel.Trace, "SlnLauncher", msg, args);
         }
 
-        void LogTryAppend(LogLevel logLevel, string msg, params object[] args)
+        void LogTryAppend(LogLevel logLevel, string app, string msg, params object[] args)
         {
+            lock (_locMaxLevel)
+            {
+                _higestLevelDetected = (LogLevel)Math.Max((int)_higestLevelDetected, (int)logLevel);
+            }
+
             if (!string.IsNullOrEmpty(_filePath) && _enabledLevel >= logLevel)
             {
                 var now = DateTime.Now;
-                var logContent = string.Format("\n{0}:{1}:{2} | {3} | {4}", now.Hour, now.Minute, now.Second, logLevel, string.Format(msg, args));
+                var logContent = string.Format("\n{0:D2}:{1:D2}:{2:D2} | {3}\t| {4}\t| {5}", now.Hour, now.Minute, now.Second, logLevel, app, string.Format(msg, args));
 
                 lock (_lock)
                 {
@@ -100,37 +118,39 @@ namespace Slnx
 
         void NuGet.Common.ILogger.LogDebug(string data)
         {
-            Instance.Debug(data);
+            LogTryAppend(LogLevel.Debug, "NuGet", data);
         }
 
         void NuGet.Common.ILogger.LogVerbose(string data)
         {
-            Instance.Trace(data);
+            LogTryAppend(LogLevel.Trace, "NuGet", data);
         }
 
         void NuGet.Common.ILogger.LogInformation(string data)
         {
-            Instance.Info(data);
+            //Map NuGet info log to debug
+            LogTryAppend(LogLevel.Debug, "NuGet", data);
         }
 
         void NuGet.Common.ILogger.LogMinimal(string data)
         {
-            Instance.Info(data);
+            LogTryAppend(LogLevel.Info, "NuGet", data);
         }
 
         void NuGet.Common.ILogger.LogWarning(string data)
         {
-            Instance.Warn(data);
+            LogTryAppend(LogLevel.Warning, "NuGet", data);
         }
 
         void NuGet.Common.ILogger.LogError(string data)
         {
-            Instance.Error(data);
+            LogTryAppend(LogLevel.Error, "NuGet", data);
         }
 
         void NuGet.Common.ILogger.LogInformationSummary(string data)
         {
-            Instance.Info(data);
+            //Map NuGet info log to debug
+            LogTryAppend(LogLevel.Debug, "NuGet", data);
         }
 
         void NuGet.Common.ILogger.Log(NuGet.Common.LogLevel level, string data)
