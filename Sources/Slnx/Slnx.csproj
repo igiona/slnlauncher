@@ -8,6 +8,9 @@
     <Reference Include="Glob" Condition="$(Glob_cs_debug) != 1">
       <HintPath>$(Glob_cs)\Glob.dll</HintPath>
     </Reference>
+    <Reference Include="NuGet.Common" Condition="$(NuGet_Common_debug) != 1">
+      <HintPath>$(NuGet_Common)\NuGet.Common.dll</HintPath>
+    </Reference>
     <Reference Include="NuGet.Versioning" Condition="$(NuGet_Versioning_debug) != 1">
       <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
     </Reference>

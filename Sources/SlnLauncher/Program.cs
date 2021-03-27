@@ -38,7 +38,8 @@ namespace SlnLauncher
         static string _pythonEnvVarsPath = null;
         static string _batchEnvVarsPath = null;
         static Logger _logger = null;
-        
+        static LogLevel _logLevel = LogLevel.Info;
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -72,6 +73,7 @@ namespace SlnLauncher
               .Add("b=|batchModule=", "Path for the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
+              .Add(string.Format("lv=|logVerbosity=", "Set the log level of verbosity. Valid values {0}. [Default: {1}]", string.Join(",", Enum.GetNames<LogLevel>()), _logLevel), v => _logLevel = ParseLogLevel(v))
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
               .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNugetDependencies = v != null)
               .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fullfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
@@ -95,7 +97,8 @@ namespace SlnLauncher
                 }
                 if (_logEnabled)
                 {
-                    _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), LogLevel.Debug);
+                    _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), _logLevel);
+                    NugetHelper.NugetHelper.SetLogger(_logger);
                 }
                 _logger.Info("Application started with parameters: {0}", string.Join("\n", argv));
 
@@ -136,14 +139,29 @@ namespace SlnLauncher
                 _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}, and ignore dependency is {ignoreDependencyCheck}");
                 NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
 
+                _logger.Info($"Checking debug packages consistency...");
+
+                foreach (var debugPackage in slnx.DebugSlnxItems.Keys)
+                {
+                    foreach (var package in slnx.Packages)
+                    {
+                        if (package.Dependencies.Where(x => x.PackageDependency.Id == debugPackage.Id).Any())
+                        {
+                            _logger.Warn($"{package} depends on the package {debugPackage.Id} which is selected for debugging. This might cause runtime issues! Consider marking it for debugging as well.");
+                        }
+                    }
+                }
+
                 _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
                 foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetImplementationAssembly))
                 {
-                    if (originalPackageList.Where((x) => x.Id == package.Id).FirstOrDefault() == null)
+                    if (!originalPackageList.Where((x) => x.Id == package.Id).Any())
                     {
-                        _logger.Warn($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly.");
+                        _logger.Warn($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.");
                     }
                 }
+                
+                _logger.Info($"Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file");
                 foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetCompileTimeAssembly))
                 {
                     if (originalPackageList.Where((x) => x.Id == package.Id).FirstOrDefault() == null)
@@ -151,7 +169,7 @@ namespace SlnLauncher
                         _logger.Info($"The .NET compilte time package {package} has been installed as dependency.");
                     }
                 }
-                
+
                 _logger.Info($"Fixing project files");
                 slnx.TryFixProjectFiles();
 
@@ -180,12 +198,28 @@ namespace SlnLauncher
                     }
                     else
                     {
-                        throw new Exception("Missing or invalid nuget information in the provided SlnX file.");
+                        throw new Exception("Missing or invalid nuget content information in the provided SlnX file.");
                     }
                 }
                 
                 MakeSln(slnx);
                 MakeAndCleanNugetDebugFile(slnx);
+
+                if (_logger.MaxLogLevelDetected >= LogLevel.Warning)
+                {
+                    if (!quiteExecution)
+                    {
+                        var baseMsg = $"Warning(s) detectd. This could cause runtime issues.\nIt's highly suggested to";
+                        if (_logEnabled)
+                        {
+                            MessageBox.Show($"{baseMsg} review them in the log file: {_logger.LogPath}", "Warning");
+                        }
+                        else
+                        {
+                            MessageBox.Show($"{baseMsg} re-run the application with log tuned on.", "Warning");
+                        }
+                    }
+                }
 
                 if (_openSolution)
                 {
@@ -235,7 +269,7 @@ namespace SlnLauncher
 
             slnx.Packages = NugetHelper.NugetHelper.InstallPackages(slnx.Packages.ToList(), autoUpdateDependencies, (message) => 
                 {
-                    _logger.Info("Package {0} successefully installed", message.ToString());
+                    _logger.Debug("Package {0} successefully installed", message.ToString());
                     progress?.IncrementProgress();
                 }).ToList();
 
@@ -299,7 +333,7 @@ namespace SlnLauncher
                 }
 
                 f.WriteLine("\nCS Projects imported for debugging:\n");
-                foreach (var p in slnx.DebugProjects.Where(x => x.Item != null && !x.Item.IsContainer))
+                foreach (var p in slnx.ProjectsImportedFromDebugSlnx.Where(x => x.Item != null && !x.Item.IsContainer))
                 {
                     f.WriteLine("{0,-40} => {1}", p.Item.Name, p.FullPath);
                 }
@@ -316,7 +350,7 @@ namespace SlnLauncher
                 }
 
                 f.WriteLine("\nNuGet packages required by the projects imported for debugging:\n");
-                foreach (var p in slnx.DebugPackages)
+                foreach (var p in slnx.PackagesImportedFromDebugSlnx)
                 {
                     f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
@@ -408,7 +442,7 @@ namespace SlnLauncher
         static void MakeSln(SlnxHandler slnx)
         {
             List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
-            projects.AddRange(slnx.DebugProjects.Where(x => x.Item != null).Select(x => x.Item));
+            projects.AddRange(slnx.ProjectsImportedFromDebugSlnx.Where(x => x.Item != null).Select(x => x.Item));
 
             string outFile = slnx.SlnPath;
             _logger.Info("Creating solution file: {0}", outFile);
@@ -493,12 +527,7 @@ EndGlobal
             var debugInfo = new Dictionary<CsProject, XmlDocument>();
             foreach (var item in slnx.DebugSlnxItems)
             {
-                var nugetPackage = slnx.Packages.Where(x => x.Id == item.Key).FirstOrDefault();
-                if (nugetPackage == null)
-                {
-                    throw new Exception($"The debug package {item.Key} is not defined as NuGet package in the current SlnX file.");
-                }
-
+                var nugetPackage = item.Key;
                 foreach (var p in slnx.CsProjects)
                 {
                     foreach (var r in p.AssemblyReferences)
@@ -525,11 +554,11 @@ EndGlobal
             }
         }
 
-        static void AppendDebugElement(XmlDocument nugetDebugXml, KeyValuePair<string, SlnxHandler> item)
+        static void AppendDebugElement(XmlDocument nugetDebugXml, KeyValuePair<NugetHelper.NugetPackage, SlnxHandler> item)
         {
             var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(propertyGroup);
-            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key));
+            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key.Id));
 
             var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(itemGroup);
@@ -552,6 +581,13 @@ EndGlobal
             {
                 f.Write(text);
             }
+        }
+
+        static LogLevel ParseLogLevel(string v)
+        {
+            LogLevel ret = _logLevel;
+            Enum.TryParse<LogLevel>(v, out ret);
+            return ret;
         }
     }
 }
