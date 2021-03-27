@@ -33,7 +33,7 @@ namespace Slnx
         List<Project> _projects = null;
         List<NugetPackage> _packages = new List<NugetPackage>();
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
-        Dictionary<string, SlnxHandler> _debugSlnxItems = new Dictionary<string, SlnxHandler>();
+        Dictionary<NugetPackage, SlnxHandler> _debugSlnxItems = new Dictionary<NugetPackage, SlnxHandler>();
 
         public SlnxHandler(string fName, string debugPackageId = null) : this(fName, null, debugPackageId)
         {
@@ -79,30 +79,40 @@ namespace Slnx
             FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
             ExtendList(_packages, _slnx.package);
 
-            if (string.IsNullOrEmpty(debugPackageId))
+            if (string.IsNullOrEmpty(debugPackageId)) //Main SlnX
             {
                 EvalueteDebugPackages(_slnx.debug);
                 EvalueteDebugPackages(userSettings?.debug);
 
+                //Read debug SlnX
                 foreach (var item in _packagesToDebug)
                 {
+                    var debugSourcePakckage = Packages.Where(x => x.Id == item.Key).FirstOrDefault();
+                    Assert(debugSourcePakckage != null, $"The request package for debug {item.Key} is not present a nuget package in the main SlnX file.");
+
                     var slnxItem = new SlnxHandler(item.Value, item.Key);
-                    _debugSlnxItems[item.Key] = slnxItem;
+                    _debugSlnxItems[debugSourcePakckage] = slnxItem;
+                    _packages.Remove(debugSourcePakckage);
 
-                    foreach (var candidate in Packages)
+                    foreach (var candidate in slnxItem.Packages)
                     {
-                        var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
+                        if (_packagesToDebug.ContainsKey(candidate.Id))
+                        {
+                            //This package is under debug, no version check needed.
+                            continue;
+                        }
 
+                        var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
                         if (known == null)
                         {
-                            _logger.Warn($"The package {candidate.Id} required by the package {item.Key} selected for debug, is not presend in the current SlnX file {_slnxName}");
+                            _logger.Warn($"The package {candidate.Id} required by the package {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}.{SlnxExtension}");
                         }
                         else
                         {
                             Assert(known.MinVersion == candidate.MinVersion &&
                                    known.TargetFramework == candidate.TargetFramework &&
                                    known.PackageType == candidate.PackageType,
-                                   $"The provided package {candidate} does not match the already known one {known}");
+                                   $"The package {candidate} defined in the debug SlnX does not match the already known one {known}");
                         }
                     }
                 }
@@ -185,7 +195,7 @@ namespace Slnx
             }
         }
 
-        public IEnumerable<Project> DebugProjects
+        public IEnumerable<Project> ProjectsImportedFromDebugSlnx
         {
             get
             {
@@ -193,7 +203,7 @@ namespace Slnx
             }
         }
 
-        public IEnumerable<NugetPackage> DebugPackages
+        public IEnumerable<NugetPackage> PackagesImportedFromDebugSlnx
         {
             get
             {
@@ -201,7 +211,7 @@ namespace Slnx
             }
         }
 
-        public Dictionary<string, SlnxHandler> DebugSlnxItems
+        public Dictionary<NugetPackage, SlnxHandler> DebugSlnxItems
         {
             get { return _debugSlnxItems; }
         }
