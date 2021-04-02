@@ -245,21 +245,19 @@ namespace SlnLauncher
             }
         }
 
-        static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies)
+        static IEnumerable<NugetHelper.NugetPackage> PerformPackageDownloadProcess(IEnumerable<NugetHelper.NugetPackage> packages, bool quite, bool autoUpdateDependencies, string formTitle)
         {
-            _logger.Info("Downloading NuGet packages...");
             ProgressDialog progress = null;
-
             System.Threading.Thread th = null;
 
             if (!quite)
             {
                 th = new System.Threading.Thread(
                 () =>
-                    {
-                        progress = new ProgressDialog("Loading packages...", slnx.Packages.Count());
-                        progress.ShowDialog();
-                    }
+                {
+                    progress = new ProgressDialog(formTitle, packages.Count());
+                    progress.ShowDialog();
+                }
                 );
             }
             if (th != null) th.IsBackground = true;
@@ -267,21 +265,41 @@ namespace SlnLauncher
             th?.Start();
             while (th != null && progress == null) System.Threading.Thread.Sleep(100);
 
-            slnx.Packages = NugetHelper.NugetHelper.InstallPackages(slnx.Packages.ToList(), autoUpdateDependencies, (message) => 
-                {
-                    _logger.Debug("Package {0} successefully installed", message.ToString());
-                    progress?.IncrementProgress();
-                }).ToList();
+            var ret = NugetHelper.NugetHelper.InstallPackages(packages.ToList(), autoUpdateDependencies, (message) =>
+            {
+                _logger.Debug("Package {0} successefully installed", message.ToString());
+                progress?.IncrementProgress();
+            }).ToList();
 
             _logger.Info("Done!");
             progress?.Close();
             th?.Join();
+
+            return ret;
+        }
+
+        static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies)
+        {
+            _logger.Info("Downloading required NuGet packages...");
+
+            slnx.Packages = PerformPackageDownloadProcess(slnx.Packages, quite, autoUpdateDependencies, "Loading packages...");
+
+            if (slnx.DebugSlnxItems.Count != 0)
+            {
+                _logger.Info("Downloading NuGet packages marked as debug...");
+                _logger.Trace("Need to download the package to properly gather the Libraries list. The dependencies are ignored to avoid package versions issues.");
+
+                foreach (var nugetPackage in slnx.DebugSlnxItems.Keys)
+                {
+                    var installed = PerformPackageDownloadProcess(new[] { nugetPackage }, quite, false, $"Loading debug package {nugetPackage} without dependencies...");
+                    nugetPackage.AddLibraries(installed.First().Libraries);
+                }
+            }
         }
 
         static List<string> GetAllKeys(SlnxHandler slnx)
         {
-            List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
-            var keys = projects.Where((x) => !x.IsContainer).Select((x) => ((CsProject)x).EnvironmentVariableKey).ToList();
+            var keys = slnx.Projects.Select((x) => x.EnvironmentVariableKey).ToList();
             keys.AddRange(slnx.EnvironementVariables.Keys);
             keys.AddRange(slnx.Packages.SelectMany(x => x.EnvironmentVariableKeys));
             keys.AddRange(slnx.Packages.Where(x => x.EnvironmentVariableAdditionalKey != null).Select(x => x.EnvironmentVariableAdditionalKey));
@@ -327,15 +345,15 @@ namespace SlnLauncher
             using (var f = new StreamWriter(Path.Combine(outDir, "dump.txt")))
             {
                 f.WriteLine("CS Projects:\n");
-                foreach (var p in slnx.Projects.Where(x => x.Item != null && !x.Item.IsContainer))
+                foreach (var p in slnx.Projects)
                 {
-                    f.WriteLine("{0,-40} => {1}", p.Item.Name, p.FullPath);
+                    f.WriteLine("{0,-40} => {1}", p.Name, p.FullPath);
                 }
 
                 f.WriteLine("\nCS Projects imported for debugging:\n");
-                foreach (var p in slnx.ProjectsImportedFromDebugSlnx.Where(x => x.Item != null && !x.Item.IsContainer))
+                foreach (var p in slnx.ProjectsImportedFromDebugSlnx)
                 {
-                    f.WriteLine("{0,-40} => {1}", p.Item.Name, p.FullPath);
+                    f.WriteLine("{0,-40} => {1}", p.Name, p.FullPath);
                 }
 
                 f.WriteLine("------------------------------------\n");
@@ -381,7 +399,6 @@ namespace SlnLauncher
         static void CreatePythonnModule(SlnxHandler slnx, string outDir)
         {
             _logger.Info("Creating Python module in {0}", outDir);
-            List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
 
             using (var f = new StreamWriter(Path.Combine(outDir, "SetEnvVars.py")))
             {
@@ -401,7 +418,6 @@ namespace SlnLauncher
         static void CreateBatchModule(SlnxHandler slnx, string outDir)
         {
             _logger.Info("Creating Batch module in {0}", outDir);
-            List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
 
             using (var f = new StreamWriter(Path.Combine(outDir, "SetEnvVars.bat")))
             {
@@ -448,8 +464,8 @@ namespace SlnLauncher
             }
             _logger.Info($"Creating solution file: {outFile}");
 
-            var projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
-            projects.AddRange(slnx.ProjectsImportedFromDebugSlnx.Where(x => x.Item != null).Select(x => x.Item));
+            var projects = slnx.Projects.ToList();
+            projects.AddRange(slnx.ProjectsImportedFromDebugSlnx);
             _logger.Trace($"Found {projects.Count()} projects.");
             _logger.Trace("Inspecting and creating containers");
 
@@ -556,7 +572,25 @@ EndGlobal
             _logger.Info("Done!");
         }
 
-        static void MakeAndCleanNugetDebugFile(SlnxHandler slnx)
+        static XmlDocument TryGetDebugXmlDoc(CsProject proj, NugetHelper.NugetPackage package)
+        {
+            if (proj.AssemblyReferences != null)
+            {
+                foreach (var r in proj.AssemblyReferences)
+                {
+                    if (package.Libraries.Any(x => Path.GetFileName(x) == Path.GetFileName(r.HintPath)))
+                    {
+                        var newDocument = new XmlDocument();
+                        var root = newDocument.CreateNode(XmlNodeType.Element, "Project", null);
+                        newDocument.AppendChild(root);
+                        return newDocument;
+                    }
+                }
+            }
+            return null;
+        }
+
+        static void MakeAndCleanNugetDebugFile(SlnxHandler slnx, SlnxHandler mainSlnx = null)
         {
             foreach (string f in Directory.EnumerateFiles(slnx.SlnxDirectory, CsProject.ImportDebugProjectName, new EnumerationOptions() { RecurseSubdirectories = true }))
             {
@@ -564,28 +598,34 @@ EndGlobal
             }
 
             var debugInfo = new Dictionary<CsProject, XmlDocument>();
-            foreach (var item in slnx.DebugSlnxItems)
+            var debugItems = mainSlnx?.DebugSlnxItems ?? slnx.DebugSlnxItems;
+
+            foreach (var item in debugItems)
             {
                 var nugetPackage = item.Key;
-                foreach (var p in slnx.CsProjects)
+                foreach (var p in slnx.Projects)
                 {
-                    foreach (var r in p.AssemblyReferences)
+                    if (mainSlnx != null)
                     {
-                        if (nugetPackage.Libraries.Any(x => Path.GetFileName(x) == Path.GetFileName(r.HintPath)))
-                        {                           
-                            if (!debugInfo.ContainsKey(p))
-                            {
-                                var newDocument = new XmlDocument();
-                                var root = newDocument.CreateNode(XmlNodeType.Element, "Project", null);
-                                newDocument.AppendChild(root);
-                                debugInfo[p] = newDocument;
-                            }
-                            AppendDebugElement(debugInfo[p], item);
-                            break;
+                        p.TryFixProjectFileAndGatherReferences(mainSlnx.AllPackages);
+                    }
+
+                    var debugDoc = TryGetDebugXmlDoc(p, nugetPackage);
+                    if (debugDoc != null)
+                    {
+                        if (!debugInfo.ContainsKey(p))
+                        {
+                            debugInfo[p] = debugDoc;
                         }
+                        AppendDebugElement(debugInfo[p], item);
                     }
                 }
+                if (mainSlnx == null)
+                {
+                    MakeAndCleanNugetDebugFile(item.Value, slnx);
+                }
             }
+
             foreach(var di in debugInfo)
             {
                 string prettyContent = XDocument.Parse(di.Value.OuterXml).ToString();
@@ -602,7 +642,7 @@ EndGlobal
             var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(itemGroup);
             itemGroup.InnerXml = "";
-            foreach (var p in item.Value.CsProjects.Where(x => !x.IsTestProject))
+            foreach (var p in item.Value.Projects.Where(x => !x.IsTestProject))
             {
                 itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, p.FullPath);
             }

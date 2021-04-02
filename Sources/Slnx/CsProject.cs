@@ -264,7 +264,7 @@ namespace Slnx
             return string.Format("\nProject(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"\nEndProject", TypeGuid, Name, FullPath, ProjectGuid);
         }
 
-        public void TryFixProjectFile(IEnumerable<NugetPackage> packages)
+        public void TryFixProjectFileAndGatherReferences(IEnumerable<NugetPackage> packages)
         {
             _logger.Debug($"Fixing project: {Name}");
 

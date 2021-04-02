@@ -30,7 +30,7 @@ namespace Slnx
         Dictionary<string, string> _environmentVariables = new Dictionary<string, string>();
         Dictionary<string, List<PackageType>> _packageBundles = new Dictionary<string, List<PackageType>>();
         List<SlnxHandler> _imports = new List<SlnxHandler>();
-        List<Project> _projects = null;
+        List<CsProject> _projects = null;
         List<NugetPackage> _packages = new List<NugetPackage>();
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
         Dictionary<NugetPackage, SlnxHandler> _debugSlnxItems = new Dictionary<NugetPackage, SlnxHandler>();
@@ -105,7 +105,7 @@ namespace Slnx
                         var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
                         if (known == null)
                         {
-                            _logger.Warn($"The package {candidate.Id} required by the package {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}.{SlnxExtension}");
+                            _logger.Warn($"The package {candidate.Id} required by the package {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
                         }
                         else
                         {
@@ -166,19 +166,11 @@ namespace Slnx
             }
         }
 
-        public IEnumerable<Project> Projects
+        public IEnumerable<CsProject> Projects
         {
             get
             {
                 return _projects;
-            }
-        }
-
-        public IEnumerable<CsProject> CsProjects
-        {
-            get
-            {
-                return Projects.Where(x => x.Item is CsProject).Select(x => x.Item as CsProject);
             }
         }
 
@@ -195,11 +187,27 @@ namespace Slnx
             }
         }
 
-        public IEnumerable<Project> ProjectsImportedFromDebugSlnx
+        /// <summary>
+        /// Return a IEnumerable containing all knwon packages, included the one marked for debugging.
+        /// </summary>
+        public IEnumerable<NugetPackage> AllPackages
         {
             get
             {
-                return _debugSlnxItems.Values.SelectMany(x => x.Projects.Where(p => !p.Item.IsTestProject));
+                var allPackages = Packages.ToList();
+                if (DebugSlnxItems.Count() != 0)
+                {
+                    allPackages.AddRange(DebugSlnxItems.Keys);
+                }
+                return allPackages;
+            }
+        }
+
+        public IEnumerable<CsProject> ProjectsImportedFromDebugSlnx
+        {
+            get
+            {
+                return _debugSlnxItems.Values.SelectMany(x => x.Projects.Where(p => !p.IsTestProject));
             }
         }
 
@@ -252,17 +260,18 @@ namespace Slnx
                 _logger.Warn($"No NuGet package found. If this is not correct, it might be because this method was called before installing the NuGet packages.");
             }
 
-            foreach (var csProj in CsProjects)
+            foreach (var csProj in Projects)
             {
                 _logger.Info($"Trying to fix the Assembly and Project reference of {csProj.Name}");
-                csProj.TryFixProjectFile(Packages);
+                
+                csProj.TryFixProjectFileAndGatherReferences(AllPackages);
                 csProj.SaveCsProjectToFile();
             }
         }
 
         void FindProjects(ProjectType[] requestedGlobalSettingsProjects, string searchPath, string skip, string enforcedContainer)
         {
-            _projects = new List<Project>();
+            _projects = new List<CsProject>();
             if (requestedGlobalSettingsProjects != null)
             {
                 IEnumerable<string> knownProjects = null;
@@ -330,7 +339,7 @@ namespace Slnx
                     container = string.Join("/", enforcedContainer, container);
                 }
 
-                var p = new Project(knownProject[0], container, !requestedProject.packableSpecified || requestedProject.packable);
+                var p = new CsProject(knownProject[0], container, !requestedProject.packableSpecified || requestedProject.packable);
                 _projects.Add(p);
             }
         }
@@ -589,7 +598,7 @@ namespace Slnx
 
                 if (!excludeProjects)
                 {
-                    foreach (var p in CsProjects)
+                    foreach (var p in Projects)
                     {
                         if (p.IsPackable)
                         {
