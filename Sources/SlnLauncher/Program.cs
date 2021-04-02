@@ -441,21 +441,58 @@ namespace SlnLauncher
 
         static void MakeSln(SlnxHandler slnx)
         {
-            List<SlnItem> projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
-            projects.AddRange(slnx.ProjectsImportedFromDebugSlnx.Where(x => x.Item != null).Select(x => x.Item));
-
             string outFile = slnx.SlnPath;
-            _logger.Info("Creating solution file: {0}", outFile);
-
-            if (Path.GetExtension(outFile).ToLower() !=  SlnxHandler.SlnExtension)
+            if (Path.GetExtension(outFile).ToLower() != SlnxHandler.SlnExtension)
+            {
                 throw new Exception(string.Format("The configured sln file is not support. Only '{0}' file are supported\n\n\tFile='{1}'", SlnxHandler.SlnExtension, outFile));
+            }
+            _logger.Info($"Creating solution file: {outFile}");
+
+            var projects = slnx.Projects.Where(x => x.Item != null).Select(x => x.Item).ToList();
+            projects.AddRange(slnx.ProjectsImportedFromDebugSlnx.Where(x => x.Item != null).Select(x => x.Item));
+            _logger.Trace($"Found {projects.Count()} projects.");
+            _logger.Trace("Inspecting and creating containers");
+
+            var projectsAndContainers = new List<SlnItem>();
+            foreach (var p in projects)
+            {
+                projectsAndContainers.Add(p);
+
+                if (p.Container != null)
+                {
+                    var containers = p.Container.Split('/');
+
+                    string parent = null;
+                    string currentFullPath = null;
+                    foreach (var c in containers)
+                    {
+                        if (string.IsNullOrEmpty(c)) continue;
+
+                        if (parent == null)
+                        {
+                            currentFullPath = c;
+                        }
+                        else
+                        {
+                            currentFullPath = string.Format("{0}/{1}", currentFullPath, c);
+                        }
+
+                        if (projectsAndContainers.Where((x) => x.IsContainer && x.FullPath == currentFullPath).Count() == 0) //Need to create the container
+                        {
+                            projectsAndContainers.Add(new CsContainer(c, parent));
+                        }
+
+                        parent = currentFullPath;
+                    }
+                }
+            }
 
             StringBuilder slnSb = new StringBuilder();
             StringBuilder projectListSb = new StringBuilder();
             StringBuilder buildConfigSb = new StringBuilder();
             StringBuilder containerConfigSb = new StringBuilder();
 
-            foreach (var p in projects)
+            foreach (var p in projectsAndContainers)
             {
                 var path = p.FullPath;
                 if (p.IsContainer)
@@ -467,9 +504,11 @@ namespace SlnLauncher
                 if (buildCfg != null)
                     buildConfigSb.Append(buildCfg);
 
-                var container = projects.Where((x) => x.IsContainer && x.FullPath == p.Container).ToList();
+                var container = projectsAndContainers.Where((x) => x.IsContainer && x.FullPath == p.Container).ToList();
                 if (container.Count > 0)
+                {
                     containerConfigSb.AppendFormat("\n		{{{0}}} = {{{1}}}", p.ProjectGuid, container[0].ProjectGuid);
+                }
             }
 
             //Header

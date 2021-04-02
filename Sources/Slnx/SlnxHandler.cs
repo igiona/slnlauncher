@@ -327,33 +327,11 @@ namespace Slnx
                 var container = requestedProject.container;
                 if (!string.IsNullOrEmpty(enforcedContainer))
                 {
-                    container = enforcedContainer;
+                    container = string.Join("/", enforcedContainer, container);
                 }
 
                 var p = new Project(knownProject[0], container, !requestedProject.packableSpecified || requestedProject.packable);
                 _projects.Add(p);
-
-                if (p.Item?.Container != null)
-                {
-                    var containers = p.Item.Container.Split('/');
-
-                    string parent = null;
-                    string currentFullPath = null;
-                    foreach (var c in containers)
-                    {
-                        if (string.IsNullOrEmpty(c)) continue;
-
-                        if (parent == null)
-                            currentFullPath = c;
-                        else
-                            currentFullPath = string.Format("{0}/{1}", currentFullPath, c);
-
-                        if (_projects.Where((x) => x.Item != null && x.Item.IsContainer && x.FullPath == currentFullPath).Count() == 0) //Need to create the container
-                            _projects.Add(new Project(c, parent, false));
-
-                        parent = currentFullPath;
-                    }
-                }
             }
         }
 
@@ -370,7 +348,9 @@ namespace Slnx
                 foreach (var skip in skipList)
                 {
                     if (path.Contains(skip))
+                    {
                         return false;
+                    }
                 }
             }
             return projectMatch;
@@ -393,7 +373,9 @@ namespace Slnx
                         var slnxImportFile = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(import.path));
 
                         if (!File.Exists(slnxImportFile))
+                        {
                             throw new Exception(string.Format("SLNX import not found, file path: {0}", slnxImportFile));
+                        }
 
                         var slnx = SlnxHandler.ReadSlnx(slnxImportFile);
                         var imported = new SlnxHandler(slnxImportFile);
