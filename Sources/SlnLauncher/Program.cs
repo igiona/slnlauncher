@@ -35,6 +35,7 @@ namespace SlnLauncher
         static bool _openSolution = false;
         static bool _createMsBuild = false;
         static bool _logEnabled = false;
+        static string _plantUmlGraphPath = null;
         static string _pythonEnvVarsPath = null;
         static string _batchEnvVarsPath = null;
         static Logger _logger = null;
@@ -69,12 +70,13 @@ namespace SlnLauncher
               .Add("o|openSln", "If set (-o/-o+) opens the generated Sln file. If not set (-o-), the generated Sln will not be opened. [Default: set]", v => _openSolution = v != null)
               .Add("u|user", "If set (-u/-u+) it loads an eventually present .user file. [Default: set]", v => loadUserFile = v != null)
               .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location . [Default: not set]", v => dump = v != null)
-              .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
-              .Add("b=|batchModule=", "Path for the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
+              .Add("dg=|dependencyGraph=", "Relative folder path for the dependency PlantUML graph. If set the <slnx-name>.wsd containing the packages dependency graph is created in the specified folder [Default: not set]", v => _plantUmlGraphPath = v)
+              .Add("py=|pythonModule=", "Relative folder path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
+              .Add("b=|batchModule=", "Relative folder path for the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
               .Add(string.Format("lv=|logVerbosity=", "Set the log level of verbosity. Valid values {0}. [Default: {1}]", string.Join(",", Enum.GetNames<LogLevel>()), _logLevel), v => _logLevel = ParseLogLevel(v))
-              .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
+              .Add("ns=|nuspec=", "Relative folder path in which the NuGet package will be created based on the current SlnX configuration. [Default: not set]", v => nuspecDir = v)
               .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNugetDependencies = v != null)
               .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fullfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
             
@@ -135,6 +137,11 @@ namespace SlnLauncher
                     Dump(slnx);
                 }
 
+                if (!string.IsNullOrEmpty(_plantUmlGraphPath))
+                {
+                    CreateDependencyGraph(slnx, Path.Combine(slnx.SlnxDirectory, _plantUmlGraphPath));
+                }
+                
                 var ignoreDependencyCheck = !autoUpdateNugetDependencies;
                 _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}, and ignore dependency is {ignoreDependencyCheck}");
                 NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
@@ -335,6 +342,63 @@ namespace SlnLauncher
             }
         }
 
+        static Dictionary<string,List<Tuple<string, string>>> _knownPackages = new Dictionary<string,List<Tuple<string, string>>>();
+
+        static void AppendDependencyId(string ns, string id, string version)
+        {
+            if (_knownPackages.Values.Where(x => x.Select(tuple=> tuple.Item1).Contains(id)).Count() == 0)
+            {
+                if (!_knownPackages.ContainsKey(ns))
+                {
+                    _knownPackages[ns] = new List<Tuple<string, string>>();
+                }
+                _knownPackages[ns].Add(new Tuple<string, string>(id, version));
+            }
+        }
+
+        static string EscapePlantedUmlName(string name)
+        {
+            return NugetHelper.NugetPackage.EscapeStringAsEnvironmentVariableAsKey(name).Replace("-", "_");
+        }
+
+        static void CreateDependencyGraph(SlnxHandler slnx, string outDir)
+        {
+            _logger.Info("Creating dependency graph in {0}", outDir);
+            using (var f = new StreamWriter(Path.Combine(outDir, $"{slnx.SlnxName}.wsd")))
+            {
+                f.WriteLine($"@startuml {slnx.SlnxName}");
+
+                foreach (var p in slnx.Packages)
+                {
+                    var ns = p.Id.Split('.').First();
+                    AppendDependencyId(ns, EscapePlantedUmlName(p.Id), p.MinVersion);
+                }
+                foreach(var item in _knownPackages)
+                {
+                    f.WriteLine($"\tnamespace {item.Key} {{");
+                    foreach (var id in item.Value)
+                    {
+                        f.WriteLine($"\t\tclass \"{id.Item1}\" {{ \n\t\t\t {id.Item2} \n\t\t}}");
+                    }
+                    f.WriteLine("\t}");
+                }
+
+                foreach (var p in slnx.Packages)
+                {
+                    var packageNs = p.Id.Split('.').First();
+                    var packageId = EscapePlantedUmlName(p.Id);
+
+                    foreach (var d in p.Dependencies)
+                    {
+                        var depNs = d.PackageDependency.Id.Split('.').First();
+                        var depId = EscapePlantedUmlName(d.PackageDependency.Id);
+
+                        f.WriteLine($"\t{packageNs}.{packageId} --> {depNs}.{depId}");
+                    }
+                }
+                f.WriteLine("@enduml");
+            }
+        }
         static void Dump(SlnxHandler slnx)
         {
             string outDir = slnx.SlnxDirectory;
