@@ -157,7 +157,7 @@ namespace SlnLauncher
                 {
                     if (!originalPackageList.Where((x) => x.Id == package.Id).Any())
                     {
-                        _logger.Warn($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.");
+                        _logger.Info($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.");
                     }
                 }
                 
