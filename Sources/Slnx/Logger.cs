@@ -21,10 +21,10 @@ namespace Slnx
     {
         private LogLevel _enabledLevel = LogLevel.None;
         private LogLevel _higestLevelDetected = LogLevel.None;
-
+        private Dictionary<LogLevel, bool> _logLevelDetected = new Dictionary<LogLevel, bool>(Enum.GetValues(typeof(LogLevel)).Cast<int>().Select(x => new KeyValuePair<LogLevel, bool>((LogLevel)x, false)));
         private string _filePath;
         private object _lock = new object();
-        private object _locMaxLevel = new object();
+        private object _lockMaxLevel = new object();
         
         private static Logger _instance;
 
@@ -52,6 +52,11 @@ namespace Slnx
         public string LogPath
         {
             get { return _filePath; }
+        }
+
+        public bool LogLevelDetected(LogLevel l)
+        {
+            return _logLevelDetected[l];
         }
 
         public void SetLog(string filePath, LogLevel level)
@@ -99,9 +104,10 @@ namespace Slnx
 
         void LogTryAppend(LogLevel logLevel, string app, string msg, params object[] args)
         {
-            lock (_locMaxLevel)
+            lock (_lockMaxLevel)
             {
                 _higestLevelDetected = (LogLevel)Math.Max((int)_higestLevelDetected, (int)logLevel);
+                _logLevelDetected[logLevel] = true;
             }
 
             if (!string.IsNullOrEmpty(_filePath) && _enabledLevel >= logLevel)

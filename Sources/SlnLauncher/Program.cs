@@ -205,21 +205,22 @@ namespace SlnLauncher
                 MakeSln(slnx);
                 MakeAndCleanNugetDebugFile(slnx);
 
-                if (_logger.MaxLogLevelDetected >= LogLevel.Warning)
+                if (_logger.LogLevelDetected(LogLevel.Warning))
                 {
                     if (!quiteExecution)
                     {
-                        var baseMsg = $"Warning(s) detectd. This could cause runtime issues.\nIt's highly suggested to";
+                        var baseMsg = $"Warning(s) detected. This could cause runtime issues.\nIt's highly suggested to";
                         if (_logEnabled)
                         {
                             MessageBox.Show($"{baseMsg} review them in the log file: {_logger.LogPath}", "Warning");
                         }
                         else
                         {
-                            MessageBox.Show($"{baseMsg} re-run the application with log tuned on.", "Warning");
+                            MessageBox.Show($"{baseMsg} re-run the application with log turned on.", "Warning");
                         }
                     }
                 }
+                _logger.Info($"Done!");
 
                 if (_openSolution)
                 {
@@ -271,7 +272,6 @@ namespace SlnLauncher
                 progress?.IncrementProgress();
             }).ToList();
 
-            _logger.Info("Done!");
             progress?.Close();
             th?.Join();
 
@@ -281,13 +281,12 @@ namespace SlnLauncher
         static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies)
         {
             _logger.Info("Downloading required NuGet packages...");
-
             slnx.Packages = PerformPackageDownloadProcess(slnx.Packages, quite, autoUpdateDependencies, "Loading packages...");
 
             if (slnx.DebugSlnxItems.Count != 0)
             {
                 _logger.Info("Downloading NuGet packages marked as debug...");
-                _logger.Trace("Need to download the package to properly gather the Libraries list. The dependencies are ignored to avoid package versions issues.");
+                _logger.Debug("Need to download the package to properly gather the Libraries list. The dependencies are ignored to avoid package versions issues.");
 
                 foreach (var nugetPackage in slnx.DebugSlnxItems.Keys)
                 {
@@ -334,7 +333,6 @@ namespace SlnLauncher
                 f.WriteLine("    </PropertyGroup>");
                 f.WriteLine("</Project>");
             }
-            _logger.Info("Done!");
         }
 
         static void Dump(SlnxHandler slnx)
@@ -393,7 +391,6 @@ namespace SlnLauncher
                     f.WriteLine("{0} = {1}", key, value);
                 }
             }
-            _logger.Info("Done!");
         }
 
         static void CreatePythonnModule(SlnxHandler slnx, string outDir)
@@ -412,7 +409,6 @@ namespace SlnLauncher
                     f.WriteLine("os.environ['{0}'] = r'{1}'", key, value);
                 }
             }
-            _logger.Info("Done!");
         }
 
         static void CreateBatchModule(SlnxHandler slnx, string outDir)
@@ -429,7 +425,6 @@ namespace SlnLauncher
                     f.WriteLine("set {0}={1}", key, value);
                 }
             }
-            _logger.Info("Done!");
         }
 
         static void OpenSln(string sln)
@@ -569,7 +564,6 @@ Global
 EndGlobal
 ", Guid.NewGuid().ToString());
             WriteAllText(outFile, slnSb.ToString());
-            _logger.Info("Done!");
         }
 
         static XmlDocument TryGetDebugXmlDoc(CsProject proj, NugetHelper.NugetPackage package)
@@ -592,6 +586,8 @@ EndGlobal
 
         static void MakeAndCleanNugetDebugFile(SlnxHandler slnx, SlnxHandler mainSlnx = null)
         {
+            _logger.Info($"Cleaning/Creating debug files for {slnx.SlnxName}");
+
             foreach (string f in Directory.EnumerateFiles(slnx.SlnxDirectory, CsProject.ImportDebugProjectName, new EnumerationOptions() { RecurseSubdirectories = true }))
             {
                 File.Delete(f);
