@@ -617,7 +617,7 @@ EndGlobal
                         {
                             debugInfo[p] = debugDoc;
                         }
-                        AppendDebugElement(debugInfo[p], item);
+                        AppendDebugElement(debugInfo[p], p, item);
                     }
                 }
                 if (mainSlnx == null)
@@ -633,7 +633,7 @@ EndGlobal
             }
         }
 
-        static void AppendDebugElement(XmlDocument nugetDebugXml, KeyValuePair<NugetHelper.NugetPackage, SlnxHandler> item)
+        static void AppendDebugElement(XmlDocument nugetDebugXml, CsProject referencingProject, KeyValuePair<NugetHelper.NugetPackage, SlnxHandler> item)
         {
             var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(propertyGroup);
@@ -642,9 +642,12 @@ EndGlobal
             var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(itemGroup);
             itemGroup.InnerXml = "";
-            foreach (var p in item.Value.Projects.Where(x => !x.IsTestProject))
+            foreach (var referencedProject in item.Value.Projects.Where(x => !x.IsTestProject))
             {
-                itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, p.FullPath);
+                if (referencingProject.AssemblyReferences.Any(r => referencedProject.Name == Path.GetFileNameWithoutExtension(r.HintPath)))
+                {
+                    itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, referencedProject.FullPath);
+                }
             }
         }
 
