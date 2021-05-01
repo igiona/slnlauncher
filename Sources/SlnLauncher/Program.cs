@@ -57,7 +57,8 @@ namespace SlnLauncher
             var autoUpdateNugetDependencies = true;
             var nugetForceMinVersion = true;
             var loadUserFile = true;
-            string nuspecDir = null;            
+            bool offlineMode = false;
+            string nuspecDir = null;
             var dump = false;
             string slnxFile = null;
             _pythonEnvVarsPath = null;
@@ -76,6 +77,7 @@ namespace SlnLauncher
               .Add(string.Format("lv=|logVerbosity=", "Set the log level of verbosity. Valid values {0}. [Default: {1}]", string.Join(",", Enum.GetNames<LogLevel>()), _logLevel), v => _logLevel = ParseLogLevel(v))
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
               .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNugetDependencies = v != null)
+              .Add("offline", "If set (-offline/-offline+), The current SlnX packagesPath attribute will be used as source for all packages. [Default: false]", v => offlineMode = v != null)
               .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fullfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
             
             try
@@ -114,7 +116,7 @@ namespace SlnLauncher
                 var slnx = new SlnxHandler(slnxFile, slnxUser, null);
                 var originalPackageList = new List<NugetHelper.NugetPackage>(slnx.Packages);
 
-                DownloadPackages(slnx, quiteExecution, autoUpdateNugetDependencies);                
+                DownloadPackages(slnx, quiteExecution, autoUpdateNugetDependencies, offlineMode);                
                 
                 if (_createMsBuild)
                 {
@@ -278,9 +280,21 @@ namespace SlnLauncher
             return ret;
         }
 
-        static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies)
+        static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies, bool offlineMode)
         {
             _logger.Info("Downloading required NuGet packages...");
+            Uri nugetCacheUri = new Uri(slnx.PackagesPath);
+            
+            if (offlineMode)
+            {
+                _logger.Info($"Offline mode, using {slnx.PackagesPath} as package source.");
+
+                foreach (var p in slnx.Packages)
+                {
+                    p.Source = nugetCacheUri;
+                }
+            }
+
             slnx.Packages = PerformPackageDownloadProcess(slnx.Packages, quite, autoUpdateDependencies, "Loading packages...");
 
             if (slnx.DebugSlnxItems.Count != 0)
@@ -290,6 +304,10 @@ namespace SlnLauncher
 
                 foreach (var nugetPackage in slnx.DebugSlnxItems.Keys)
                 {
+                    if (offlineMode)
+                    {
+                        nugetPackage.Source = nugetCacheUri;
+                    }
                     var installed = PerformPackageDownloadProcess(new[] { nugetPackage }, quite, false, $"Loading debug package {nugetPackage} without dependencies...");
                     nugetPackage.AddLibraries(installed.First().Libraries);
                 }
