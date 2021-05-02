@@ -560,6 +560,7 @@ namespace Slnx
                                                      SafeExpandEnvironmentVariables(e.version), 
                                                      SafeExpandEnvironmentVariables(e.targetFramework), 
                                                      SafeExpandEnvironmentVariables(e.source),
+                                                     SafeExpandEnvironmentVariables(e.dependencySources)?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                                                      SafeExpandEnvironmentVariables(e.var), 
                                                      IsDotNet(e), PackagesPath,
                                                      !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion);
@@ -583,7 +584,7 @@ namespace Slnx
                 var id = SafeExpandAndTrimEnvironmentVariables(nuget.id, SlnxName);
                 var excludePackages = nuget.excludePackagesSpecified && nuget.excludePackages;
                 var excludeProjects = nuget.excludeProjectsSpecified && nuget.excludeProjects;
-                var versionString = SafeExpandAndTrimEnvironmentVariables(nuget.id, null);
+                var versionString = SafeExpandAndTrimEnvironmentVariables(nuget.version, null);
                 var targetConfig = SafeExpandAndTrimEnvironmentVariables(nuget.targetConfig, "Release");
                 var readmeFile = SafeExpandAndTrimEnvironmentVariables(nuget.readme, null);
                 string additionalInformation = null;

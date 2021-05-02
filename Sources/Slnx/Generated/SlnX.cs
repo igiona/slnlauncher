@@ -382,6 +382,8 @@ namespace Slnx.Generated {
         
         private string sourceField;
         
+        private string dependencySourcesField;
+        
         private string varField;
         
         private bool dependenciesForceMinVersionField;
@@ -435,6 +437,17 @@ namespace Slnx.Generated {
             }
             set {
                 this.sourceField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string dependencySources {
+            get {
+                return this.dependencySourcesField;
+            }
+            set {
+                this.dependencySourcesField = value;
             }
         }
         
