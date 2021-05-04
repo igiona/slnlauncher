@@ -14,9 +14,9 @@
             <description>The SlnLauncher is a tool that allows to perform actions based on the information contained in .slnx files.</description>
             <owners>Giona Imperatori</owners>-->
             <authors>Giona Imperatori</authors>
-            <projectUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</projectUrl>
-            <docsUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</docsUrl>
-            <iconUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/blob/master/Icon/SlnLauncher.png</iconUrl>
+            <projectUrl>https://github.com/igiona/slnlauncher</projectUrl>
+            <docsUrl>https://github.com/igiona/slnlauncher</docsUrl>
+            <iconUrl>https://github.com/igiona/slnlauncher/raw/master/Icon/SlnLauncher.png</iconUrl>
             <tags>.NET c# NuGet visual studio git multi repo </tags>
             <requireLicenseAcceptance>true</requireLicenseAcceptance>
             <license type="expression">MIT</license>

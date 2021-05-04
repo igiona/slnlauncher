@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>slnlauncher</id>
-    <version>2.3.2</version>
+    <version>2.3.3</version>
     <title>SlnLauncher (Portable)</title>
     <summary>The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).</summary>
     <description>The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).
@@ -10,11 +10,11 @@ As input, it takes a SlnX file that contains all the required information.
 The SlnLauncher takes care of finding the C# projects, downloading the NuGet packages of your projects while ensuring package versions consistency and automatically formatting .csproj for a seamless integration.</description>
     <owners>Giona Imperatori</owners>
     <authors>Giona Imperatori</authors>
-    <packageSourceUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</packageSourceUrl>
-    <releaseNotes>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</releaseNotes>
-    <projectUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</projectUrl>
-    <docsUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher</docsUrl>
-    <iconUrl>https://git.immo-electronics.ch/giona.imperatori/slnlauncher/-/blob/master/Icon/SlnLauncher.png</iconUrl>
+    <packageSourceUrl>https://github.com/igiona/slnlauncher</packageSourceUrl>
+    <releaseNotes>https://github.com/igiona/slnlauncher</releaseNotes>
+    <projectUrl>https://github.com/igiona/slnlauncher</projectUrl>
+    <docsUrl>https://github.com/igiona/slnlauncher</docsUrl>
+    <iconUrl>https://github.com/igiona/slnlauncher/raw/master/Icon/SlnLauncher.png</iconUrl>
     <tags>.NET c# NuGet visual studio git multi repo </tags>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <licenseUrl>https://licenses.nuget.org/MIT</licenseUrl>
