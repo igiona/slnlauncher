@@ -13,6 +13,8 @@ namespace Slnx
 {
     public class SlnxHandler
     {
+        public enum VersionCheck { FullMatch, AllowNewer, AllowAll }
+
         public const string SlnxExtension = ".slnx";
         public const string SlnxUserExtension = ".user";
         public const string SlnExtension = ".sln";
@@ -35,11 +37,19 @@ namespace Slnx
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
         Dictionary<NugetPackage, SlnxHandler> _debugSlnxItems = new Dictionary<NugetPackage, SlnxHandler>();
 
-        public SlnxHandler(string fName, string debugPackageId = null) : this(fName, null, debugPackageId)
-        {
-        }
-
-        public SlnxHandler(string fName, SlnXType userSettings, string debugPackageId)
+        /// <summary>
+        /// </summary>
+        /// <param name="fName">SlnX file path</param>
+        /// <param name="userSettings">User settings, can be null</param>
+        /// <param name="debugPackageId">
+        /// If not null, it represent the nuget package id the provided fname SlnX file used as debug-SlnX.
+        /// It is has to be set to null if fname is main SlnX file.
+        /// </param>
+        /// <param name="versionCheck"
+        /// If set, the imported debug packages are accepted also if their version doesn't match the main SlnX package version. 
+        /// NOTE: This parameter is evalueted only for the main SlnX (e.g. debugPackageId == null)
+        /// </param>
+        public SlnxHandler(string fName, SlnXType userSettings, string debugPackageId, VersionCheck versionCheck = VersionCheck.FullMatch)
         {
             if (!string.IsNullOrEmpty(debugPackageId))
             {
@@ -90,7 +100,7 @@ namespace Slnx
                     var debugSourcePakckage = Packages.Where(x => x.Id == item.Key).FirstOrDefault();
                     Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
-                    var slnxItem = new SlnxHandler(item.Value, item.Key);
+                    var slnxItem = new SlnxHandler(item.Value, null, item.Key);
                     _debugSlnxItems[debugSourcePakckage] = slnxItem;
                     _packages.Remove(debugSourcePakckage);
 
@@ -102,17 +112,41 @@ namespace Slnx
                             continue;
                         }
 
-                        var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
-                        if (known == null)
+                        var knownMainPackage = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
+                        if (knownMainPackage == null)
                         {
                             _logger.Warn($"The package {candidate} required by the SlnX {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
                         }
                         else
                         {
-                            Assert(known.MinVersion == candidate.MinVersion &&
-                                   known.TargetFramework == candidate.TargetFramework &&
-                                   known.PackageType == candidate.PackageType,
-                                   $"The package {candidate} required by the SlnX {item.Key} selected for debug, does not match the already known one {known}");
+                            var versionfullMatch = knownMainPackage.MinVersion == candidate.MinVersion;
+                            var validVersion = false;
+                            switch(versionCheck)
+                            {
+                                case VersionCheck.FullMatch:
+                                    validVersion = versionfullMatch;
+                                    break;
+
+                                case VersionCheck.AllowNewer:
+                                    validVersion = knownMainPackage.VersionRange.Satisfies(candidate.VersionRange.MinVersion);
+                                    if (!versionfullMatch && validVersion)
+                                    {
+                                        _logger.Warn($"The package {knownMainPackage} defined in the main SlnX is older than {candidate} specified in the SlnX {item.Key}. It has been requested to ignore this potential error.");
+                                    }
+                                    break;
+
+                                case VersionCheck.AllowAll:
+                                    validVersion = true;
+                                    if (!versionfullMatch && validVersion)
+                                    {
+                                        _logger.Warn($"The package {knownMainPackage} defined in the main SlnX doesn't match {candidate} specified in the SlnX {item.Key}. It has been requested to ignore this potential error.");
+                                    }
+                                    break;
+                            }
+                            Assert(validVersion &&
+                                   knownMainPackage.TargetFramework == candidate.TargetFramework &&
+                                   knownMainPackage.PackageType == candidate.PackageType,
+                                   $"The package {candidate} required by the SlnX {item.Key} selected for debug, does not match the already known one {knownMainPackage}");
                         }
                     }
                 }
@@ -387,7 +421,7 @@ namespace Slnx
                         }
 
                         var slnx = SlnxHandler.ReadSlnx(slnxImportFile);
-                        var imported = new SlnxHandler(slnxImportFile);
+                        var imported = new SlnxHandler(slnxImportFile, null, null);
                         _imports.Add(imported);
 
                         ExtendDictionary(env, slnx.env, false);

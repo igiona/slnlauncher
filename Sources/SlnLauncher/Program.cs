@@ -115,7 +115,18 @@ namespace SlnLauncher
                     slnxUser = SlnxHandler.ReadSlnx(slnxUserFile);
                 }
 
-                var slnx = new SlnxHandler(slnxFile, slnxUser, null);
+                var ignoreDependencyCheck = !autoUpdateNugetDependencies;
+                SlnxHandler.VersionCheck versionCheck = SlnxHandler.VersionCheck.FullMatch;
+                if (ignoreDependencyCheck)
+                {
+                    versionCheck = SlnxHandler.VersionCheck.AllowAll;
+                }
+                else if (!nugetForceMinVersion)
+                {
+                    versionCheck = SlnxHandler.VersionCheck.AllowNewer;
+                }
+
+                var slnx = new SlnxHandler(slnxFile, slnxUser, null, versionCheck);
                 var originalPackageList = new List<NugetHelper.NugetPackage>(slnx.Packages);
                 bool errorOccured = false;
                 try
@@ -154,7 +165,6 @@ namespace SlnLauncher
                     }
                 }
 
-                var ignoreDependencyCheck = !autoUpdateNugetDependencies;
                 _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}, and ignore dependency is {ignoreDependencyCheck}");
                 NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
 
