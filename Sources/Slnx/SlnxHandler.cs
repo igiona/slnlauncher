@@ -88,7 +88,7 @@ namespace Slnx
                 foreach (var item in _packagesToDebug)
                 {
                     var debugSourcePakckage = Packages.Where(x => x.Id == item.Key).FirstOrDefault();
-                    Assert(debugSourcePakckage != null, $"The request package for debug {item.Key} is not present a nuget package in the main SlnX file.");
+                    Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
                     var slnxItem = new SlnxHandler(item.Value, item.Key);
                     _debugSlnxItems[debugSourcePakckage] = slnxItem;
@@ -105,14 +105,14 @@ namespace Slnx
                         var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
                         if (known == null)
                         {
-                            _logger.Warn($"The package {candidate.Id} required by the package {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
+                            _logger.Warn($"The package {candidate} required by the SlnX {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
                         }
                         else
                         {
                             Assert(known.MinVersion == candidate.MinVersion &&
                                    known.TargetFramework == candidate.TargetFramework &&
                                    known.PackageType == candidate.PackageType,
-                                   $"The package {candidate} defined in the debug SlnX does not match the already known one {known}");
+                                   $"The package {candidate} required by the SlnX {item.Key} selected for debug, does not match the already known one {known}");
                         }
                     }
                 }
