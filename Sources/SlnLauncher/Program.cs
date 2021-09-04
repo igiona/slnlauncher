@@ -37,6 +37,7 @@ namespace SlnLauncher
         static bool _logEnabled = false;
         static string _pythonEnvVarsPath = null;
         static string _batchEnvVarsPath = null;
+        static string _psEnvVarsPath = null;
         static Logger _logger = null;
         static LogLevel _logLevel = LogLevel.Info;
 
@@ -71,7 +72,8 @@ namespace SlnLauncher
               .Add("u|user", "If set (-u/-u+) it loads an eventually present .user file. [Default: set]", v => loadUserFile = v != null)
               .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location . [Default: not set]", v => dump = v != null)
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
-              .Add("b=|batchModule=", "Path for the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
+              .Add("b=|batchModule=", "Path to the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
+              .Add("ps=|powershellModule=", "Path to the power-shell module. If set the specified power-shell module containing all defined environment variables is created. [Default: not set]", v => _psEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
               .Add(string.Format("lv=|logVerbosity=", "Set the log level of verbosity. Valid values {0}. [Default: {1}]", string.Join(",", Enum.GetNames<LogLevel>()), _logLevel), v => _logLevel = ParseLogLevel(v))
@@ -132,6 +134,10 @@ namespace SlnLauncher
                     if (!string.IsNullOrEmpty(_batchEnvVarsPath))
                     {
                         CreateBatchModule(slnx, Path.Combine(slnx.SlnxDirectory, _batchEnvVarsPath));
+                    }
+                    if (!string.IsNullOrEmpty(_psEnvVarsPath))
+                    {
+                        CreatePowerShellModule(slnx, Path.Combine(slnx.SlnxDirectory, _psEnvVarsPath));
                     }
                 }
                 catch
@@ -480,6 +486,22 @@ namespace SlnLauncher
                 {
                     var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
                     f.WriteLine("set {0}={1}", key, value);
+                }
+            }
+        }
+
+        static void CreatePowerShellModule(SlnxHandler slnx, string outDir)
+        {
+            _logger.Info("Creating PS module in {0}", outDir);
+
+            using (var f = new StreamWriter(Path.Combine(outDir, "SetEnvVars.ps1")))
+            {
+                var keys = GetAllKeys(slnx);
+
+                foreach (var key in keys)
+                {
+                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                    f.WriteLine($"[Environment]::SetEnvironmentVariable(\"{key}\", \"{value}\")");
                 }
             }
         }
