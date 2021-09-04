@@ -212,14 +212,16 @@ namespace SlnLauncher
                     if (!quiteExecution)
                     {
                         var baseMsg = $"Warning(s) detected. This could cause runtime issues.\nIt's highly suggested to";
+                        string message = "";
                         if (_logEnabled)
                         {
-                            MessageBox.Show($"{baseMsg} review them in the log file: {_logger.LogPath}", "Warning");
+                            message = $"{baseMsg} review them in the log file: {_logger.LogPath}";
                         }
                         else
                         {
-                            MessageBox.Show($"{baseMsg} re-run the application with log turned on.", "Warning");
+                            message = $"{baseMsg} re-run the application with log turned on.";
                         }
+                        new InfoBox("Warning", message, System.Drawing.SystemIcons.Warning.ToBitmap()).ShowDialog();
                     }
                 }
                 _logger.Info($"Done!");
@@ -242,7 +244,18 @@ namespace SlnLauncher
                 _logger.Error(stackTrace);
 
                 if (!quiteExecution)
-                    MessageBox.Show(string.Format("Run the command with the option --log for more information\n\n{0}", exText), "Error");
+                {
+                    string message;
+                    if (_logEnabled)
+                    {
+                        message = $"Inspect the log for more information.\nLog file: {_logger.LogPath}";
+                    }
+                    else
+                    {
+                        message = $"Re-run the application with log turned on (--log) for more information\n\n{exText}";
+                    }
+                    new InfoBox("Error", message, System.Drawing.SystemIcons.Error.ToBitmap()).ShowDialog();
+                }
                 else
                     throw;
             }
@@ -259,6 +272,8 @@ namespace SlnLauncher
                 () =>
                 {
                     progress = new ProgressDialog(formTitle, packages.Count());
+                    progress.TopLevel = true;
+                    progress.TopMost = true;
                     progress.ShowDialog();
                 }
                 );
