@@ -307,6 +307,11 @@ namespace SlnLauncher
                 foreach (var p in slnx.Packages)
                 {
                     p.Source = nugetCacheUri;
+                    if (p.DependencySources?.Count > 0)
+                    {
+                        p.DependencySources.Clear();
+                        p.DependencySources.Add(nugetCacheUri);
+                    }
                 }
             }
 
