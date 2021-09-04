@@ -1,0 +1,31 @@
+name: .NET
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Setup SlnLauncher
+      run: choco install slnlauncher
+    - name: Create solution
+      run: .\Sources\SlnLauncher\bin\Debug\net5.0-windows\SlnLauncher.exe -q -u- -o- -ps . SlnLauncher.slnx
+    - name: Restore dependencies
+      run: |
+        .\SetEnvVars.ps1
+        dotnet restore
+    - name: Build
+      run: |
+        .\SetEnvVars.ps1
+        dotnet build --no-restore
