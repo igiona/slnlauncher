@@ -14,18 +14,19 @@ namespace Slnx
 {
     public class CsProject : SlnItem
     {
-        private static readonly string[] PlatformTypeNames = { "x86", "Any CPU", "Mixed Platforms" };
+        private static readonly string[] PlatformTypeNames = { "x86", "x64", "Any CPU", "Mixed Platforms" };
         public enum PlatformType
         {
             x86,
-            AnyCpu,
+            x64,
+            AnyCPU,
             Mixed
         }
 
         public const string FileExtension = "csproj";
         public const string DotExtension = "." + FileExtension;
         const string GuidPattern = @"<ProjectGuid>{(?<guid>.*)}<\/ProjectGuid>";
-        const string PlatformPattern = @"<Platform .*>(?<platform>.*)<\/Platform>";
+        const string PlatformPattern = @"<Platform.*>(?<platform>.*)<\/Platform.*>";
         const string ProjectReferencePattern = "<ProjectReference Include=\"(?<reference>.*)\">";
 
         const string KeyAsMsBuildProjectVariableTemplate = @"$({0})";       
@@ -84,8 +85,9 @@ namespace Slnx
             {
                 LegacyProjectStyle = false;
                 _projectGuid = Guid.NewGuid().ToString();
-                Platform = PlatformType.AnyCpu; //?
-
+                var platform = PlatformType.AnyCPU;
+                TryGetPlatform(_projectOriginalContent, ref platform);
+                Platform = platform;
                 Framework = TryGetFramework("TargetFramework");
             }
             else
@@ -106,20 +108,12 @@ namespace Slnx
                     throw new Exception(string.Format("Invalid GUID in project {0}", FullPath));
                 }
 
-                m = _platformRegex.Match(projectNewContent);
-                Platform = PlatformType.AnyCpu;
-                if (m.Success)
-                {
-                    var p = m.Groups["platform"].Value.ToLower();
-                    if (p.Contains("any"))
-                        Platform = PlatformType.AnyCpu;
-                    else if (p.Contains("mix"))
-                        Platform = PlatformType.Mixed;
-                }
-                else
+                var platform = PlatformType.AnyCPU;
+                if (!TryGetPlatform(projectNewContent, ref platform))
                 {
                     throw new Exception(string.Format("The project '{0}' does not contain a valid Platform tag!", FullPath));
                 }
+                Platform = platform;
 
                 m = _projectRefRegex.Match(projectNewContent);
                 while (m.Success)
@@ -382,6 +376,20 @@ namespace Slnx
                 }
             }
             return ret;
+        }
+
+        private bool TryGetPlatform(string projectNewContent, ref PlatformType platform)
+        {
+            var m = _platformRegex.Match(projectNewContent);
+            if (m.Success)
+            {
+                var p = m.Groups["platform"].Value.Trim();
+                if (Enum.TryParse<PlatformType>(p, out platform))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private string TryGetFramework(string tag)
