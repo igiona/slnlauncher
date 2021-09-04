@@ -248,7 +248,7 @@ namespace SlnLauncher
                     string message;
                     if (_logEnabled)
                     {
-                        message = $"Inspect the log for more information.\nLog file: {_logger.LogPath}";
+                        message = $"Inspect the log for more information.\nLog file: {_logger.LogPath}\n\n{exText}";
                     }
                     else
                     {
