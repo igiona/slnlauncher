@@ -115,26 +115,37 @@ namespace SlnLauncher
 
                 var slnx = new SlnxHandler(slnxFile, slnxUser, null);
                 var originalPackageList = new List<NugetHelper.NugetPackage>(slnx.Packages);
+                bool errorOccured = false;
+                try
+                {
+                    DownloadPackages(slnx, quiteExecution, autoUpdateNugetDependencies, offlineMode);
 
-                DownloadPackages(slnx, quiteExecution, autoUpdateNugetDependencies, offlineMode);                
-                
-                if (_createMsBuild)
+                    if (_createMsBuild)
+                    {
+                        CreateMsBuildPropertiesTarget(slnx);
+                    }
+
+                    if (!string.IsNullOrEmpty(_pythonEnvVarsPath))
+                    {
+                        CreatePythonnModule(slnx, Path.Combine(slnx.SlnxDirectory, _pythonEnvVarsPath));
+                    }
+                    if (!string.IsNullOrEmpty(_batchEnvVarsPath))
+                    {
+                        CreateBatchModule(slnx, Path.Combine(slnx.SlnxDirectory, _batchEnvVarsPath));
+                    }
+                }
+                catch
                 {
-                    CreateMsBuildPropertiesTarget(slnx);
+                    errorOccured = true;
+					throw;
                 }
 
-                if (!string.IsNullOrEmpty(_pythonEnvVarsPath))
+                finally
                 {
-                    CreatePythonnModule(slnx, Path.Combine(slnx.SlnxDirectory, _pythonEnvVarsPath));
-                }
-                if (!string.IsNullOrEmpty(_batchEnvVarsPath))
-                {
-                    CreateBatchModule(slnx, Path.Combine(slnx.SlnxDirectory, _batchEnvVarsPath));
-                }
-                
-                if (dump)
-                {
-                    Dump(slnx);
+                    if (dump)
+                    {
+                        Dump(slnx, errorOccured);
+                    }
                 }
 
                 var ignoreDependencyCheck = !autoUpdateNugetDependencies;
@@ -373,28 +384,36 @@ namespace SlnLauncher
             }
         }
 
-        static void Dump(SlnxHandler slnx)
+        static void Dump(SlnxHandler slnx, bool errorOccured)
         {
             string outDir = slnx.SlnxDirectory;
             _logger.Info("Dumping SlnX info in {0}", outDir);
+            
 
             using (var f = new StreamWriter(Path.Combine(outDir, "dump.txt")))
             {
+                if (errorOccured)
+                {
+                    var errorDisclaimer = "Dumping is performed although there was an exception during the loading operations. The dump might be partial, invalid or inaccurate.";
+                    _logger.Info(errorDisclaimer);
+                    f.WriteLine($"/!\\ DISCLAIMER {errorDisclaimer}\n\n");
+                }
+
                 f.WriteLine("CS Projects:\n");
-                foreach (var p in slnx.Projects)
+                foreach (var p in slnx.Projects ?? Enumerable.Empty<CsProject>())
                 {
                     f.WriteLine("{0,-40} => {1}", p.Name, p.FullPath);
                 }
 
                 f.WriteLine("\nCS Projects imported for debugging:\n");
-                foreach (var p in slnx.ProjectsImportedFromDebugSlnx)
+                foreach (var p in slnx.ProjectsImportedFromDebugSlnx ?? Enumerable.Empty<CsProject>())
                 {
                     f.WriteLine("{0,-40} => {1}", p.Name, p.FullPath);
                 }
 
                 f.WriteLine("------------------------------------\n");
                 f.WriteLine("NuGet packages:\n");
-                foreach (var p in slnx.Packages)
+                foreach (var p in slnx.Packages ?? Enumerable.Empty<NugetHelper.NugetPackage>())
                 {
                     f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
@@ -404,7 +423,7 @@ namespace SlnLauncher
                 }
 
                 f.WriteLine("\nNuGet packages required by the projects imported for debugging:\n");
-                foreach (var p in slnx.PackagesImportedFromDebugSlnx)
+                foreach (var p in slnx.PackagesImportedFromDebugSlnx ?? Enumerable.Empty<NugetHelper.NugetPackage>())
                 {
                     f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
