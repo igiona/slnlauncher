@@ -4,8 +4,6 @@ env:
   SlnxName: SlnLauncher
   DotNetVersion: 5.0.x
 
-    env:
-      Solution_Name: your-solution-name        
 on:
   push:
     branches: [ master ]
