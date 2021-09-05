@@ -3,7 +3,6 @@ name: .NET
 env:
   SlnxName: SlnLauncher
   DotNetVersion: 5.0.x
-
 on:
   push:
     branches: [ master ]
@@ -20,11 +19,11 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: $env:DotNetVersion
+        dotnet-version: ${{ env.DotNetVersion }}
     - name: Setup SlnLauncher installation
-      run: choco install slnlauncher
+      run: choco install slnlauncher -s artifact
     - name: Create solution
-      run: slnlauncher -q -u- -o- -ps . $env:SlnxName.slnx
+      run: slnlauncher -q -u- -o- -ps . "$($env:SlnxName).slnx"
     - name: Restore dependencies
       run: |
         .\SetEnvVars.ps1
@@ -36,7 +35,7 @@ jobs:
     - name: Create choco package
       run: |
         mkdir artifacts
-        choco pack .\package\$env:SlnxName.nuspec --out artifacts
+        choco pack ".\package\$($env:SlnxName).nuspec" --out artifacts
     - name: Archive choco package
       uses: actions/upload-artifact@v2
       with:
