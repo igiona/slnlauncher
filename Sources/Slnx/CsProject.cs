@@ -12,9 +12,17 @@ using NugetHelper;
 
 namespace Slnx
 {
-    public class CsProject : SlnItem
+    public static class PlatformEnumExtension
     {
         private static readonly string[] PlatformTypeNames = { "x86", "x64", "Any CPU", "Mixed Platforms" };
+        public static string ToPrettyString(this CsProject.PlatformType e)
+        {
+            return PlatformTypeNames[(int)e];
+        }
+    }
+
+    public class CsProject : SlnItem
+    {
         public enum PlatformType
         {
             x86,
@@ -26,7 +34,8 @@ namespace Slnx
         public const string FileExtension = "csproj";
         public const string DotExtension = "." + FileExtension;
         const string GuidPattern = @"<ProjectGuid>{(?<guid>.*)}<\/ProjectGuid>";
-        const string PlatformPattern = @"<Platform.*>(?<platform>.*)<\/Platform.*>";
+        const string PlatformTargetPattern = @"<PlatformTarget>(?<platform>.*)<\/PlatformTarget>";
+        const string PlatformsPattern = @"<Platforms>(?<platform>.*)<\/Platforms>";
         const string ProjectReferencePattern = "<ProjectReference Include=\"(?<reference>.*)\">";
 
         const string KeyAsMsBuildProjectVariableTemplate = @"$({0})";       
@@ -42,7 +51,8 @@ namespace Slnx
         static readonly string ImportDebugCondition = $"Exists('{ImportDebugProjectName}')";
 
         static Regex _guidRegex = new Regex(GuidPattern);
-        static Regex _platformRegex = new Regex(PlatformPattern);
+        static Regex _platformTargetRegex = new Regex(PlatformTargetPattern);
+        static Regex _platformsRegex = new Regex(PlatformsPattern);
         static Regex _projectRefRegex = new Regex(ProjectReferencePattern);
 
         XmlDocument _xml;
@@ -85,9 +95,21 @@ namespace Slnx
             {
                 LegacyProjectStyle = false;
                 _projectGuid = Guid.NewGuid().ToString();
-                var platform = PlatformType.AnyCPU;
-                TryGetPlatform(_projectOriginalContent, ref platform);
-                Platform = platform;
+
+                PlatformType platformTargetTmp;
+                PlatformTarget = PlatformType.AnyCPU;
+                if (TryGetPlatformTarget(_projectOriginalContent, out platformTargetTmp))
+                {
+                    PlatformTarget = platformTargetTmp;
+                }
+
+                string platformsTmp;
+                Platforms = PlatformType.AnyCPU.ToPrettyString();
+                if (TryGetPlatforms(_projectOriginalContent, out platformsTmp))
+                {
+                    Platforms = platformsTmp;
+                }
+
                 Framework = TryGetFramework("TargetFramework");
             }
             else
@@ -109,11 +131,11 @@ namespace Slnx
                 }
 
                 var platform = PlatformType.AnyCPU;
-                if (!TryGetPlatform(projectNewContent, ref platform))
+                if (!TryGetPlatformTarget(projectNewContent, out platform))
                 {
                     throw new Exception(string.Format("The project '{0}' does not contain a valid Platform tag!", FullPath));
                 }
-                Platform = platform;
+                PlatformTarget = platform;
 
                 m = _projectRefRegex.Match(projectNewContent);
                 while (m.Success)
@@ -180,15 +202,16 @@ namespace Slnx
             private set;
         }
 
-        public PlatformType Platform
+        public PlatformType PlatformTarget
         {
             get;
             private set;
         }
 
-        public string PlatformString
+        public string Platforms
         {
-            get { return PlatformTypeNames[(int)Platform]; }
+            get;
+            private set;
         }
 
         public string EnvironmentVariableKey
@@ -239,7 +262,7 @@ namespace Slnx
 		{{{0}}}.Release|Mixed Platforms.ActiveCfg = Release|{1}
 		{{{0}}}.Release|Mixed Platforms.Build.0 = Release|{1}
 		{{{0}}}.Release|x86.ActiveCfg = Release|{1}
-		{{{0}}}.Release|x86.Build.0 = Release|{1}", ProjectGuid, PlatformString);
+		{{{0}}}.Release|x86.Build.0 = Release|{1}", ProjectGuid, Platforms);
         }
 
         ///TODO: return string list => .exe .dll based on outputtype element in project
@@ -378,9 +401,11 @@ namespace Slnx
             return ret;
         }
 
-        private bool TryGetPlatform(string projectNewContent, ref PlatformType platform)
+        private bool TryGetPlatformTarget(string projectNewContent, out PlatformType platform)
         {
-            var m = _platformRegex.Match(projectNewContent);
+            platform = PlatformType.AnyCPU;
+
+            var m = _platformTargetRegex.Match(projectNewContent);
             if (m.Success)
             {
                 var p = m.Groups["platform"].Value.Trim();
@@ -388,6 +413,18 @@ namespace Slnx
                 {
                     return true;
                 }
+            }
+            return false;
+        }
+
+        private bool TryGetPlatforms(string projectNewContent, out string platform)
+        {
+            platform = null;
+            var m = _platformsRegex.Match(projectNewContent);
+            if (m.Success)
+            {
+                platform = m.Groups["platform"].Value.Trim();
+                return true;
             }
             return false;
         }
