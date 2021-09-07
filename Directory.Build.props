@@ -1,6 +1,6 @@
 <Project>
  <PropertyGroup>
-   <AssemblyVersion>2.4.1</AssemblyVersion>
+   <AssemblyVersion>2.4.2</AssemblyVersion>
     <Version>$(AssemblyVersion)</Version> <!-- If repacked, it might be required to set this as the NuGet SDK. -->
  </PropertyGroup>
 
