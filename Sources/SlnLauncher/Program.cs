@@ -353,7 +353,8 @@ namespace SlnLauncher
 
         static List<string> GetAllKeys(SlnxHandler slnx)
         {
-            var keys = slnx.Projects.Select((x) => x.EnvironmentVariableKey).ToList();
+            var keys = new List<string>();
+            keys.AddRange(slnx.Projects.SelectMany(x => x.EnvironmentVariableKeys));
             keys.AddRange(slnx.EnvironementVariables.Keys);
             keys.AddRange(slnx.Packages.SelectMany(x => x.EnvironmentVariableKeys));
             keys.AddRange(slnx.Packages.Where(x => x.EnvironmentVariableAdditionalKey != null).Select(x => x.EnvironmentVariableAdditionalKey));
