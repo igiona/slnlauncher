@@ -243,6 +243,7 @@ The following table shows the variable keys and their respective value that are 
 | \<*package-id*>\_framework | The *targetFramework* of the specified NuGet package.                             |
 | \<*package-id*>\_debug     | 1: if the NuGet package is marked to be compiled via source code.<br>0: otherwise |
 | \<*project-id*>            | Path to the .csproj file of the C# project.                                       |
+| \<*project-id*>\_framework | The *targetFramework* of the specified C# project.                                |
 
 - - -
 

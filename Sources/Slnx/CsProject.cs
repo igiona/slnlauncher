@@ -110,7 +110,7 @@ namespace Slnx
                     Platforms = platformsTmp;
                 }
 
-                Framework = TryGetFramework("TargetFramework");
+                Framework = GetFramework("TargetFramework");
             }
             else
             {
@@ -118,7 +118,7 @@ namespace Slnx
                 _logger.Warn($"The current solution contains a legacy project {Name}, the Debug feature might not work as expected!");
 
                 var projectNewContent = _projectOriginalContent;
-                Framework = TryGetFramework("TargetFrameworkVersion");
+                Framework = GetFramework("TargetFrameworkVersion");
 
                 var m = _guidRegex.Match(projectNewContent);
                 if (m.Success)
@@ -156,9 +156,11 @@ namespace Slnx
                 }
             }
 
-            EnvironmentVariableKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
-            EnvironmentVariableDebugKey = NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(EnvironmentVariableKey);
-            Environment.SetEnvironmentVariable(EnvironmentVariableKey, Path.GetDirectoryName(FullPath));
+            var environmentVariableKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
+            var environmentVariableFrameworkKey = NugetHelper.NugetPackage.GetFrameworkEnvironmentVariableKey(environmentVariableKey);
+            EnvironmentVariableKeys = new List<string>() { environmentVariableKey, environmentVariableFrameworkKey };
+            Environment.SetEnvironmentVariable(environmentVariableKey, Path.GetDirectoryName(FullPath));
+            Environment.SetEnvironmentVariable(environmentVariableFrameworkKey, Framework);
         }
 
         public override string TypeGuid
@@ -214,13 +216,7 @@ namespace Slnx
             private set;
         }
 
-        public string EnvironmentVariableKey
-        {
-            get;
-            private set;
-        }
-
-        public string EnvironmentVariableDebugKey
+        public IEnumerable<string> EnvironmentVariableKeys
         {
             get;
             private set;
@@ -429,7 +425,7 @@ namespace Slnx
             return false;
         }
 
-        private string TryGetFramework(string tag)
+        private string GetFramework(string tag)
         {
             var element = _xml.GetElementsByTagName(tag);
 
