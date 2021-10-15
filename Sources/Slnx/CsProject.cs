@@ -62,12 +62,11 @@ namespace Slnx
         List<Generated.ProjectReference> _projectReferences = null;
         Logger _logger = Logger.Instance;
 
-        public CsProject(string fullpath, string container, bool isPackable)
+        public CsProject(string fullpath, string container)
         {
             _logger.Debug($"Processing project: {fullpath}");
 
             bool projectContentModified = false;
-            IsPackable = isPackable;
 
             _typeGuid = CsProjectTypeGuid.ToUpper();
 
@@ -111,6 +110,7 @@ namespace Slnx
                 }
 
                 Framework = GetFramework("TargetFramework");
+                IsPackable = GetIsPackable();
             }
             else
             {
@@ -119,6 +119,7 @@ namespace Slnx
 
                 var projectNewContent = _projectOriginalContent;
                 Framework = GetFramework("TargetFrameworkVersion");
+                IsPackable = true;
 
                 var m = _guidRegex.Match(projectNewContent);
                 if (m.Success)
@@ -423,6 +424,17 @@ namespace Slnx
                 return true;
             }
             return false;
+        }
+
+        private bool GetIsPackable(bool defaultValue = true)
+        {
+            var ret = defaultValue;
+            var elements = _xml.GetElementsByTagName("IsPackable");
+            foreach(XmlNode e in elements)
+            {
+                bool.TryParse(e.InnerText, out ret);
+            }
+            return ret;
         }
 
         private string GetFramework(string tag)
