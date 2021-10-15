@@ -610,10 +610,6 @@ namespace Slnx.Generated {
         
         private string containerField;
         
-        private bool packableField;
-        
-        private bool packableFieldSpecified;
-        
         private string valueField;
         
         /// <remarks/>
@@ -635,28 +631,6 @@ namespace Slnx.Generated {
             }
             set {
                 this.containerField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
-        public bool packable {
-            get {
-                return this.packableField;
-            }
-            set {
-                this.packableField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlIgnoreAttribute()]
-        public bool packableSpecified {
-            get {
-                return this.packableFieldSpecified;
-            }
-            set {
-                this.packableFieldSpecified = value;
             }
         }
         

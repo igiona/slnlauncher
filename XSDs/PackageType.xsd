@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">	
-	<xs:complexType name="PackageType">
-		<xs:simpleContent>
-			<xs:extension base="xs:string">
-				<xs:attribute name="id" use="required"/>
-				<xs:attribute name="version" use="required"/>
-				<xs:attribute name="targetFramework" use="optional"/>
-				<xs:attribute name="source" use="optional"/> <!-- URL of the package-feed containing the packages. -->
-				<xs:attribute name="dependencySources" use="optional"/> <!-- URL of the package-feed containing the dependencies of the package. -->
-				<xs:attribute name="var" use="optional"/> <!-- Additional (optional) environment variable name that will be used to locate the package -->
-				<xs:attribute name="dependenciesForceMinVersion" type="xs:boolean"/>
-				<xs:attribute name="IsDotNetLib" type="xs:boolean"/>
-			</xs:extension>
-		</xs:simpleContent>
-	</xs:complexType>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">    
+    <xs:complexType name="PackageType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="id" use="required"/>
+                <xs:attribute name="version" use="required"/>
+                <xs:attribute name="targetFramework" use="optional"/>
+                <xs:attribute name="source" use="optional"/> <!-- URL of the package-feed containing the packages. -->
+                <xs:attribute name="dependencySources" use="optional"/> <!-- URL of the package-feed containing the dependencies of the package. -->
+                <xs:attribute name="var" use="optional"/> <!-- Additional (optional) environment variable name that will be used to locate the package -->
+                <xs:attribute name="dependenciesForceMinVersion" type="xs:boolean"/>
+                <xs:attribute name="IsDotNetLib" type="xs:boolean"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 </xs:schema>

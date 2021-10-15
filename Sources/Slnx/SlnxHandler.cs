@@ -339,7 +339,7 @@ namespace Slnx
                     container = string.Join("/", enforcedContainer, container);
                 }
 
-                var p = new CsProject(knownProject[0], container, !requestedProject.packableSpecified || requestedProject.packable);
+                var p = new CsProject(knownProject[0], container);
                 _projects.Add(p);
             }
         }

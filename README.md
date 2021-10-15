@@ -419,7 +419,15 @@ Defintion of a C# project to be added to the solution.
 | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | name      | -       | Name of the environment variable to be set.<br>Wild cards (\*) can be used to match multiple projects.                                                                                                                                                                         |
 | container | *none*  | This value can be used to define a subdirectory in the VS Solution file, in which the project will be placed.<br>The container can have multiple sub-directories (ex: Libs/Bar/Foo)<br>If not set, all Test projects are automatically placed under a container called "Test". |
-| packable  | true    | If set to false, this project is not being conisdered in the generation of the nuspec file.<br>Useful to avoid to include test projects.                                                                                                                                       |
+
+- - -
+
+**NOTE:**
+The tool evaluates the \<IsPackable\> element within the CsProj file (Microsoft.NET.Sdk style projects only!).<br>
+If set to false, this project is not being considered in the generation of the nuspec file.<br>
+Useful to avoid to include test assemblies in the package.
+
+- - -
 <br>
 
 ### debug
