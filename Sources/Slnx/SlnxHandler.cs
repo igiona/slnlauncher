@@ -615,9 +615,22 @@ namespace Slnx
 
                 if (!excludePackages)
                 {
-                    foreach (var p in Packages)
+                    foreach (var package in Packages)
                     {
-                        nuspec.AddDependeciesPacket(p);
+                        var packageIsReferenced = Projects
+                            .Where(refProject => refProject.IsPackable)
+                            .Any(refProject => 
+                                    refProject.PackageReferences.Any(refPackage => refPackage.Id == package.Id)
+                            );
+
+                        if (packageIsReferenced)
+                        {
+                            nuspec.AddDependeciesPacket(package);
+                        }
+                        else
+                        {
+                            Logger.Instance.Info($"The package {package} has no reference in packable projects. It will be excluded from the NuSpec dependencies.");
+                        }
                     }
                 }
 
