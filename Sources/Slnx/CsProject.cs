@@ -60,6 +60,7 @@ namespace Slnx
         bool _isTestProject = false;
         List<Generated.AssemblyReference> _assemblyReferences = null;
         List<Generated.ProjectReference> _projectReferences = null;
+        List<NugetPackage> _packageReferences = new List<NugetPackage>();
         Logger _logger = Logger.Instance;
 
         public CsProject(string fullpath, string container)
@@ -239,6 +240,11 @@ namespace Slnx
             get { return _projectReferences; }
         }
 
+        public List<NugetPackage> PackageReferences
+        {
+            get { return _packageReferences; }
+        }
+
         public bool LegacyProjectStyle
         {
             get; 
@@ -335,22 +341,18 @@ namespace Slnx
                 if (!string.IsNullOrEmpty(assemblyRef.HintPath)) // && !assemblyRef.HintPath.StartsWith("$"))
                 {
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
-                    var match = (packages.Where((x) => x.Id == candidatePackageName).Count() > 0);
+                    NugetPackage candidatePackage = packages.Where((x) => x.Id == candidatePackageName).FirstOrDefault();
 
-                    if (!match)
+                    if (candidatePackage == null) //The assembly name might not match the package name
                     {
                         var candidateAssmblyName = Path.GetFileName(assemblyRef.HintPath);
-                        var candidatePackage = packages.Where(x => x.Libraries.Where(y => y.EndsWith(candidateAssmblyName)).FirstOrDefault() != null).FirstOrDefault();
-                        if (candidatePackage != null)
-                        {
-                            match = true;
-                            candidatePackageName = candidatePackage.Id;
-                        }
+                        candidatePackage = packages.Where(x => x.Libraries.Where(y => y.EndsWith(candidateAssmblyName)).FirstOrDefault() != null).FirstOrDefault();
                     }
 
-                    if (match)
+                    if (candidatePackage != null) //The current project references candidatePackage
                     {
-                        var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackageName);
+                        PackageReferences.Add(candidatePackage);
+                        var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackage.Id);
                         var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
                         var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
                         if (string.IsNullOrEmpty(assemblyRoot))
