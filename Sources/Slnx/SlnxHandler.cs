@@ -613,7 +613,7 @@ namespace Slnx
                     }
                 }
 
-                if (!excludeProjects)
+                if (!excludePackages)
                 {
                     foreach (var p in Packages)
                     {
