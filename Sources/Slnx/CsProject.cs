@@ -42,11 +42,14 @@ namespace Slnx
         const string ProjectReferenceElementTag = "ProjectReference";
         const string ConditionAttributeTag = "Condition";
         const string ProjectAttributeTag = "Project";
+        const string PackageReferenceElementTag = "PackageReference";
         const string TargetFrameworkElementTag = "TargetFramework";
         const string IsPackablekElementTag = "IsPackable";
         const string PlatformsElementTag = "Platforms";
         const string PlatformElementAttributeTag = "PlatformTarget";
         const string ImportElementTag = "Import";
+        const string IncludeAttributeTag = "Include";
+        const string HintPathAttributeTag = "HintPath";
 
         public const string ImportDebugProjectName = "nuget.debug";
         static readonly string ImportDebugCondition = $"Exists('{ImportDebugProjectName}')";
@@ -105,6 +108,7 @@ namespace Slnx
 
                 Framework = GetFramework();
                 IsPackable = GetIsPackable();
+                InFilePackageReferences = GetInFilePackageReferences();
             }
             else
             {
@@ -194,6 +198,18 @@ namespace Slnx
             get { return _projectReferences; }
         }
 
+        /// <summary>
+        /// List of package references present in the cs-project file
+        /// </summary>
+        public List<NugetPackageIdentity> InFilePackageReferences
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// Fully resolved package references (derivate assembly references or package references)
+        /// </summary>
         public List<NugetPackage> PackageReferences
         {
             get { return _packageReferences; }
@@ -236,8 +252,8 @@ namespace Slnx
         {
             _logger.Debug($"Fixing project: {Name}");
 
-            _assemblyReferences = GatherAndFixAssemblyReferences(packages);
-            _projectReferences = GatherAndFixProjectReferences();
+            _assemblyReferences = GetAndFixAssemblyReferences(packages);
+            _projectReferences = GetAndFixProjectReferences();
             FixDebugImport();
         }
 
@@ -275,7 +291,7 @@ namespace Slnx
             importNode.Attributes[ConditionAttributeTag].Value = ImportDebugCondition;
         }
 
-        private List<Generated.AssemblyReference> GatherAndFixAssemblyReferences(IEnumerable<NugetPackage> packages)
+        private List<Generated.AssemblyReference> GetAndFixAssemblyReferences(IEnumerable<NugetPackage> packages)
         {
             var xmlSer = new XmlSerializer(typeof(Generated.AssemblyReference));
             var ret = new List<Generated.AssemblyReference>();
@@ -309,7 +325,7 @@ namespace Slnx
                             assemblyRef.HintPath = assemblyRef.HintPath.Replace(assemblyRoot, candidatePackageMsBuilVar);
                         }
                         assemblyRef.Condition = string.Format(AssemblyReferenceConditionTemplate, candidatePackageKey);
-                        r["HintPath"].InnerText = assemblyRef.HintPath;
+                        r[HintPathAttributeTag].InnerText = assemblyRef.HintPath;
 
                         var conditionAttr = _xml.CreateAttribute(ConditionAttributeTag);
                         if (r.Attributes.GetNamedItem(conditionAttr.Name) == null)
@@ -326,7 +342,7 @@ namespace Slnx
             return ret;
         }
 
-        private List<Generated.ProjectReference> GatherAndFixProjectReferences()
+        private List<Generated.ProjectReference> GetAndFixProjectReferences()
         {
             var xmlSer = new XmlSerializer(typeof(Generated.ProjectReference));
             var ret = new List<Generated.ProjectReference>();
@@ -338,8 +354,34 @@ namespace Slnx
                     var candidateProjectName = Path.GetFileNameWithoutExtension(projectRef.Include);
                     var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidateProjectName);
                     projectRef.Include = string.Format(ProjectReferenceIncludeTemplate, candidatePackageKey, candidateProjectName, FileExtension);
-                    r.Attributes["Include"].InnerText = projectRef.Include;
+                    r.Attributes[IncludeAttributeTag].InnerText = projectRef.Include;
                     ret.Add(projectRef);
+                }
+            }
+            return ret;
+        }
+
+        private List<NugetPackageIdentity> GetInFilePackageReferences()
+        {
+            var xmlSer = new XmlSerializer(typeof(Generated.PackageReference));
+            var ret = new List<NugetPackageIdentity>();
+            foreach (XmlNode r in _xml.GetElementsByTagName(PackageReferenceElementTag))
+            {
+                var packageRef = (Generated.PackageReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
+                if (!string.IsNullOrEmpty(packageRef.Include) && !string.IsNullOrEmpty(packageRef.Version))
+                {
+                    if (!ret.Any(x => x.Id.ToLower() == packageRef.Include.ToLower()))
+                    {
+                        ret.Add(new NugetPackageIdentity(packageRef.Include, packageRef.Version));
+                    }
+                    else
+                    {
+                        throw new Exceptions.DuplicatePackageReferenceException($"Duplicate {PackageReferenceElementTag} element with id {packageRef.Include} in the project {Name}");
+                    }
+                }
+                else
+                {
+                    throw new Exceptions.InvalidPackageReferenceException($"Error in project {Name}, the element {r.OuterXml} doesn't have the Include or the Version attributes properly set.");
                 }
             }
             return ret;
