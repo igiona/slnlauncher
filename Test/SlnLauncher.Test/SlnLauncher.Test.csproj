@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+  <PropertyGroup>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Stimuli\**" />
+    <EmbeddedResource Remove="Stimuli\**" />
+    <None Remove="Stimuli\**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(SlnLauncher)\SlnLauncher.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="NuGet.Protocol" Condition="$(NuGet_Protocol_debug) != 1">
+      <HintPath>$(NuGet_Protocol)\NuGet.Protocol.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Resolver" Condition="$(NuGet_Resolver_debug) != 1">
+      <HintPath>$(NuGet_Resolver)\NuGet.Resolver.dll</HintPath>
+    </Reference>
+    <Reference Include="NugetHelper" Condition="$(NugetHelper_debug) != 1">
+      <HintPath>$(NugetHelper)\NugetHelper.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
