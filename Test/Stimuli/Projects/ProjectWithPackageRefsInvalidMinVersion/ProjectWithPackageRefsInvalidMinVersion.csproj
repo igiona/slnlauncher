@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+  <PropertyGroup>
+    <TargetFramework>net45</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- MathNet.Filtering 0.7.0 requires MathNet.Numerics 
+         package to be version 4.9.1 or higher.
+         In this case there is not exact match (MathNet.Numerics => 4.15.0)            
+    -->
+    <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
+    <PackageReference Include="MathNet.Filtering" Version="0.7.0" />
+  </ItemGroup>
+</Project>
