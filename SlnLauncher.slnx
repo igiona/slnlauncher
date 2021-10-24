@@ -47,5 +47,6 @@
     <project name="SlnLauncher" container="" />
     <project name="Slnx" container="Lib" />
     <!--<project name="Slnx.Test" /> -->
+    <project name="SlnLauncher.Test" />
     
 </SlnX>

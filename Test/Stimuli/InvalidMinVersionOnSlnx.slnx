@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<SlnX searchPath="$(slnx)\Projects" packagesPath="C:\Nugetcache">
+    <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
+
+    <package id="MathNet.Numerics" version="4.15.0" targetFramework="net40" source="%NUGET_ORG_URL%" />
+    <!-- MathNet.Filtering requires MathNet.Numerics package to be version 4.9.1 or higher -->
+    <package id="MathNet.Filtering" version="0.7.0" targetFramework="net40" source="%NUGET_ORG_URL%" />
+
+    <!-- Projects -->
+    <project name="ProjectNet45" />
+</SlnX>

@@ -28,7 +28,7 @@ using System.Diagnostics;
 
 namespace SlnLauncher
 {
-    static class Program
+    public static class Program
     {
         const int _reqParameterN = 1;
 
@@ -45,7 +45,7 @@ namespace SlnLauncher
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] argv)
+        public static void Main(string[] argv)
         {
             _logger = Logger.Instance;
             Application.EnableVisualStyles();
@@ -94,7 +94,7 @@ namespace SlnLauncher
                 if (slnxFile == null)
                     throw new ArgumentException(string.Format("Invalid parameters, no SlnX file specified.\n\n\t{0}", string.Join("\n\t", argv)));
 
-                slnxFile = Path.GetFullPath(slnxFile);
+                slnxFile = Path.GetFullPath(Environment.ExpandEnvironmentVariables(slnxFile));
                 if (File.Exists(slnxFile))
                 {
                     Environment.CurrentDirectory = Path.GetDirectoryName(slnxFile);
