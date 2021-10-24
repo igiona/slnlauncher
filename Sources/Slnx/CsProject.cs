@@ -33,27 +33,23 @@ namespace Slnx
 
         public const string FileExtension = "csproj";
         public const string DotExtension = "." + FileExtension;
-        const string GuidPattern = @"<ProjectGuid>{(?<guid>.*)}<\/ProjectGuid>";
-        const string PlatformTargetPattern = @"<PlatformTarget>(?<platform>.*)<\/PlatformTarget>";
-        const string PlatformsPattern = @"<Platforms>(?<platform>.*)<\/Platforms>";
-        const string ProjectReferencePattern = "<ProjectReference Include=\"(?<reference>.*)\">";
-
+        
         const string KeyAsMsBuildProjectVariableTemplate = @"$({0})";       
         const string ProjectReferenceIncludeTemplate = @"$({0})\{1}.{2}";
         readonly string AssemblyReferenceConditionTemplate = string.Format("$({0}) != 1", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey("{0}"));
 
-        const string AssemblyReferenceTag = "Reference";
-        const string ProjectReferenceTag = "ProjectReference";
+        const string AssemblyReferenceElementTag = "Reference";
+        const string ProjectReferenceElementTag = "ProjectReference";
         const string ConditionAttributeTag = "Condition";
         const string ProjectAttributeTag = "Project";
-        const string ImportTag = "Import";
+        const string TargetFrameworkElementTag = "TargetFramework";
+        const string IsPackablekElementTag = "IsPackable";
+        const string PlatformsElementTag = "Platforms";
+        const string PlatformElementAttributeTag = "PlatformTarget";
+        const string ImportElementTag = "Import";
+
         public const string ImportDebugProjectName = "nuget.debug";
         static readonly string ImportDebugCondition = $"Exists('{ImportDebugProjectName}')";
-
-        static Regex _guidRegex = new Regex(GuidPattern);
-        static Regex _platformTargetRegex = new Regex(PlatformTargetPattern);
-        static Regex _platformsRegex = new Regex(PlatformsPattern);
-        static Regex _projectRefRegex = new Regex(ProjectReferencePattern);
 
         XmlDocument _xml;
         string _projectOriginalContent;
@@ -66,8 +62,6 @@ namespace Slnx
         public CsProject(string fullpath, string container)
         {
             _logger.Debug($"Processing project: {fullpath}");
-
-            bool projectContentModified = false;
 
             _typeGuid = CsProjectTypeGuid.ToUpper();
 
@@ -93,69 +87,29 @@ namespace Slnx
 
             if (projectSdk.StartsWith("Microsoft.NET.Sdk"))
             {
-                LegacyProjectStyle = false;
                 _projectGuid = Guid.NewGuid().ToString();
 
                 PlatformType platformTargetTmp;
                 PlatformTarget = PlatformType.AnyCPU;
-                if (TryGetPlatformTarget(_projectOriginalContent, out platformTargetTmp))
+                if (TryGetPlatformTarget(out platformTargetTmp))
                 {
                     PlatformTarget = platformTargetTmp;
                 }
 
                 string platformsTmp;
                 Platforms = PlatformType.AnyCPU.ToPrettyString();
-                if (TryGetPlatforms(_projectOriginalContent, out platformsTmp))
+                if (TryGetPlatforms(out platformsTmp))
                 {
                     Platforms = platformsTmp;
                 }
 
-                Framework = GetFramework("TargetFramework");
+                Framework = GetFramework();
                 IsPackable = GetIsPackable();
             }
             else
             {
-                LegacyProjectStyle = true;
-                _logger.Warn($"The current solution contains a legacy project {Name}, the Debug feature might not work as expected!");
-
-                var projectNewContent = _projectOriginalContent;
-                Framework = GetFramework("TargetFrameworkVersion");
-                IsPackable = true;
-
-                var m = _guidRegex.Match(projectNewContent);
-                if (m.Success)
-                {
-                    _projectGuid = m.Groups["guid"].Value.ToUpper();
-                }
-                else
-                {
-                    throw new Exception(string.Format("Invalid GUID in project {0}", FullPath));
-                }
-
-                var platform = PlatformType.AnyCPU;
-                if (!TryGetPlatformTarget(projectNewContent, out platform))
-                {
-                    throw new Exception(string.Format("The project '{0}' does not contain a valid Platform tag!", FullPath));
-                }
-                PlatformTarget = platform;
-
-                m = _projectRefRegex.Match(projectNewContent);
-                while (m.Success)
-                {
-                    var p = m.Groups["reference"].Value;
-                    var pName = Path.GetFileNameWithoutExtension(p);
-                    var expectedRef = string.Format(ProjectReferenceIncludeTemplate, NugetPackage.EscapeStringAsEnvironmentVariableAsKey(pName), pName, FileExtension);
-                    if (p != expectedRef) //Invalid project reference. Update it.
-                    {
-                        projectNewContent = projectNewContent.Replace(p, expectedRef);
-                        projectContentModified = true;
-                    }
-                    m = m.NextMatch();
-                }
-                if (projectContentModified)
-                {
-                    File.WriteAllText(FullPath, projectNewContent);
-                }
+                _logger.Error($"The current solution contains a legacy project: {Name}, which are not supported anymore!");
+                throw new Exception("Legacy project are not supported anymore by the slnlauncher (>=v3.0.0). Upgrade you project (.NET Framework/Core) to the new SDK style.");
             }
 
             var environmentVariableKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
@@ -245,12 +199,6 @@ namespace Slnx
             get { return _packageReferences; }
         }
 
-        public bool LegacyProjectStyle
-        {
-            get; 
-            private set;
-        }
-
         public override string GetBuildConfiguration()
         {
             return string.Format(@"
@@ -290,10 +238,7 @@ namespace Slnx
 
             _assemblyReferences = GatherAndFixAssemblyReferences(packages);
             _projectReferences = GatherAndFixProjectReferences();
-            if (!LegacyProjectStyle)
-            {
-                FixDebugImport();
-            }
+            FixDebugImport();
         }
 
         public void SaveCsProjectToFile()
@@ -311,7 +256,7 @@ namespace Slnx
             //var xmlSer = new XmlSerializer(typeof(Generated.ProjectReference));
             var ret = new List<Generated.ProjectReference>();
             XmlNode importNode = null;
-            foreach (XmlNode r in _xml.GetElementsByTagName(ImportTag))
+            foreach (XmlNode r in _xml.GetElementsByTagName(ImportElementTag))
             {
                 if (r.Attributes.GetNamedItem(ProjectAttributeTag)?.Value == ImportDebugProjectName)
                 {
@@ -321,7 +266,7 @@ namespace Slnx
             }
             if (importNode == null)
             {
-                importNode = _xml.CreateElement(ImportTag);
+                importNode = _xml.CreateElement(ImportElementTag);
                 importNode.Attributes.Append(_xml.CreateAttribute(ProjectAttributeTag));
                 importNode.Attributes.Append(_xml.CreateAttribute(ConditionAttributeTag));
                 _xml.DocumentElement.PrependChild(importNode);
@@ -334,7 +279,7 @@ namespace Slnx
         {
             var xmlSer = new XmlSerializer(typeof(Generated.AssemblyReference));
             var ret = new List<Generated.AssemblyReference>();
-            foreach (XmlNode r in _xml.GetElementsByTagName(AssemblyReferenceTag))
+            foreach (XmlNode r in _xml.GetElementsByTagName(AssemblyReferenceElementTag))
             {
                 var assemblyRef = (Generated.AssemblyReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
                 
@@ -385,7 +330,7 @@ namespace Slnx
         {
             var xmlSer = new XmlSerializer(typeof(Generated.ProjectReference));
             var ret = new List<Generated.ProjectReference>();
-            foreach (XmlNode r in _xml.GetElementsByTagName(ProjectReferenceTag))
+            foreach (XmlNode r in _xml.GetElementsByTagName(ProjectReferenceElementTag))
             {
                 var projectRef = (Generated.ProjectReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
                 if (!string.IsNullOrEmpty(projectRef.Include))
@@ -400,29 +345,53 @@ namespace Slnx
             return ret;
         }
 
-        private bool TryGetPlatformTarget(string projectNewContent, out PlatformType platform)
+        /// <summary>
+        /// Tries to find the content of the PlatformTarget.
+        /// Mulitple defintion of the element overwrite the previously detected value
+        /// </summary>
+        /// <param name="platform"></param>
+        /// <returns>True if a valid match was found, false otherwise</returns>
+        private bool TryGetPlatformTarget(out PlatformType platform)
         {
             platform = PlatformType.AnyCPU;
 
-            var m = _platformTargetRegex.Match(projectNewContent);
-            if (m.Success)
+            var elements = _xml.GetElementsByTagName(PlatformElementAttributeTag);
+            if (elements.Count > 0)
             {
-                var p = m.Groups["platform"].Value.Trim();
-                if (Enum.TryParse<PlatformType>(p, out platform))
+                var validMatchFound = false;
+                foreach (XmlNode e in elements)
                 {
-                    return true;
+                    var p = e.InnerText?.Trim();
+                    if (!string.IsNullOrEmpty(p))
+                    {
+                        if (Enum.TryParse<PlatformType>(p, out platform))
+                        {
+                            validMatchFound = true;
+                        }
+                    }
                 }
+                return validMatchFound;
             }
             return false;
         }
 
-        private bool TryGetPlatforms(string projectNewContent, out string platform)
+        /// <summary>
+        /// Tries to find the content of the Platforms.
+        /// Mulitple defintion of the element overwrite the previously detected value
+        /// </summary>
+        /// <param name="platform"></param>
+        /// <returns>True if a valid match was found, false otherwise</returns>
+        private bool TryGetPlatforms(out string platform)
         {
             platform = null;
-            var m = _platformsRegex.Match(projectNewContent);
-            if (m.Success)
+
+            var elements = _xml.GetElementsByTagName(PlatformsElementTag);
+            if (elements.Count > 0)
             {
-                platform = m.Groups["platform"].Value.Trim();
+                foreach (XmlNode e in elements)
+                {
+                    platform = e.InnerText?.Trim();
+                }
                 return true;
             }
             return false;
@@ -431,16 +400,17 @@ namespace Slnx
         private bool GetIsPackable(bool defaultValue = true)
         {
             var ret = defaultValue;
-            var elements = _xml.GetElementsByTagName("IsPackable");
+            var elements = _xml.GetElementsByTagName(IsPackablekElementTag);
             foreach(XmlNode e in elements)
             {
-                bool.TryParse(e.InnerText, out ret);
+                bool.TryParse(e.InnerText, out ret); //Mulitple defintion of the element overwrite the previous value
             }
             return ret;
         }
 
-        private string GetFramework(string tag)
+        private string GetFramework()
         {
+            var tag = TargetFrameworkElementTag;
             var element = _xml.GetElementsByTagName(tag);
 
             if (element.Count == 1)
