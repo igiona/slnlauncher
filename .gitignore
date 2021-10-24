@@ -361,3 +361,8 @@ MigrationBackup/
 
 # SlnLauncher generated file, required to debug nuget packages
 nuget.debug
+**/Test/Stimuli/dump.txt
+*.sln
+SetEnvVars.ps1
+SetEnvVars.bat
+SetEnvVars.py
