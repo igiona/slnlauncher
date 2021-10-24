@@ -32,6 +32,10 @@ jobs:
       run: |
         .\SetEnvVars.ps1
         dotnet build --no-restore
+    - name: Test
+      run: |
+        .\SetEnvVars.ps1
+        dotnet test --no-build --no-restore
     - name: Create choco package
       run: |
         mkdir artifacts
