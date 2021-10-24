@@ -15,7 +15,7 @@ namespace SlnLauncher.Test
         }
 
         //[TestCase("InvalidMinVersionOnProjectRef.slnx", typeof(NugetHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
-        [TestCase("InvalidMinVersionOnSlnx.slnx", typeof(NugetHelper.Exceptions.InvalidMinVersionDependencyFoundExceptio))]
+        [TestCase("InvalidMinVersionOnSlnx.slnx", typeof(NugetHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
         public void MinVersion_TestFails(string slnxFile, Type expectedException)
         {
             Assert.Throws(expectedException, () => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile)));

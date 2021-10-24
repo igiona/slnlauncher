@@ -164,9 +164,9 @@ namespace SlnLauncher
                 {
                     foreach (var package in slnx.Packages)
                     {
-                        if (package.Dependencies.Where(x => x.PackageDependency.Id == debugPackage.Id).Any())
+                        if (package.Dependencies.Where(x => x.PackageDependency.Id == debugPackage.Identity.Id).Any())
                         {
-                            _logger.Warn($"{package} depends on the package {debugPackage.Id} which is selected for debugging. This might cause runtime issues! Consider marking it for debugging as well.");
+                            _logger.Warn($"{package} depends on the package {debugPackage.Identity.Id} which is selected for debugging. This might cause runtime issues! Consider marking it for debugging as well.");
                         }
                     }
                 }
@@ -174,7 +174,7 @@ namespace SlnLauncher
                 _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
                 foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetImplementationAssembly))
                 {
-                    if (!originalPackageList.Where((x) => x.Id == package.Id).Any())
+                    if (!originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).Any())
                     {
                         _logger.Info($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.");
                     }
@@ -183,7 +183,7 @@ namespace SlnLauncher
                 _logger.Info($"Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file");
                 foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetCompileTimeAssembly))
                 {
-                    if (originalPackageList.Where((x) => x.Id == package.Id).FirstOrDefault() == null)
+                    if (originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).FirstOrDefault() == null)
                     {
                         _logger.Info($"The .NET compilte time package {package} has been installed as dependency.");
                     }
@@ -713,7 +713,7 @@ EndGlobal
         {
             var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(propertyGroup);
-            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key.Id));
+            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key.Identity.Id));
 
             var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(itemGroup);

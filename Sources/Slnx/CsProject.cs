@@ -286,7 +286,7 @@ namespace Slnx
                 if (!string.IsNullOrEmpty(assemblyRef.HintPath)) // && !assemblyRef.HintPath.StartsWith("$"))
                 {
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
-                    NugetPackage candidatePackage = packages.Where((x) => x.Id == candidatePackageName).FirstOrDefault();
+                    NugetPackage candidatePackage = packages.Where((x) => x.Identity.Id == candidatePackageName).FirstOrDefault();
 
                     if (candidatePackage == null) //The assembly name might not match the package name
                     {
@@ -297,7 +297,7 @@ namespace Slnx
                     if (candidatePackage != null) //The current project references candidatePackage
                     {
                         PackageReferences.Add(candidatePackage);
-                        var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackage.Id);
+                        var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackage.Identity.Id);
                         var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
                         var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
                         if (string.IsNullOrEmpty(assemblyRoot))

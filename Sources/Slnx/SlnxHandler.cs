@@ -87,7 +87,7 @@ namespace Slnx
                 //Read debug SlnX
                 foreach (var item in _packagesToDebug)
                 {
-                    var debugSourcePakckage = Packages.Where(x => x.Id == item.Key).FirstOrDefault();
+                    var debugSourcePakckage = Packages.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
                     Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
                     var slnxItem = new SlnxHandler(item.Value, item.Key);
@@ -96,20 +96,20 @@ namespace Slnx
 
                     foreach (var candidate in slnxItem.Packages)
                     {
-                        if (_packagesToDebug.ContainsKey(candidate.Id))
+                        if (_packagesToDebug.ContainsKey(candidate.Identity.Id))
                         {
                             //This package is under debug, no version check needed.
                             continue;
                         }
 
-                        var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
+                        var known = Packages.Where(x => x.Identity.Id == candidate.Identity.Id).FirstOrDefault();
                         if (known == null)
                         {
                             _logger.Warn($"The package {candidate} required by the SlnX {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
                         }
                         else
                         {
-                            Assert(known.MinVersion == candidate.MinVersion &&
+                            Assert(known.Identity.MinVersion == candidate.Identity.MinVersion &&
                                    known.TargetFramework == candidate.TargetFramework &&
                                    known.PackageType == candidate.PackageType,
                                    $"The package {candidate} required by the SlnX {item.Key} selected for debug, does not match the already known one {known}");
@@ -565,7 +565,7 @@ namespace Slnx
                                                      IsDotNet(e), PackagesPath,
                                                      !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion);
 
-                    var alreadyPresent = packages.Where((x) => x.Id == candidate.Id);
+                    var alreadyPresent = packages.Where((x) => x.Identity.Id == candidate.Identity.Id);
                     if (alreadyPresent.Count() == 0)
                     {
                         packages.Add(candidate);
@@ -620,7 +620,7 @@ namespace Slnx
                         var packageIsReferenced = Projects
                             .Where(refProject => refProject.IsPackable)
                             .Any(refProject => 
-                                    refProject.PackageReferences.Any(refPackage => refPackage.Id == package.Id)
+                                    refProject.PackageReferences.Any(refPackage => refPackage.Identity.Id == package.Identity.Id)
                             );
 
                         if (packageIsReferenced)
