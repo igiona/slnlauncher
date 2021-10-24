@@ -6,7 +6,8 @@ using NUnit.Framework;
 
 namespace SlnLauncher.Test
 {
-    public class Tests
+    [TestFixture]
+    public class CommandLineTest
     {
         [SetUp]
         public void Setup()

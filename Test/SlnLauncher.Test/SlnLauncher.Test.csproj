@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="$(SlnLauncher)\SlnLauncher.csproj" />
+    <ProjectReference Include="$(Slnx)\Slnx.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="NuGet.Protocol" Condition="$(NuGet_Protocol_debug) != 1">
