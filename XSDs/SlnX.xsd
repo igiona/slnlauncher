@@ -9,7 +9,7 @@
     </xs:element>
     <xs:complexType name="SlnXType">
         <xs:sequence>
-            <xs:element name="nuget" type="NugetType"/>
+            <xs:element name="nuget" type="NuGetType"/>
             <xs:element name="env" type="EnvType" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="project" type="ProjectType" minOccurs="0" maxOccurs="unbounded"/>
             <xs:element name="import" type="ImportType" minOccurs="0" maxOccurs="unbounded"/>
@@ -22,7 +22,7 @@
         <xs:attribute name="packagesPath" use="optional"/>
         <xs:attribute name="skip" use="optional"/>
     </xs:complexType>
-    <xs:complexType name="NugetType">
+    <xs:complexType name="NuGetType">
         <xs:all>
             <xs:element name="id" type="xs:string" />
             <xs:element name="version" type="xs:string"/>

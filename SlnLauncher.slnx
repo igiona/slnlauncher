@@ -41,7 +41,7 @@
     <package id="System.IO.Abstractions" version="8.0.3" targetFramework="netstandard2.0" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="Glob.cs" version="5.0.224" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
-    <package id="NugetHelper" version="0.3.2" targetFramework="netstandard2.0" source="https://git.immo-electronics.ch/api/v4/projects/19/packages/nuget/index.json" />
+    <package id="NuGetClientHelper" version="1.0.0-alpha2" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
     <!-- Projects -->
     <project name="SlnLauncher" container="" />

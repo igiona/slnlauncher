@@ -6,15 +6,16 @@ using NUnit.Framework;
 
 namespace SlnLauncher.Test
 {
-    public class Tests
+    [TestFixture]
+    public class CommandLineTest
     {
         [SetUp]
         public void Setup()
         {
         }
 
-        //[TestCase("InvalidMinVersionOnProjectRef.slnx", typeof(NugetHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
-        [TestCase("InvalidMinVersionOnSlnx.slnx", typeof(NugetHelper.Exceptions.InvalidMinVersionDependencyFoundExceptio))]
+        //[TestCase("InvalidMinVersionOnProjectRef.slnx", typeof(NuGetClientHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
+        [TestCase("InvalidMinVersionOnSlnx.slnx", typeof(NuGetClientHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
         public void MinVersion_TestFails(string slnxFile, Type expectedException)
         {
             Assert.Throws(expectedException, () => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile)));
@@ -39,9 +40,9 @@ namespace SlnLauncher.Test
             var dumpFile = TestHelper.GetDumpFilePathForSlnx(slnxFile);
             SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument, "--dump"));
 
-            Assert.IsTrue(TestHelper.Compare(dumpFile, expectedFile, 
-                            string.Join(Path.DirectorySeparatorChar, "Test", "Stimuli", "Projects"),
-                            string.Join(Path.DirectorySeparatorChar, "Sources", "Slnx")
+            Assert.IsTrue(TestHelper.Compare(dumpFile, expectedFile,
+                            Path.Combine("Test", "Stimuli", "Projects"),
+                            Path.Combine("Sources", "Slnx")
                             ));
         }
     }

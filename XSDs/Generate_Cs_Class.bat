@@ -15,3 +15,8 @@ echo "Generating CsProj C# Classes..."
 /c /l:CS ^
 %CD%\ProjectReference.xsd ^
 /n:Slnx.Generated /o:..\Sources\Slnx\Generated
+
+%XSD% ^
+/c /l:CS ^
+%CD%\PackageReference.xsd ^
+/n:Slnx.Generated /o:..\Sources\Slnx\Generated

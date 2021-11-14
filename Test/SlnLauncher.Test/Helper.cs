@@ -85,7 +85,7 @@ namespace SlnLauncher.Test
 
         private static string GetStimulTestFor(string path, string testFolder)
         {
-            var key = NugetHelper.NugetPackage.EscapeStringAsEnvironmentVariableAsKey(typeof(TestHelper).Assembly.GetName().Name);
+            var key = NuGetClientHelper.NuGetPackage.EscapeStringAsEnvironmentVariableAsKey(typeof(TestHelper).Assembly.GetName().Name);
             return Path.Combine($"{Environment.ExpandEnvironmentVariables($"%{key}%")}", "..", testFolder, path);
         }
     }

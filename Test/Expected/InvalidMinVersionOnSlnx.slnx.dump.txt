@@ -8,11 +8,11 @@ CS Projects imported for debugging:
 
 NuGet packages:
 
-MathNet.Numerics V4.15.0                 => C:\Nugetcache\MathNet.Numerics.4.15.0\lib\net40 [DotNetImplementationAssembly]
-MathNet.Filtering V0.7.0                 => C:\Nugetcache\MathNet.Filtering.0.7.0\lib\net40 [DotNetImplementationAssembly]
+MathNet.Numerics V4.15.0 net40           => C:\Nugetcache\MathNet.Numerics.4.15.0\lib\net40 [DotNetImplementationAssembly]
+MathNet.Filtering V0.7.0 net40           => C:\Nugetcache\MathNet.Filtering.0.7.0\lib\net40 [DotNetImplementationAssembly]
     | MathNet.Numerics     => [4.9.1, ) [DotNetImplementationAssembly]
     | System.ValueTuple    => [4.5.0, ) [DotNetImplementationAssembly]
-System.ValueTuple V4.5.0                 => C:\Nugetcache\System.ValueTuple.4.5.0\lib\portable-net40+sl4+win8+wp8 [DotNetImplementationAssembly]
+System.ValueTuple V4.5.0 portable-net40+sl4+win8+wp8 => C:\Nugetcache\System.ValueTuple.4.5.0\lib\portable-net40+sl4+win8+wp8 [DotNetImplementationAssembly]
 
 NuGet packages required by the projects imported for debugging:
 

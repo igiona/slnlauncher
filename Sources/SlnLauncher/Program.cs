@@ -55,7 +55,7 @@ namespace SlnLauncher
             _createMsBuild = false;
             var _printVersion = false;
             var quiteExecution = false;
-            var autoUpdateNugetDependencies = true;
+            var autoUpdateNuGetDependencies = true;
             var nugetForceMinVersion = true;
             var loadUserFile = true;
             bool offlineMode = false;
@@ -78,7 +78,7 @@ namespace SlnLauncher
               .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
               .Add(string.Format("lv=|logVerbosity=", "Set the log level of verbosity. Valid values {0}. [Default: {1}]", string.Join(",", Enum.GetNames<LogLevel>()), _logLevel), v => _logLevel = ParseLogLevel(v))
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
-              .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNugetDependencies = v != null)
+              .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNuGetDependencies = v != null)
               .Add("offline", "If set (-offline/-offline+), The current SlnX packagesPath attribute will be used as source for all packages. [Default: false]", v => offlineMode = v != null)
               .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fullfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
             
@@ -102,7 +102,7 @@ namespace SlnLauncher
                 if (_logEnabled)
                 {
                     _logger.SetLog(Path.Join(Environment.CurrentDirectory, Path.GetFileNameWithoutExtension(typeof(Program).Assembly.Location) + ".log"), _logLevel);
-                    NugetHelper.NugetHelper.SetLogger(_logger);
+                    NuGetClientHelper.NuGetClientHelper.SetLogger(_logger);
                 }
                 _logger.Info("Application started with parameters: {0}", string.Join("\n", argv));
 
@@ -116,11 +116,11 @@ namespace SlnLauncher
                 }
 
                 var slnx = new SlnxHandler(slnxFile, slnxUser, null);
-                var originalPackageList = new List<NugetHelper.NugetPackage>(slnx.Packages);
+                var originalPackageList = new List<NuGetClientHelper.NuGetPackage>(slnx.Packages);
                 bool errorOccured = false;
                 try
                 {
-                    DownloadPackages(slnx, quiteExecution, autoUpdateNugetDependencies, offlineMode);
+                    DownloadPackages(slnx, quiteExecution, autoUpdateNuGetDependencies, offlineMode);
 
                     if (_createMsBuild)
                     {
@@ -154,9 +154,9 @@ namespace SlnLauncher
                     }
                 }
 
-                var ignoreDependencyCheck = !autoUpdateNugetDependencies;
+                var ignoreDependencyCheck = !autoUpdateNuGetDependencies;
                 _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}, and ignore dependency is {ignoreDependencyCheck}");
-                NugetHelper.NugetHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
+                NuGetClientHelper.NuGetClientHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
 
                 _logger.Info($"Checking debug packages consistency...");
 
@@ -164,26 +164,26 @@ namespace SlnLauncher
                 {
                     foreach (var package in slnx.Packages)
                     {
-                        if (package.Dependencies.Where(x => x.PackageDependency.Id == debugPackage.Id).Any())
+                        if (package.Dependencies.Where(x => x.PackageDependency.Id == debugPackage.Identity.Id).Any())
                         {
-                            _logger.Warn($"{package} depends on the package {debugPackage.Id} which is selected for debugging. This might cause runtime issues! Consider marking it for debugging as well.");
+                            _logger.Warn($"{package} depends on the package {debugPackage.Identity.Id} which is selected for debugging. This might cause runtime issues! Consider marking it for debugging as well.");
                         }
                     }
                 }
 
                 _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
-                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetImplementationAssembly))
+                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetPackageType.DotNetImplementationAssembly))
                 {
-                    if (!originalPackageList.Where((x) => x.Id == package.Id).Any())
+                    if (!originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).Any())
                     {
                         _logger.Info($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.");
                     }
                 }
                 
                 _logger.Info($"Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file");
-                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NugetHelper.NugetPackageType.DotNetCompileTimeAssembly))
+                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetPackageType.DotNetCompileTimeAssembly))
                 {
-                    if (originalPackageList.Where((x) => x.Id == package.Id).FirstOrDefault() == null)
+                    if (originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).FirstOrDefault() == null)
                     {
                         _logger.Info($"The .NET compilte time package {package} has been installed as dependency.");
                     }
@@ -210,10 +210,10 @@ namespace SlnLauncher
                             throw new Exception($"The provided nuspec directory is not empty: '{nuspecDir}'");
                         }
                     }
-                    var nuspec = slnx.GetNugetPackageInformation();
+                    var nuspec = slnx.GetNuGetPackageInformation();
                     if (nuspec != null)
                     {
-                        NugetHelper.NuspecGenerator.Generate(nuspecDir, nuspec);
+                        NuGetClientHelper.NuspecGenerator.Generate(nuspecDir, nuspec);
                     }
                     else
                     {
@@ -222,7 +222,7 @@ namespace SlnLauncher
                 }
                 
                 MakeSln(slnx);
-                MakeAndCleanNugetDebugFile(slnx);
+                MakeAndCleanNuGetDebugFile(slnx);
 
                 if (_logger.LogLevelDetected(LogLevel.Warning))
                 {
@@ -278,7 +278,7 @@ namespace SlnLauncher
             }
         }
 
-        static IEnumerable<NugetHelper.NugetPackage> PerformPackageDownloadProcess(IEnumerable<NugetHelper.NugetPackage> packages, bool quite, bool autoUpdateDependencies, string formTitle)
+        static IEnumerable<NuGetClientHelper.NuGetPackage> PerformPackageDownloadProcess(IEnumerable<NuGetClientHelper.NuGetPackage> packages, bool quite, bool autoUpdateDependencies, string formTitle)
         {
             ProgressDialog progress = null;
             System.Threading.Thread th = null;
@@ -300,7 +300,7 @@ namespace SlnLauncher
             th?.Start();
             while (th != null && progress == null) System.Threading.Thread.Sleep(100);
 
-            var ret = NugetHelper.NugetHelper.InstallPackages(packages.ToList(), autoUpdateDependencies, (message) =>
+            var ret = NuGetClientHelper.NuGetClientHelper.InstallPackages(packages.ToList(), autoUpdateDependencies, (message) =>
             {
                 _logger.Debug("Package {0} successefully installed", message.ToString());
                 progress?.IncrementProgress();
@@ -420,7 +420,7 @@ namespace SlnLauncher
 
                 f.WriteLine("------------------------------------\n");
                 f.WriteLine("NuGet packages:\n");
-                foreach (var p in slnx.Packages ?? Enumerable.Empty<NugetHelper.NugetPackage>())
+                foreach (var p in slnx.Packages ?? Enumerable.Empty<NuGetClientHelper.NuGetPackage>())
                 {
                     f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
@@ -430,7 +430,7 @@ namespace SlnLauncher
                 }
 
                 f.WriteLine("\nNuGet packages required by the projects imported for debugging:\n");
-                foreach (var p in slnx.PackagesImportedFromDebugSlnx ?? Enumerable.Empty<NugetHelper.NugetPackage>())
+                foreach (var p in slnx.PackagesImportedFromDebugSlnx ?? Enumerable.Empty<NuGetClientHelper.NuGetPackage>())
                 {
                     f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
                     foreach (var d in p.Dependencies)
@@ -646,7 +646,7 @@ EndGlobal
             WriteAllText(outFile, slnSb.ToString());
         }
 
-        static XmlDocument TryGetDebugXmlDoc(CsProject proj, NugetHelper.NugetPackage package)
+        static XmlDocument TryGetDebugXmlDoc(CsProject proj, NuGetClientHelper.NuGetPackage package)
         {
             if (proj.AssemblyReferences != null)
             {
@@ -664,7 +664,7 @@ EndGlobal
             return null;
         }
 
-        static void MakeAndCleanNugetDebugFile(SlnxHandler slnx, SlnxHandler mainSlnx = null)
+        static void MakeAndCleanNuGetDebugFile(SlnxHandler slnx, SlnxHandler mainSlnx = null)
         {
             _logger.Info($"Cleaning/Creating debug files for {slnx.SlnxName}");
 
@@ -698,7 +698,7 @@ EndGlobal
                 }
                 if (mainSlnx == null)
                 {
-                    MakeAndCleanNugetDebugFile(item.Value, slnx);
+                    MakeAndCleanNuGetDebugFile(item.Value, slnx);
                 }
             }
 
@@ -709,11 +709,11 @@ EndGlobal
             }
         }
 
-        static void AppendDebugElement(XmlDocument nugetDebugXml, CsProject referencingProject, KeyValuePair<NugetHelper.NugetPackage, SlnxHandler> item)
+        static void AppendDebugElement(XmlDocument nugetDebugXml, CsProject referencingProject, KeyValuePair<NuGetClientHelper.NuGetPackage, SlnxHandler> item)
         {
             var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(propertyGroup);
-            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey(item.Key.Id));
+            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NuGetClientHelper.NuGetPackage.GetDebugEnvironmentVariableKey(item.Key.Identity.Id));
 
             var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(itemGroup);

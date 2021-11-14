@@ -39,7 +39,12 @@ choco install slnlauncher
 | Test project         | Every project with the name ending with ".Test.csproj", is treated as a Test project.     |
 | Legacy-style project | A CS project file whose format has not yet been ported to the new Microsoft.NET.Sdk style |
 
-<br>
+
+# Important notes
+
+- Starting from the v3.0.0 of the tool, legacy-style projects are not supported anymore.
+Upgrade them to the Microsoft.NET.Sdk style. You will love it :)<br>
+You can build .NET project with theh new style as well. It's not a Core-thing only!
 
 # How it works?
 
@@ -98,12 +103,6 @@ That said, simply reference the necessary DLL(s) coming from a NuGet package (fr
 The SlnLauncher will take over the task of rewriting the path with the necessary environmental variable.
 
 ## <a name="PackageDebugFeature"></a>Package Debug Feature
-
-- - -
-
-**NOTE:** This feature doesn't work on legacy-style projects, since these files do not support the import statement. Upgrade them to the Microsoft.NET.Sdk style. You will love it :)
-
-- - -
 
 If in your company you have libraries packed and released in NuGet packages, this is feature is for sure for you.
 One of the biggest hassle of using NuGet packages in application is their debuggability. This can be somehow solved by packging PDBs in NuGet packages.

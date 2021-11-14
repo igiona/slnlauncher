@@ -6,7 +6,7 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Text.RegularExpressions;
 using Slnx.Generated;
-using NugetHelper;
+using NuGetClientHelper;
 using Ganss.IO;
 
 namespace Slnx
@@ -31,9 +31,9 @@ namespace Slnx
         Dictionary<string, List<PackageType>> _packageBundles = new Dictionary<string, List<PackageType>>();
         List<SlnxHandler> _imports = new List<SlnxHandler>();
         List<CsProject> _projects = null;
-        List<NugetPackage> _packages = new List<NugetPackage>();
+        List<NuGetPackage> _packages = new List<NuGetPackage>();
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
-        Dictionary<NugetPackage, SlnxHandler> _debugSlnxItems = new Dictionary<NugetPackage, SlnxHandler>();
+        Dictionary<NuGetPackage, SlnxHandler> _debugSlnxItems = new Dictionary<NuGetPackage, SlnxHandler>();
 
         public SlnxHandler(string fName, string debugPackageId = null) : this(fName, null, debugPackageId)
         {
@@ -87,7 +87,7 @@ namespace Slnx
                 //Read debug SlnX
                 foreach (var item in _packagesToDebug)
                 {
-                    var debugSourcePakckage = Packages.Where(x => x.Id == item.Key).FirstOrDefault();
+                    var debugSourcePakckage = Packages.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
                     Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
                     var slnxItem = new SlnxHandler(item.Value, item.Key);
@@ -96,20 +96,20 @@ namespace Slnx
 
                     foreach (var candidate in slnxItem.Packages)
                     {
-                        if (_packagesToDebug.ContainsKey(candidate.Id))
+                        if (_packagesToDebug.ContainsKey(candidate.Identity.Id))
                         {
                             //This package is under debug, no version check needed.
                             continue;
                         }
 
-                        var known = Packages.Where(x => x.Id == candidate.Id).FirstOrDefault();
+                        var known = Packages.Where(x => x.Identity.Id == candidate.Identity.Id).FirstOrDefault();
                         if (known == null)
                         {
                             _logger.Warn($"The package {candidate} required by the SlnX {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
                         }
                         else
                         {
-                            Assert(known.MinVersion == candidate.MinVersion &&
+                            Assert(known.Identity.MinVersion == candidate.Identity.MinVersion &&
                                    known.TargetFramework == candidate.TargetFramework &&
                                    known.PackageType == candidate.PackageType,
                                    $"The package {candidate} required by the SlnX {item.Key} selected for debug, does not match the already known one {known}");
@@ -174,7 +174,7 @@ namespace Slnx
             }
         }
 
-        public IEnumerable<NugetPackage> Packages
+        public IEnumerable<NuGetPackage> Packages
         {
             get
             {
@@ -190,7 +190,7 @@ namespace Slnx
         /// <summary>
         /// Return a IEnumerable containing all knwon packages, included the one marked for debugging.
         /// </summary>
-        public IEnumerable<NugetPackage> AllPackages
+        public IEnumerable<NuGetPackage> AllPackages
         {
             get
             {
@@ -211,7 +211,7 @@ namespace Slnx
             }
         }
 
-        public IEnumerable<NugetPackage> PackagesImportedFromDebugSlnx
+        public IEnumerable<NuGetPackage> PackagesImportedFromDebugSlnx
         {
             get
             {
@@ -219,7 +219,7 @@ namespace Slnx
             }
         }
 
-        public Dictionary<NugetPackage, SlnxHandler> DebugSlnxItems
+        public Dictionary<NuGetPackage, SlnxHandler> DebugSlnxItems
         {
             get { return _debugSlnxItems; }
         }
@@ -369,7 +369,7 @@ namespace Slnx
         /// The imported environment variables do NOT override eventually already present values.
         /// Projects or other settings cannot be imported !
         /// </summary>
-        private void ReadImports(Dictionary<string, string> env, Dictionary<string, List<PackageType>> bundle, List<NugetPackage> packages)
+        private void ReadImports(Dictionary<string, string> env, Dictionary<string, List<PackageType>> bundle, List<NuGetPackage> packages)
         {
             //Evaluate eventually defined import(s)
             if (_slnx.import != null)
@@ -550,13 +550,13 @@ namespace Slnx
             }
         }
 
-        private void ExtendList(List<NugetPackage> packages, PackageType[] importedValues)
+        private void ExtendList(List<NuGetPackage> packages, PackageType[] importedValues)
         {
             if (importedValues != null)
             {
                 foreach (var e in importedValues)
                 {
-                    var candidate = new NugetPackage(SafeExpandEnvironmentVariables(e.id),
+                    var candidate = new NuGetPackage(SafeExpandEnvironmentVariables(e.id),
                                                      SafeExpandEnvironmentVariables(e.version), 
                                                      SafeExpandEnvironmentVariables(e.targetFramework), 
                                                      SafeExpandEnvironmentVariables(e.source),
@@ -565,7 +565,7 @@ namespace Slnx
                                                      IsDotNet(e), PackagesPath,
                                                      !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion);
 
-                    var alreadyPresent = packages.Where((x) => x.Id == candidate.Id);
+                    var alreadyPresent = packages.Where((x) => x.Identity.Id == candidate.Identity.Id);
                     if (alreadyPresent.Count() == 0)
                     {
                         packages.Add(candidate);
@@ -574,7 +574,7 @@ namespace Slnx
             }
         }
 
-        public Nuspec GetNugetPackageInformation()
+        public Nuspec GetNuGetPackageInformation()
         {
             Nuspec nuspec = null;
             var nuget = _slnx.nuget;
@@ -620,7 +620,7 @@ namespace Slnx
                         var packageIsReferenced = Projects
                             .Where(refProject => refProject.IsPackable)
                             .Any(refProject => 
-                                    refProject.PackageReferences.Any(refPackage => refPackage.Id == package.Id)
+                                    refProject.PackageReferences.Any(refPackage => refPackage.Identity.Id == package.Identity.Id)
                             );
 
                         if (packageIsReferenced)
@@ -687,13 +687,13 @@ namespace Slnx
         /// If field not specified, assume that it is a .NET lib.
         /// This function assumes that the provided package is either "other" or a .NET implementation assembly.
         /// </summary>
-        private static NugetPackageType IsDotNet(PackageType p)
+        private static NuGetPackageType IsDotNet(PackageType p)
         {
             if (!p.IsDotNetLibSpecified || p.IsDotNetLib)
             {
-                return NugetPackageType.DotNetImplementationAssembly;
+                return NuGetPackageType.DotNetImplementationAssembly;
             }
-            return NugetPackageType.Other;
+            return NuGetPackageType.Other;
         }
 
         /// <summary>
