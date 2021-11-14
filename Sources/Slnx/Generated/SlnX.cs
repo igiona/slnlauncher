@@ -23,7 +23,7 @@ namespace Slnx.Generated {
     [System.Xml.Serialization.XmlRootAttribute("SlnX", Namespace="", IsNullable=false)]
     public partial class SlnXType {
         
-        private NugetType nugetField;
+        private NuGetType nugetField;
         
         private EnvType[] envField;
         
@@ -46,7 +46,7 @@ namespace Slnx.Generated {
         private string skipField;
         
         /// <remarks/>
-        public NugetType nuget {
+        public NuGetType nuget {
             get {
                 return this.nugetField;
             }
@@ -171,7 +171,7 @@ namespace Slnx.Generated {
     [System.SerializableAttribute()]
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
-    public partial class NugetType {
+    public partial class NuGetType {
         
         private string idField;
         
@@ -183,7 +183,7 @@ namespace Slnx.Generated {
         
         private ContentItemType[] contentField;
         
-        private NugetTypeInfo infoField;
+        private NuGetTypeInfo infoField;
         
         private bool excludeProjectsField;
         
@@ -245,7 +245,7 @@ namespace Slnx.Generated {
         }
         
         /// <remarks/>
-        public NugetTypeInfo info {
+        public NuGetTypeInfo info {
             get {
                 return this.infoField;
             }
@@ -686,7 +686,7 @@ namespace Slnx.Generated {
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     [System.Xml.Serialization.XmlTypeAttribute(AnonymousType=true)]
-    public partial class NugetTypeInfo {
+    public partial class NuGetTypeInfo {
         
         private System.Xml.XmlElement[] anyField;
         

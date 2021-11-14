@@ -8,7 +8,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
-using NugetHelper;
+using NuGetClientHelper;
 
 namespace Slnx
 {
@@ -36,7 +36,7 @@ namespace Slnx
         
         const string KeyAsMsBuildProjectVariableTemplate = @"$({0})";       
         const string ProjectReferenceIncludeTemplate = @"$({0})\{1}.{2}";
-        readonly string AssemblyReferenceConditionTemplate = string.Format("$({0}) != 1", NugetHelper.NugetPackage.GetDebugEnvironmentVariableKey("{0}"));
+        readonly string AssemblyReferenceConditionTemplate = string.Format("$({0}) != 1", NuGetClientHelper.NuGetPackage.GetDebugEnvironmentVariableKey("{0}"));
 
         const string AssemblyReferenceElementTag = "Reference";
         const string ProjectReferenceElementTag = "ProjectReference";
@@ -59,7 +59,7 @@ namespace Slnx
         bool _isTestProject = false;
         List<Generated.AssemblyReference> _assemblyReferences = null;
         List<Generated.ProjectReference> _projectReferences = null;
-        List<NugetPackage> _packageReferences = new List<NugetPackage>();
+        List<NuGetPackage> _packageReferences = new List<NuGetPackage>();
         Logger _logger = Logger.Instance;
 
         public CsProject(string fullpath, string container)
@@ -116,8 +116,8 @@ namespace Slnx
                 throw new Exception("Legacy project are not supported anymore by the slnlauncher (>=v3.0.0). Upgrade you project (.NET Framework/Core) to the new SDK style.");
             }
 
-            var environmentVariableKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
-            var environmentVariableFrameworkKey = NugetHelper.NugetPackage.GetFrameworkEnvironmentVariableKey(environmentVariableKey);
+            var environmentVariableKey = NuGetPackage.EscapeStringAsEnvironmentVariableAsKey(Name);
+            var environmentVariableFrameworkKey = NuGetClientHelper.NuGetPackage.GetFrameworkEnvironmentVariableKey(environmentVariableKey);
             EnvironmentVariableKeys = new List<string>() { environmentVariableKey, environmentVariableFrameworkKey };
             Environment.SetEnvironmentVariable(environmentVariableKey, Path.GetDirectoryName(FullPath));
             Environment.SetEnvironmentVariable(environmentVariableFrameworkKey, Framework);
@@ -201,7 +201,7 @@ namespace Slnx
         /// <summary>
         /// List of package references present in the cs-project file
         /// </summary>
-        public List<NugetPackageIdentity> InFilePackageReferences
+        public List<NuGetPackageIdentity> InFilePackageReferences
         {
             get;
             private set;
@@ -210,7 +210,7 @@ namespace Slnx
         /// <summary>
         /// Fully resolved package references (derivate assembly references or package references)
         /// </summary>
-        public List<NugetPackage> PackageReferences
+        public List<NuGetPackage> PackageReferences
         {
             get { return _packageReferences; }
         }
@@ -248,7 +248,7 @@ namespace Slnx
             return string.Format("\nProject(\"{{{0}}}\") = \"{1}\", \"{2}\", \"{{{3}}}\"\nEndProject", TypeGuid, Name, FullPath, ProjectGuid);
         }
 
-        public void TryFixProjectFileAndGatherReferences(IEnumerable<NugetPackage> packages)
+        public void TryFixProjectFileAndGatherReferences(IEnumerable<NuGetPackage> packages)
         {
             _logger.Debug($"Fixing project: {Name}");
 
@@ -291,7 +291,7 @@ namespace Slnx
             importNode.Attributes[ConditionAttributeTag].Value = ImportDebugCondition;
         }
 
-        private List<Generated.AssemblyReference> GetAndFixAssemblyReferences(IEnumerable<NugetPackage> packages)
+        private List<Generated.AssemblyReference> GetAndFixAssemblyReferences(IEnumerable<NuGetPackage> packages)
         {
             var xmlSer = new XmlSerializer(typeof(Generated.AssemblyReference));
             var ret = new List<Generated.AssemblyReference>();
@@ -302,7 +302,7 @@ namespace Slnx
                 if (!string.IsNullOrEmpty(assemblyRef.HintPath)) // && !assemblyRef.HintPath.StartsWith("$"))
                 {
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
-                    NugetPackage candidatePackage = packages.Where((x) => x.Identity.Id == candidatePackageName).FirstOrDefault();
+                    NuGetPackage candidatePackage = packages.Where((x) => x.Identity.Id == candidatePackageName).FirstOrDefault();
 
                     if (candidatePackage == null) //The assembly name might not match the package name
                     {
@@ -313,7 +313,7 @@ namespace Slnx
                     if (candidatePackage != null) //The current project references candidatePackage
                     {
                         PackageReferences.Add(candidatePackage);
-                        var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackage.Identity.Id);
+                        var candidatePackageKey = NuGetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackage.Identity.Id);
                         var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
                         var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
                         if (string.IsNullOrEmpty(assemblyRoot))
@@ -352,7 +352,7 @@ namespace Slnx
                 if (!string.IsNullOrEmpty(projectRef.Include))
                 {
                     var candidateProjectName = Path.GetFileNameWithoutExtension(projectRef.Include);
-                    var candidatePackageKey = NugetPackage.EscapeStringAsEnvironmentVariableAsKey(candidateProjectName);
+                    var candidatePackageKey = NuGetPackage.EscapeStringAsEnvironmentVariableAsKey(candidateProjectName);
                     projectRef.Include = string.Format(ProjectReferenceIncludeTemplate, candidatePackageKey, candidateProjectName, FileExtension);
                     r.Attributes[IncludeAttributeTag].InnerText = projectRef.Include;
                     ret.Add(projectRef);
@@ -361,10 +361,10 @@ namespace Slnx
             return ret;
         }
 
-        private List<NugetPackageIdentity> GetInFilePackageReferences()
+        private List<NuGetPackageIdentity> GetInFilePackageReferences()
         {
             var xmlSer = new XmlSerializer(typeof(Generated.PackageReference));
-            var ret = new List<NugetPackageIdentity>();
+            var ret = new List<NuGetPackageIdentity>();
             foreach (XmlNode r in _xml.GetElementsByTagName(PackageReferenceElementTag))
             {
                 var packageRef = (Generated.PackageReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
@@ -372,7 +372,7 @@ namespace Slnx
                 {
                     if (!ret.Any(x => x.Id.ToLower() == packageRef.Include.ToLower()))
                     {
-                        ret.Add(new NugetPackageIdentity(packageRef.Include, packageRef.Version));
+                        ret.Add(new NuGetPackageIdentity(packageRef.Include, packageRef.Version));
                     }
                     else
                     {
