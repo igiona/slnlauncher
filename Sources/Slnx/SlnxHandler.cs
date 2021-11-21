@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Slnx.Generated;
 using NuGetClientHelper;
 using Ganss.IO;
+using Slnx.Interfaces;
 
 namespace Slnx
 {
@@ -25,6 +26,7 @@ namespace Slnx
         string _slnxName;
         SlnXType _slnx;
         Logger _logger = Logger.Instance;
+        IFileWriter _fileWriter = null;
 
         Dictionary<string, string> _specialSlnxKeys = new Dictionary<string, string>();
         Dictionary<string, string> _environmentVariables = new Dictionary<string, string>();
@@ -35,12 +37,13 @@ namespace Slnx
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
         Dictionary<NuGetPackage, SlnxHandler> _debugSlnxItems = new Dictionary<NuGetPackage, SlnxHandler>();
 
-        public SlnxHandler(string fName, string debugPackageId = null) : this(fName, null, debugPackageId)
+        public SlnxHandler(string fName, IFileWriter writer, string debugPackageId = null) : this(fName, null, writer, debugPackageId)
         {
         }
 
-        public SlnxHandler(string fName, SlnXType userSettings, string debugPackageId)
+        public SlnxHandler(string fName, SlnXType userSettings, IFileWriter writer, string debugPackageId)
         {
+            _fileWriter = writer;
             if (!string.IsNullOrEmpty(debugPackageId))
             {
                 userSettings = null; //Ignore use settings in case of an import via <debug package.../>
@@ -90,7 +93,7 @@ namespace Slnx
                     var debugSourcePakckage = Packages.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
                     Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
-                    var slnxItem = new SlnxHandler(item.Value, item.Key);
+                    var slnxItem = new SlnxHandler(item.Value, _fileWriter, item.Key);
                     _debugSlnxItems[debugSourcePakckage] = slnxItem;
                     _packages.Remove(debugSourcePakckage);
 
@@ -243,15 +246,6 @@ namespace Slnx
             return slnx;
         }
 
-        public static void WriteSlnx(string slnxFile, SlnXType slnx)
-        {
-            var xmlSer = new XmlSerializer(typeof(SlnXType));
-            using (var streamWriter = new StreamWriter(slnxFile))
-            {
-                xmlSer.Serialize(streamWriter, slnx);
-            }
-        }
-
         public void TryFixProjectFiles()
         {
             _logger.Info($"Trying to fix the Assembly and Project of the known projects");
@@ -339,7 +333,7 @@ namespace Slnx
                     container = string.Join("/", enforcedContainer, container);
                 }
 
-                var p = new CsProject(knownProject[0], container);
+                var p = new CsProject(knownProject[0], container, _fileWriter);
                 _projects.Add(p);
             }
         }
@@ -387,7 +381,7 @@ namespace Slnx
                         }
 
                         var slnx = SlnxHandler.ReadSlnx(slnxImportFile);
-                        var imported = new SlnxHandler(slnxImportFile);
+                        var imported = new SlnxHandler(slnxImportFile, _fileWriter);
                         _imports.Add(imported);
 
                         ExtendDictionary(env, slnx.env, false);

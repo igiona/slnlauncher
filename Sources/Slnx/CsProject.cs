@@ -9,6 +9,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 using NuGetClientHelper;
+using Slnx.Interfaces;
 
 namespace Slnx
 {
@@ -61,11 +62,12 @@ namespace Slnx
         List<Generated.ProjectReference> _projectReferences = null;
         List<NuGetPackage> _packageReferences = new List<NuGetPackage>();
         Logger _logger = Logger.Instance;
+        IFileWriter _fileWriter = null;
 
-        public CsProject(string fullpath, string container)
+        public CsProject(string fullpath, string container, IFileWriter writer)
         {
             _logger.Debug($"Processing project: {fullpath}");
-
+            _fileWriter = writer;
             _typeGuid = CsProjectTypeGuid.ToUpper();
 
             _fullPath = Path.GetFullPath(fullpath);
@@ -262,7 +264,7 @@ namespace Slnx
             string projectNewContent = XDocument.Parse(_xml.OuterXml).ToString();
             if (projectNewContent != _projectOriginalContent)
             {
-                File.WriteAllText(FullPath, projectNewContent);
+                _fileWriter.WriteAllText(FullPath, projectNewContent);
                 _projectOriginalContent = projectNewContent;
             }
         }
