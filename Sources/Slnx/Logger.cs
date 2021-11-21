@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Slnx.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -27,21 +28,32 @@ namespace Slnx
         private object _lockMaxLevel = new object();
         
         private static Logger _instance;
+        private IFileWriter _fileWriter = null;
 
         public static Logger Instance
         {
             get
             {
-                if (_instance == null)
-                {
-                    _instance = new Logger();
-                }
-                return _instance;
+                return _instance ?? throw new NullReferenceException("The logger has not been created yet");
             }
         }
 
-        protected Logger()
+        public static void DestroyInstance()
         {
+            _instance = null;
+        }
+
+        public Logger(IFileWriter fileWriter)
+        {
+            if (_instance == null)
+            {
+                _fileWriter = fileWriter;
+                _instance = this;
+            }
+            else
+            {
+                throw new InvalidOperationException("The logger is already initialized. Call Logger.Instance instead.");
+            }
         }
 
         public LogLevel MaxLogLevelDetected
@@ -63,9 +75,9 @@ namespace Slnx
         {
             lock (_lock)
             {
-                if (System.IO.File.Exists(filePath))
+                if (_fileWriter.FileExists(filePath))
                 {
-                    System.IO.File.Delete(filePath);
+                    _fileWriter.DeleteFile(filePath);
                 }
                 _filePath = filePath;
                 _enabledLevel = level;
@@ -117,7 +129,7 @@ namespace Slnx
 
                 lock (_lock)
                 {
-                    System.IO.File.AppendAllText(_filePath, logContent);
+                    _fileWriter.AppendAllText(_filePath, logContent);
                 }
             }
         }

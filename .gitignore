@@ -89,7 +89,6 @@ StyleCopReport.xml
 *.tmp
 *.tmp_proj
 *_wpftmp.csproj
-*.log
 *.vspscc
 *.vssscc
 .builds
@@ -361,8 +360,9 @@ MigrationBackup/
 
 # SlnLauncher generated file, required to debug nuget packages
 nuget.debug
-**/Test/Stimuli/dump.txt
+**/Test/Results
 *.sln
-SetEnvVars.ps1
-SetEnvVars.bat
-SetEnvVars.py
+./*.log
+./SetEnvVars.ps1
+./SetEnvVars.bat
+./SetEnvVars.py

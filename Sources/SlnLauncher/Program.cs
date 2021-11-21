@@ -55,8 +55,10 @@ namespace SlnLauncher
         [STAThread]
         public static void Main(string[] argv, IFileWriter fileWriter)
         {
-            _logger = Logger.Instance;
+            Logger.DestroyInstance();
+
             _fileWriter = fileWriter ?? throw new ArgumentNullException(nameof(fileWriter));
+            _logger = new Logger(fileWriter);
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -682,7 +684,7 @@ EndGlobal
 
             foreach (string f in Directory.EnumerateFiles(slnx.SlnxDirectory, CsProject.ImportDebugProjectName, new EnumerationOptions() { RecurseSubdirectories = true }))
             {
-                File.Delete(f);
+                _fileWriter.DeleteFile(f);
             }
 
             var debugInfo = new Dictionary<CsProject, XmlDocument>();

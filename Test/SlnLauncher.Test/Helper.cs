@@ -32,40 +32,63 @@ namespace SlnLauncher.Test
 
         /// <summary>
         /// Compare files line by line, ignoring the line ending.
+        /// It also ignore the lines that contains one or more element of the skip parameter.
         /// </summary>
         /// <param name="resultFile">Full path to the result file</param>
         /// <param name="expectedFile">Relative path to the expected file.</param>
         /// <returns>Returns true if the file match, false otherwise</returns>
         public static bool Compare(string resultFile, string expectedFile, params string[] skip)
         {
-            //try
+            return Compare(resultFile, expectedFile, null, skip);
+        }
+
+        /// <summary>
+        /// Compare files line by line, ignoring the line ending.
+        /// It also ignore the lines that contains one or more element of the skip parameter.
+        /// Additionally, on each line it ignores also all charaters which are written before the "|" (timestamp)
+        /// </summary>
+        /// <param name="resultFile">Full path to the result file</param>
+        /// <param name="expectedFile">Relative path to the expected file.</param>
+        /// <returns>Returns true if the file match, false otherwise</returns>
+        public static bool CompareLogFile(string resultFile, string expectedFile, params string[] skip)
+        {
+            return Compare(resultFile, expectedFile, "|", skip);
+        }
+
+        private static bool Compare(string resultFile, string expectedFile, string skipUpTo, params string[] skip)
+        {
+            var resultLines = File.ReadAllLines(resultFile);
+            var expectedLines = File.ReadAllLines(GetExpectedPathFor(expectedFile));
+            if (resultLines.Length == expectedLines.Length)
             {
-                var resultLines = File.ReadAllLines(resultFile);
-                var expectedLines = File.ReadAllLines(GetExpectedPathFor(expectedFile));
-                if (resultLines.Length == expectedLines.Length)
+                var lines = resultLines.Length;
+                int i;
+                for (i = 0; i < lines; i++)
                 {
-                    var lines = resultLines.Length;
-                    int i;
-                    for (i = 0; i < lines; i++)
+                    var resLine = resultLines[i];
+                    var expLine = expectedLines[i];
+                    if (!string.IsNullOrEmpty(skipUpTo))
                     {
-                        if (resultLines[i] != expectedLines[i])
+                        var skipChars = resLine.IndexOf(skipUpTo);
+                        if (skipChars != -1) { resLine = resLine.Substring(skipChars); }
+                        skipChars = expLine.IndexOf(skipUpTo);
+                        if (skipChars != -1) { expLine = expLine.Substring(skipChars); }
+                    }
+
+                    if (resLine != expLine)
+                    {
+                        if (!skip.Any(x => resLine.Contains(x)))
                         {
-                            if (!skip.Any(x => resultLines[i].Contains(x)))
-                            {
-                                Console.WriteLine($"Error at line {i}");
-                                break;
-                            }
+                            Console.WriteLine($"Error at line {i} in {resultFile}");
+                            break;
                         }
                     }
-                    if (lines == i)
-                    {
-                        return true;
-                    }
+                }
+                if (lines == i)
+                {
+                    return true;
                 }
             }
-            //catch
-            //{
-            //}
             return false;
         }
 

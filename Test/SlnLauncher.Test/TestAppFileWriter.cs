@@ -3,9 +3,11 @@ using Slnx.Interfaces;
 
 namespace SlnLauncher.Test
 {
-    internal class TestFileWriter : IFileWriter
+    internal class TestAppFileWriter : IFileWriter
     {
-        public TestFileWriter()
+        internal const string FolderName = "TestApp";
+
+        public TestAppFileWriter()
         {
         }
 
@@ -41,7 +43,8 @@ namespace SlnLauncher.Test
 
         private string GetPath(string path)
         {
-            return TestHelper.GeResultPathFor(Path.GetFileName(path));
+            var filePartialPath = Path.Combine(FolderName, Path.GetFileName(path));
+            return TestHelper.GeResultPathFor(filePartialPath);
         }
     }
 }
