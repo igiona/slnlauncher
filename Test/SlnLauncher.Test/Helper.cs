@@ -11,6 +11,7 @@ namespace SlnLauncher.Test
     {
         const string StimulFolder = "Stimuli";
         const string ExpectedFolder = "Expected";
+        const string ResultsFolder = "Results";
 
         internal static string[] GetArguments(string slnxFile, params string[] additionalArgs)
         {
@@ -67,26 +68,36 @@ namespace SlnLauncher.Test
             //}
             return false;
         }
+
         internal static string GetStimulPathFor(string file)
         {
-            return GetStimulTestFor(file, StimulFolder);
+            return GetFolderFor(file, StimulFolder);
+        }
+
+        internal static string GeResultPathFor(string file)
+        {
+            return GetFolderFor(file, ResultsFolder);
+        }
+
+        internal static string GeResultsPath()
+        {
+            return GetFolder(ResultsFolder);
         }
 
         internal static string GetExpectedPathFor(string file)
         {
-            return GetStimulTestFor(file, ExpectedFolder);
+            return GetFolderFor(file, ExpectedFolder);
         }
 
-        internal static string GetDumpFilePathForSlnx(string slnxFile)
-        {
-            slnxFile = GetStimulPathFor(slnxFile);
-            return Path.Combine(Path.GetDirectoryName(slnxFile), "dump.txt");
-        }
-
-        private static string GetStimulTestFor(string path, string testFolder)
+        private static string GetFolder(string testFolder)
         {
             var key = NuGetClientHelper.NuGetPackage.EscapeStringAsEnvironmentVariableAsKey(typeof(TestHelper).Assembly.GetName().Name);
-            return Path.Combine($"{Environment.ExpandEnvironmentVariables($"%{key}%")}", "..", testFolder, path);
+            return Path.Combine($"{Environment.ExpandEnvironmentVariables($"%{key}%")}", "..", testFolder);
+        }
+
+        private static string GetFolderFor(string path, string testFolder)
+        {
+            return Path.Combine(GetFolder(testFolder), path);
         }
     }
 }

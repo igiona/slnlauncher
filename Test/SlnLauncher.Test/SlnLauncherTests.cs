@@ -12,6 +12,12 @@ namespace SlnLauncher.Test
         [SetUp]
         public void Setup()
         {
+            var resultFolder = TestHelper.GeResultsPath();
+            if (Directory.Exists(resultFolder))
+            {
+                Directory.Delete(resultFolder, true);
+            }
+            Directory.CreateDirectory(resultFolder);
         }
 
         //[TestCase("InvalidMinVersionOnProjectRef.slnx", typeof(NuGetClientHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
@@ -27,7 +33,7 @@ namespace SlnLauncher.Test
         //[TestCase("InvalidMinVersionOnProjectRefForceMinFalseOnPackage.slnx", null)]
         public void MinVersion_TestPasses(string slnxFile, string argument)
         {
-            SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument));
+            Assert.DoesNotThrow(() => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument)));
         }
 
         [TestCase("InvalidMinVersionOnSlnxForceMinFalseOnPackage.slnx", null)]
@@ -37,8 +43,8 @@ namespace SlnLauncher.Test
         public void CheckDump(string slnxFile, string argument)
         {
             var expectedFile = TestHelper.GetExpectedPathFor($"{slnxFile}.dump.txt");
-            var dumpFile = TestHelper.GetDumpFilePathForSlnx(slnxFile);
-            SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument, "--dump"));
+            var dumpFile = TestHelper.GeResultPathFor("dump.txt");
+            SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument, "--dump"), new TestFileWriter());
 
             Assert.IsTrue(TestHelper.Compare(dumpFile, expectedFile,
                             Path.Combine("Test", "Stimuli", "Projects"),

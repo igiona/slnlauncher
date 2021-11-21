@@ -15,6 +15,7 @@ using Slnx.Generated;
 using NDesk.Options;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
+using Slnx.Interfaces;
 
 // Important note:
 //  The NuGet Client code requires to know its version.
@@ -40,6 +41,7 @@ namespace SlnLauncher
         static string _psEnvVarsPath = null;
         static Logger _logger = null;
         static LogLevel _logLevel = LogLevel.Info;
+        static IFileWriter _fileWriter = null ;
 
         /// <summary>
         /// The main entry point for the application.
@@ -47,7 +49,14 @@ namespace SlnLauncher
         [STAThread]
         public static void Main(string[] argv)
         {
+            Main(argv, new OutputFileWriter());
+        }
+
+        [STAThread]
+        public static void Main(string[] argv, IFileWriter fileWriter)
+        {
             _logger = Logger.Instance;
+            _fileWriter = fileWriter ?? throw new ArgumentNullException(nameof(fileWriter));
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
@@ -123,7 +132,7 @@ namespace SlnLauncher
                     slnxUser = SlnxHandler.ReadSlnx(slnxUserFile);
                 }
 
-                var slnx = new SlnxHandler(slnxFile, slnxUser, null);
+                var slnx = new SlnxHandler(slnxFile, slnxUser, _fileWriter, null);
                 var originalPackageList = new List<NuGetClientHelper.NuGetPackage>(slnx.Packages);
                 bool errorOccured = false;
                 try
@@ -373,146 +382,141 @@ namespace SlnLauncher
         {
             string outDir = slnx.SlnxDirectory;
             _logger.Info("Creating MS Build targets in {0}", outDir);
-            using (var f = new StreamWriter(Path.Combine(outDir, "MsBuildGeneratedProperties.targets")))
+            var content = new StringBuilder();
+            var keys = GetAllKeys(slnx);
+
+            content.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            content.AppendLine("<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
+            content.AppendLine("    <PropertyGroup>");
+            foreach (var key in keys)
             {
-                var keys = GetAllKeys(slnx);
-
-                f.WriteLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-                f.WriteLine("<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
-                f.WriteLine("    <PropertyGroup>");
-                foreach (var key in keys)
-                {
-                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
-                    f.WriteLine("        <{0}>{1}</{0}>", key, value);
-                }
-                f.WriteLine("\n        <MsBuildGeneratedProperties Condition=\" '$(MsBuildGeneratedProperties)' == '' \">");
-
-                foreach (var key in keys)
-                {
-                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
-                    f.WriteLine("            {0}={1};", key, value);
-                }
-
-                f.WriteLine("        </MsBuildGeneratedProperties>");
-                f.WriteLine("    </PropertyGroup>");
-                f.WriteLine("</Project>");
+                var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                content.AppendLine($"        <{key}>{value}</{key}>");
             }
+            content.AppendLine("\n        <MsBuildGeneratedProperties Condition=\" '$(MsBuildGeneratedProperties)' == '' \">");
+
+            foreach (var key in keys)
+            {
+                var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                content.AppendLine($"            {key}={value};");
+            }
+
+            content.AppendLine("        </MsBuildGeneratedProperties>");
+            content.AppendLine("    </PropertyGroup>");
+            content.AppendLine("</Project>");
+
+            _fileWriter.WriteAllText(Path.Combine(outDir, "MsBuildGeneratedProperties.targets"), content.ToString());
         }
 
         static void Dump(SlnxHandler slnx, bool errorOccured)
         {
+            const int firstColWidth = 40;
+            const int sublineFirstColWidth = 20;
+
             string outDir = slnx.SlnxDirectory;
             _logger.Info("Dumping SlnX info in {0}", outDir);
-            
+            var content = new StringBuilder();
 
-            using (var f = new StreamWriter(Path.Combine(outDir, "dump.txt")))
+            if (errorOccured)
             {
-                if (errorOccured)
+                var errorDisclaimer = "Dumping is performed although there was an exception during the loading operations. The dump might be partial, invalid or inaccurate.";
+                _logger.Info(errorDisclaimer);
+                content.AppendLine($"/!\\ DISCLAIMER {errorDisclaimer}{Environment.NewLine}{Environment.NewLine}");
+            }
+
+            content.AppendLine($"CS Projects:{Environment.NewLine}");
+            foreach (var p in slnx.Projects ?? Enumerable.Empty<CsProject>())
+            {
+                content.AppendLine($"{p.Name,-firstColWidth} => {p.FullPath}");
+            }
+
+            content.AppendLine($"{Environment.NewLine}CS Projects imported for debugging:{Environment.NewLine}");
+            foreach (var p in slnx.ProjectsImportedFromDebugSlnx ?? Enumerable.Empty<CsProject>())
+            {
+                content.AppendLine($"{p.Name,-firstColWidth} => {p.FullPath}");
+            }
+
+            content.AppendLine($"------------------------------------{Environment.NewLine}");
+            content.AppendLine($"NuGet packages:{Environment.NewLine}");
+            foreach (var p in slnx.Packages ?? Enumerable.Empty<NuGetClientHelper.NuGetPackage>())
+            {
+                content.AppendLine($"{p,-firstColWidth} => {p.FullPath} [{p.PackageType}]");
+                foreach (var d in p.Dependencies)
                 {
-                    var errorDisclaimer = "Dumping is performed although there was an exception during the loading operations. The dump might be partial, invalid or inaccurate.";
-                    _logger.Info(errorDisclaimer);
-                    f.WriteLine($"/!\\ DISCLAIMER {errorDisclaimer}\n\n");
-                }
-
-                f.WriteLine("CS Projects:\n");
-                foreach (var p in slnx.Projects ?? Enumerable.Empty<CsProject>())
-                {
-                    f.WriteLine("{0,-40} => {1}", p.Name, p.FullPath);
-                }
-
-                f.WriteLine("\nCS Projects imported for debugging:\n");
-                foreach (var p in slnx.ProjectsImportedFromDebugSlnx ?? Enumerable.Empty<CsProject>())
-                {
-                    f.WriteLine("{0,-40} => {1}", p.Name, p.FullPath);
-                }
-
-                f.WriteLine("------------------------------------\n");
-                f.WriteLine("NuGet packages:\n");
-                foreach (var p in slnx.Packages ?? Enumerable.Empty<NuGetClientHelper.NuGetPackage>())
-                {
-                    f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
-                    foreach (var d in p.Dependencies)
-                    {
-                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.PackageDependency.Id, d.PackageDependency.VersionRange, p.PackageType);
-                    }
-                }
-
-                f.WriteLine("\nNuGet packages required by the projects imported for debugging:\n");
-                foreach (var p in slnx.PackagesImportedFromDebugSlnx ?? Enumerable.Empty<NuGetClientHelper.NuGetPackage>())
-                {
-                    f.WriteLine("{0,-40} => {1} [{2}]", p, p.FullPath, p.PackageType);
-                    foreach (var d in p.Dependencies)
-                    {
-                        f.WriteLine("    | {0,-20} => {1} [{2}]", d.PackageDependency.Id, d.PackageDependency.VersionRange, p.PackageType);
-                    }
-                }
-
-                f.WriteLine("------------------------------------\n");
-                f.WriteLine("Environment variables:\n");
-
-                var keys = GetAllKeys(slnx);
-
-                foreach (var key in keys)
-                {
-                    var envVar = Environment.GetEnvironmentVariable(key);
-                    string value = null;
-                    if (envVar != null)
-                    {
-                        value = slnx.SafeExpandEnvironmentVariables(envVar);
-                    }
-                    f.WriteLine("{0} = {1}", key, value);
+                    content.AppendLine($"    | {d.PackageDependency.Id,-sublineFirstColWidth} => {d.PackageDependency.VersionRange} [{p.PackageType}]");
                 }
             }
+
+            content.AppendLine($"{Environment.NewLine}NuGet packages required by the projects imported for debugging:{Environment.NewLine}");
+            foreach (var p in slnx.PackagesImportedFromDebugSlnx ?? Enumerable.Empty<NuGetClientHelper.NuGetPackage>())
+            {
+                content.AppendLine($"{p,-firstColWidth} => {p.FullPath} [{p.PackageType}]");
+                foreach (var d in p.Dependencies)
+                {
+                    content.AppendLine($"    | {d.PackageDependency.Id,-sublineFirstColWidth} => {d.PackageDependency.VersionRange} [{p.PackageType}]");
+                }
+            }
+
+            content.AppendLine($"------------------------------------{Environment.NewLine}");
+            content.AppendLine($"Environment variables:{Environment.NewLine}");
+
+            var keys = GetAllKeys(slnx);
+
+            foreach (var key in keys)
+            {
+                var envVar = Environment.GetEnvironmentVariable(key);
+                string value = null;
+                if (envVar != null)
+                {
+                    value = slnx.SafeExpandEnvironmentVariables(envVar);
+                }
+                content.AppendLine($"{key} = {value}");
+            }
+            _fileWriter.WriteAllText(Path.Combine(outDir, "dump.txt"), content.ToString());
         }
 
         static void CreatePythonnModule(SlnxHandler slnx, string outDir)
         {
             _logger.Info("Creating Python module in {0}", outDir);
+            var content = new StringBuilder();
+            var keys = GetAllKeys(slnx);
 
-            using (var f = new StreamWriter(Path.Combine(outDir, "SetEnvVars.py")))
+            content.AppendLine($"import os{Environment.NewLine}");
+
+            foreach (var key in keys)
             {
-                var keys = GetAllKeys(slnx);
-
-                f.WriteLine("import os\n");
-
-                foreach (var key in keys)
-                {
-                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
-                    f.WriteLine("os.environ['{0}'] = r'{1}'", key, value);
-                }
+                var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                content.AppendLine($"os.environ['{key}'] = r'{value}'");
             }
+            _fileWriter.WriteAllText(Path.Combine(outDir, "SetEnvVars.py"), content.ToString());
         }
 
         static void CreateBatchModule(SlnxHandler slnx, string outDir)
         {
             _logger.Info("Creating Batch module in {0}", outDir);
+            var content = new StringBuilder();
+            var keys = GetAllKeys(slnx);
 
-            using (var f = new StreamWriter(Path.Combine(outDir, "SetEnvVars.bat")))
+            foreach (var key in keys)
             {
-                var keys = GetAllKeys(slnx);
-
-                foreach (var key in keys)
-                {
-                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
-                    f.WriteLine("set {0}={1}", key, value);
-                }
+                var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                content.AppendLine($"set {key}={value}");
             }
+            _fileWriter.WriteAllText(Path.Combine(outDir, "SetEnvVars.bat"), content.ToString());
         }
 
         static void CreatePowerShellModule(SlnxHandler slnx, string outDir)
         {
             _logger.Info("Creating PS module in {0}", outDir);
+            var content = new StringBuilder();
+            var keys = GetAllKeys(slnx);
 
-            using (var f = new StreamWriter(Path.Combine(outDir, "SetEnvVars.ps1")))
+            foreach (var key in keys)
             {
-                var keys = GetAllKeys(slnx);
-
-                foreach (var key in keys)
-                {
-                    var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
-                    f.WriteLine($"[Environment]::SetEnvironmentVariable(\"{key}\", \"{value}\")");
-                }
+                var value = slnx.SafeExpandEnvironmentVariables(Environment.GetEnvironmentVariable(key));
+                content.AppendLine($"[Environment]::SetEnvironmentVariable(\"{key}\", \"{value}\")");
             }
+            _fileWriter.WriteAllText(Path.Combine(outDir, "SetEnvVars.ps1"), content.ToString());
         }
 
         static void OpenSln(string sln)
@@ -543,7 +547,7 @@ namespace SlnLauncher
             string outFile = slnx.SlnPath;
             if (Path.GetExtension(outFile).ToLower() != SlnxHandler.SlnExtension)
             {
-                throw new Exception(string.Format("The configured sln file is not support. Only '{0}' file are supported\n\n\tFile='{1}'", SlnxHandler.SlnExtension, outFile));
+                throw new Exception($"The configured sln file is not support. Only '{SlnxHandler.SlnExtension}' file are supported{Environment.NewLine}{Environment.NewLine}\tFile='{outFile}'");
             }
             _logger.Info($"Creating solution file: {outFile}");
 
@@ -651,7 +655,7 @@ Global
 	EndGlobalSection
 EndGlobal
 ", Guid.NewGuid().ToString());
-            WriteAllText(outFile, slnSb.ToString());
+            _fileWriter.WriteAllText(outFile, slnSb.ToString());
         }
 
         static XmlDocument TryGetDebugXmlDoc(CsProject proj, NuGetClientHelper.NuGetPackage package)
@@ -713,7 +717,7 @@ EndGlobal
             foreach(var di in debugInfo)
             {
                 string prettyContent = XDocument.Parse(di.Value.OuterXml).ToString();
-                WriteAllText(Path.Join(di.Key.FullDir, CsProject.ImportDebugProjectName), prettyContent);
+                _fileWriter.WriteAllText(Path.Join(di.Key.FullDir, CsProject.ImportDebugProjectName), prettyContent);
             }
         }
 
@@ -732,20 +736,6 @@ EndGlobal
                 {
                     itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, referencedProject.FullPath);
                 }
-            }
-        }
-
-        /// <summary>
-        /// File.WriteAllText writes to the filesystem cache.
-        /// The file is written to the disk by the OS at a later stage.
-        /// This can be a problem, if the generated output is required by some other SW.
-        /// This method makes use of the StreamWriter, which behaves differently.
-        /// </summary>
-        static void WriteAllText(string path, string text)
-        {
-            using (var f = new StreamWriter(path))
-            {
-                f.Write(text);
             }
         }
 
