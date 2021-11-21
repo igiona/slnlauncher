@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TestApp.Lib.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json" Condition="$(Newtonsoft_Json_debug) != 1">
+      <HintPath>$(Newtonsoft_Json)\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="NuGet.Versioning" Condition="$(NuGet_Versioning_debug) != 1">
+      <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
