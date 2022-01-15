@@ -54,6 +54,7 @@ namespace SlnLauncher
             _openSolution = true;
             _createMsBuild = false;
             var _printVersion = false;
+            var _printHelp = false;
             var quiteExecution = false;
             var autoUpdateNuGetDependencies = true;
             var nugetForceMinVersion = true;
@@ -65,6 +66,7 @@ namespace SlnLauncher
             _pythonEnvVarsPath = null;
 
             OptionSet p = new OptionSet()
+              .Add("h|help", "Prints the list of command and exits.", v => _printHelp = v != null)
               .Add("v|version", "Prints the tool version in the standard output and exits.", v => _printVersion = v != null)
               .Add("q|quite", "If set (-q/-q+) no popups will be shown in case of exceptions. [Default: not set]", v => quiteExecution = v != null)
               .Add("<>", "SlnX file path", v => slnxFile = v)
@@ -76,7 +78,7 @@ namespace SlnLauncher
               .Add("ps=|powershellModule=", "Path to the power-shell module. If set the specified power-shell module containing all defined environment variables is created. [Default: not set]", v => _psEnvVarsPath = v)
               .Add("msb|msbuildModule", "If set (-msb/-msb+) a MSBuild module containing all defined environment variables is created in the SlnX location. [Default: not set]", v => _createMsBuild = v != null)
               .Add("log", "If set (-log/-log+), a log file location in the SlnX directory (or EXE if that path is invalid) will be created. [Default: false]", v => _logEnabled = v != null)
-              .Add(string.Format("lv=|logVerbosity=", "Set the log level of verbosity. Valid values {0}. [Default: {1}]", string.Join(",", Enum.GetNames<LogLevel>()), _logLevel), v => _logLevel = ParseLogLevel(v))
+              .Add("lv=|logVerbosity=", string.Format("Set the log level of verbosity. Valid values {0}. [Default: {1}]", string.Join(",", Enum.GetNames<LogLevel>()), _logLevel), v => _logLevel = ParseLogLevel(v))
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
               .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNuGetDependencies = v != null)
               .Add("offline", "If set (-offline/-offline+), The current SlnX packagesPath attribute will be used as source for all packages. [Default: false]", v => offlineMode = v != null)
@@ -88,6 +90,12 @@ namespace SlnLauncher
                 if (_printVersion)
                 {
                     Console.WriteLine("SlnLauncher v{0}", typeof(SlnxHandler).Assembly.GetName().Version.ToString(3));
+                    return;
+                }
+                if (_printHelp)
+                {
+                    Console.WriteLine("SlnLauncher v{0}", typeof(SlnxHandler).Assembly.GetName().Version.ToString(3));
+                    p.WriteOptionDescriptions(Console.Out);
                     return;
                 }
 
