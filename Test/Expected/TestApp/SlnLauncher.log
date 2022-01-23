@@ -1,43 +1,53 @@
 
-19:16:38 | Info	| SlnLauncher	| Application started with parameters: -o-
+13:31:08 | Info	| SlnLauncher	| Application started with parameters: -o-
 -q
 --log
-<depends_on_the_installation>\slnlauncher\Test\SlnLauncher.Test\..\Stimuli\TestApp\TestApp.slnx
-19:16:38 | Info	| SlnLauncher	| Downloading required NuGet packages...
-19:16:50 | Info	| SlnLauncher	| Running dependency check with force min-version match set to True, and ignore dependency is False
-19:16:50 | Info	| SlnLauncher	| Checking debug packages consistency...
-19:16:50 | Info	| SlnLauncher	| Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file
-19:16:50 | Info	| SlnLauncher	| The .NET implementation package Microsoft.NETCore.Platforms V1.0.1 netstandard1.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
-19:16:50 | Info	| SlnLauncher	| The .NET implementation package Microsoft.NETCore.Targets V1.0.1 netstandard1.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
-19:16:50 | Info	| SlnLauncher	| Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package Microsoft.CSharp V4.0.1 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Dynamic.Runtime V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Linq.Expressions V4.1.0 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Reflection V4.1.0 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.IO V4.1.0 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Runtime V4.1.0 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Text.Encoding V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Threading.Tasks V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Reflection.Primitives V4.0.1 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.ObjectModel V4.0.12 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Collections V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Diagnostics.Debug V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Globalization V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Linq V4.1.0 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Reflection.Extensions V4.0.1 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Resources.ResourceManager V4.0.1 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Runtime.Extensions V4.1.0 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Runtime.Serialization.Primitives V4.1.1 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Text.Encoding.Extensions V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Text.RegularExpressions V4.1.0 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Threading V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Xml.ReaderWriter V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| The .NET compilte time package System.Xml.XDocument V4.0.11 netstandard1.0 has been installed as dependency.
-19:16:50 | Info	| SlnLauncher	| Fixing project files
-19:16:50 | Info	| SlnLauncher	| Trying to fix the Assembly and Project of the known projects
-19:16:50 | Info	| SlnLauncher	| Trying to fix the Assembly and Project reference of TestApp.Lib
-19:16:50 | Info	| SlnLauncher	| Trying to fix the Assembly and Project reference of TestApp.Lib.Test
-19:16:50 | Info	| SlnLauncher	| Trying to fix the Assembly and Project reference of TestApp.UiUnformattedProj
-19:16:50 | Info	| SlnLauncher	| Creating solution file: <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\TestApp.sln
-19:16:50 | Info	| SlnLauncher	| Cleaning/Creating debug files for TestApp
-19:16:50 | Info	| SlnLauncher	| Done!
+<depends_on_the_installation\SlnLauncher.Test\..\Stimuli\TestApp\TestApp.slnx
+13:31:08 | Info	| SlnLauncher	| Downloading required NuGet packages...
+13:31:10 | Info	| SlnLauncher	| Running dependency check with force min-version match set to True, and ignore dependency is False
+13:31:10 | Info	| SlnLauncher	| Checking debug packages consistency...
+13:31:10 | Info	| SlnLauncher	| Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package Microsoft.NETCore.Platforms V1.0.1 netstandard1.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package Microsoft.NETCore.Targets V1.0.1 netstandard1.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package NuGet.Frameworks V5.8.1 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package NuGet.Configuration V5.8.1 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Security.Cryptography.ProtectedData V4.4.0 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Security.Cryptography.Cng V5.0.0 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Security.Cryptography.Pkcs V5.0.0 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Buffers V4.5.1 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Formats.Asn1 V5.0.0 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Memory V4.5.4 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Numerics.Vectors V4.4.0 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| The .NET implementation package System.Runtime.CompilerServices.Unsafe V4.5.3 netstandard2.0 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+13:31:10 | Info	| SlnLauncher	| Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package Microsoft.CSharp V4.0.1 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Dynamic.Runtime V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Linq.Expressions V4.1.0 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Reflection V4.1.0 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.IO V4.1.0 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Runtime V4.1.0 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Text.Encoding V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Threading.Tasks V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Reflection.Primitives V4.0.1 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.ObjectModel V4.0.12 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Collections V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Diagnostics.Debug V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Globalization V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Linq V4.1.0 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Reflection.Extensions V4.0.1 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Resources.ResourceManager V4.0.1 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Runtime.Extensions V4.1.0 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Runtime.Serialization.Primitives V4.1.1 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Text.Encoding.Extensions V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Text.RegularExpressions V4.1.0 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Threading V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Xml.ReaderWriter V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| The .NET compilte time package System.Xml.XDocument V4.0.11 netstandard1.0 has been installed as dependency.
+13:31:10 | Info	| SlnLauncher	| Creating solution file: <depends_on_the_installation\Stimuli\TestApp\TestApp.sln
+13:31:10 | Info	| SlnLauncher	| Cleaning generated files for TestApp
+13:31:10 | Info	| SlnLauncher	| Adding nuget package references to the CsProjects...
+13:31:10 | Info	| SlnLauncher	| Trying to fix the Assembly and Project of the known projects
+13:31:10 | Info	| SlnLauncher	| Trying to fix the Assembly and Project reference of TestApp.Lib
+13:31:10 | Info	| SlnLauncher	| Trying to fix the Assembly and Project reference of TestApp.Lib.Test
+13:31:10 | Info	| SlnLauncher	| Trying to fix the Assembly and Project reference of TestApp.UiUnformattedProj
+13:31:10 | Info	| SlnLauncher	| Done!

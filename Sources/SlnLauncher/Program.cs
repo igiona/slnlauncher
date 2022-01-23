@@ -208,8 +208,9 @@ namespace SlnLauncher
                     }
                 }
 
-                _logger.Info($"Fixing project files");
-                slnx.TryFixProjectFiles();
+                MakeSln(slnx);
+                CleanGeneratedFiles(slnx);
+                slnx.CreateGenereatedFiles();
 
                 if (!string.IsNullOrEmpty(nuspecDir))
                 {
@@ -239,9 +240,6 @@ namespace SlnLauncher
                         throw new Exception("Missing or invalid nuget content information in the provided SlnX file.");
                     }
                 }
-                
-                MakeSln(slnx);
-                MakeAndCleanNuGetDebugFile(slnx);
 
                 if (_logger.LogLevelDetected(LogLevel.Warning))
                 {
@@ -660,83 +658,26 @@ EndGlobal
             _fileWriter.WriteAllText(outFile, slnSb.ToString());
         }
 
-        static XmlDocument TryGetDebugXmlDoc(CsProject proj, NuGetClientHelper.NuGetPackage package)
+        static List<SlnxHandler> GetAllSlnxHanlders(SlnxHandler mainSlnx)
         {
-            if (proj.AssemblyReferences != null)
-            {
-                foreach (var r in proj.AssemblyReferences)
-                {
-                    if (package.Libraries.Any(x => Path.GetFileName(x) == Path.GetFileName(r.HintPath)))
-                    {
-                        var newDocument = new XmlDocument();
-                        var root = newDocument.CreateNode(XmlNodeType.Element, "Project", null);
-                        newDocument.AppendChild(root);
-                        return newDocument;
-                    }
-                }
-            }
-            return null;
+            var slnxToProcess = new List<SlnxHandler>();
+            slnxToProcess.Add(mainSlnx);
+            if (mainSlnx.DebugSlnxItems != null)
+                slnxToProcess.AddRange(mainSlnx.DebugSlnxItems.Values);
+            return slnxToProcess;
         }
 
-        static void MakeAndCleanNuGetDebugFile(SlnxHandler slnx, SlnxHandler mainSlnx = null)
+        static void CleanGeneratedFiles(SlnxHandler mainSlnx)
         {
-            _logger.Info($"Cleaning/Creating debug files for {slnx.SlnxName}");
-
-            foreach (string f in Directory.EnumerateFiles(slnx.SlnxDirectory, CsProject.ImportDebugProjectName, new EnumerationOptions() { RecurseSubdirectories = true }))
+            foreach (var slnx in GetAllSlnxHanlders(mainSlnx))
             {
-                _fileWriter.DeleteFile(f);
-            }
-
-            var debugInfo = new Dictionary<CsProject, XmlDocument>();
-            var debugItems = mainSlnx?.DebugSlnxItems ?? slnx.DebugSlnxItems;
-
-            foreach (var item in debugItems)
-            {
-                var nugetPackage = item.Key;
-                foreach (var p in slnx.Projects)
+                _logger.Info($"Cleaning generated files for {slnx.SlnxName}");
+                foreach (var pattern in new[] { CsProject.ImportDebugProjectName, CsProject.ImportPacakageReferencesProjectName })
                 {
-                    if (mainSlnx != null)
+                    foreach (string f in Directory.EnumerateFiles(slnx.ProjectsSearchPath, pattern, new EnumerationOptions() { RecurseSubdirectories = true }))
                     {
-                        p.TryFixProjectFileAndGatherReferences(mainSlnx.AllPackages);
+                        _fileWriter.DeleteFile(f);
                     }
-
-                    var debugDoc = TryGetDebugXmlDoc(p, nugetPackage);
-                    if (debugDoc != null)
-                    {
-                        if (!debugInfo.ContainsKey(p))
-                        {
-                            debugInfo[p] = debugDoc;
-                        }
-                        AppendDebugElement(debugInfo[p], p, item);
-                    }
-                }
-                if (mainSlnx == null)
-                {
-                    MakeAndCleanNuGetDebugFile(item.Value, slnx);
-                }
-            }
-
-            foreach(var di in debugInfo)
-            {
-                string prettyContent = XDocument.Parse(di.Value.OuterXml).ToString();
-                _fileWriter.WriteAllText(Path.Join(di.Key.FullDir, CsProject.ImportDebugProjectName), prettyContent);
-            }
-        }
-
-        static void AppendDebugElement(XmlDocument nugetDebugXml, CsProject referencingProject, KeyValuePair<NuGetClientHelper.NuGetPackage, SlnxHandler> item)
-        {
-            var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
-            nugetDebugXml.DocumentElement.AppendChild(propertyGroup);
-            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NuGetClientHelper.NuGetPackage.GetDebugEnvironmentVariableKey(item.Key.Identity.Id));
-
-            var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
-            nugetDebugXml.DocumentElement.AppendChild(itemGroup);
-            itemGroup.InnerXml = "";
-            foreach (var referencedProject in item.Value.Projects.Where(x => !x.IsTestProject))
-            {
-                if (referencingProject.AssemblyReferences.Any(r => referencedProject.Name == Path.GetFileNameWithoutExtension(r.HintPath)))
-                {
-                    itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, referencedProject.FullPath);
                 }
             }
         }
