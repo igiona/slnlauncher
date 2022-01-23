@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
   <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
