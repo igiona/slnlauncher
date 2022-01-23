@@ -193,12 +193,12 @@ namespace Slnx
             private set;
         }
 
-        public List<Generated.AssemblyReference> AssemblyReferences
+        public IReadOnlyList<Generated.AssemblyReference> AssemblyReferences
         {
             get { return _assemblyReferences; }
         }
 
-        public List<Generated.ProjectReference> ProjectReferences
+        public IReadOnlyList<Generated.ProjectReference> ProjectReferences
         {
             get { return _projectReferences; }
         }
@@ -206,14 +206,15 @@ namespace Slnx
         /// <summary>
         /// List of package references present in the cs-project file
         /// </summary>
-        public List<NuGetPackageIdentity> InFilePackageReferences
+        public IReadOnlyList<NuGetPackageIdentity> InFilePackageReferences
         {
             get;
             private set;
         }
 
         /// <summary>
-        /// Fully resolved package references (derivate assembly references or package references)
+        /// Fully resolved package references (derivate assembly references or package references).
+        /// Could be extended by other classes.
         /// </summary>
         public List<NuGetPackage> PackageReferences
         {

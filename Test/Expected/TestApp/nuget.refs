@@ -1,0 +1,6 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Include="NuGet.Common" Version="5.8.1" />
+    <PackageReference Include="NuGet.Packaging" Version="5.8.1" />
+  </ItemGroup>
+</Project>
