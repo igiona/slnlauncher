@@ -88,9 +88,45 @@
         <System_Xml_XDocument>C:\Nugetcache\System.Xml.XDocument.4.0.11\ref\netstandard1.0</System_Xml_XDocument>
         <System_Xml_XDocument_version>4.0.11</System_Xml_XDocument_version>
         <System_Xml_XDocument_framework>netstandard1.0</System_Xml_XDocument_framework>
+        <NuGet_Common>C:\Nugetcache\NuGet.Common.5.8.1\lib\netstandard2.0</NuGet_Common>
+        <NuGet_Common_version>5.8.1</NuGet_Common_version>
+        <NuGet_Common_framework>netstandard2.0</NuGet_Common_framework>
+        <NuGet_Frameworks>C:\Nugetcache\NuGet.Frameworks.5.8.1\lib\netstandard2.0</NuGet_Frameworks>
+        <NuGet_Frameworks_version>5.8.1</NuGet_Frameworks_version>
+        <NuGet_Frameworks_framework>netstandard2.0</NuGet_Frameworks_framework>
+        <NuGet_Packaging>C:\Nugetcache\NuGet.Packaging.5.8.1\lib\netstandard2.0</NuGet_Packaging>
+        <NuGet_Packaging_version>5.8.1</NuGet_Packaging_version>
+        <NuGet_Packaging_framework>netstandard2.0</NuGet_Packaging_framework>
+        <NuGet_Configuration>C:\Nugetcache\NuGet.Configuration.5.8.1\lib\netstandard2.0</NuGet_Configuration>
+        <NuGet_Configuration_version>5.8.1</NuGet_Configuration_version>
+        <NuGet_Configuration_framework>netstandard2.0</NuGet_Configuration_framework>
+        <System_Security_Cryptography_ProtectedData>C:\Nugetcache\System.Security.Cryptography.ProtectedData.4.4.0\lib\netstandard2.0</System_Security_Cryptography_ProtectedData>
+        <System_Security_Cryptography_ProtectedData_version>4.4.0</System_Security_Cryptography_ProtectedData_version>
+        <System_Security_Cryptography_ProtectedData_framework>netstandard2.0</System_Security_Cryptography_ProtectedData_framework>
         <NuGet_Versioning>C:\Nugetcache\NuGet.Versioning.5.8.1\lib\netstandard2.0</NuGet_Versioning>
         <NuGet_Versioning_version>5.8.1</NuGet_Versioning_version>
         <NuGet_Versioning_framework>netstandard2.0</NuGet_Versioning_framework>
+        <System_Security_Cryptography_Cng>C:\Nugetcache\System.Security.Cryptography.Cng.5.0.0\lib\netstandard2.0</System_Security_Cryptography_Cng>
+        <System_Security_Cryptography_Cng_version>5.0.0</System_Security_Cryptography_Cng_version>
+        <System_Security_Cryptography_Cng_framework>netstandard2.0</System_Security_Cryptography_Cng_framework>
+        <System_Security_Cryptography_Pkcs>C:\Nugetcache\System.Security.Cryptography.Pkcs.5.0.0\lib\netstandard2.0</System_Security_Cryptography_Pkcs>
+        <System_Security_Cryptography_Pkcs_version>5.0.0</System_Security_Cryptography_Pkcs_version>
+        <System_Security_Cryptography_Pkcs_framework>netstandard2.0</System_Security_Cryptography_Pkcs_framework>
+        <System_Buffers>C:\Nugetcache\System.Buffers.4.5.1\lib\netstandard2.0</System_Buffers>
+        <System_Buffers_version>4.5.1</System_Buffers_version>
+        <System_Buffers_framework>netstandard2.0</System_Buffers_framework>
+        <System_Formats_Asn1>C:\Nugetcache\System.Formats.Asn1.5.0.0\lib\netstandard2.0</System_Formats_Asn1>
+        <System_Formats_Asn1_version>5.0.0</System_Formats_Asn1_version>
+        <System_Formats_Asn1_framework>netstandard2.0</System_Formats_Asn1_framework>
+        <System_Memory>C:\Nugetcache\System.Memory.4.5.4\lib\netstandard2.0</System_Memory>
+        <System_Memory_version>4.5.4</System_Memory_version>
+        <System_Memory_framework>netstandard2.0</System_Memory_framework>
+        <System_Numerics_Vectors>C:\Nugetcache\System.Numerics.Vectors.4.4.0\lib\netstandard2.0</System_Numerics_Vectors>
+        <System_Numerics_Vectors_version>4.4.0</System_Numerics_Vectors_version>
+        <System_Numerics_Vectors_framework>netstandard2.0</System_Numerics_Vectors_framework>
+        <System_Runtime_CompilerServices_Unsafe>C:\Nugetcache\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\netstandard2.0</System_Runtime_CompilerServices_Unsafe>
+        <System_Runtime_CompilerServices_Unsafe_version>4.5.3</System_Runtime_CompilerServices_Unsafe_version>
+        <System_Runtime_CompilerServices_Unsafe_framework>netstandard2.0</System_Runtime_CompilerServices_Unsafe_framework>
 
         <MsBuildGeneratedProperties Condition=" '$(MsBuildGeneratedProperties)' == '' ">
             TestApp_Lib=<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib;
@@ -180,9 +216,45 @@
             System_Xml_XDocument=C:\Nugetcache\System.Xml.XDocument.4.0.11\ref\netstandard1.0;
             System_Xml_XDocument_version=4.0.11;
             System_Xml_XDocument_framework=netstandard1.0;
+            NuGet_Common=C:\Nugetcache\NuGet.Common.5.8.1\lib\netstandard2.0;
+            NuGet_Common_version=5.8.1;
+            NuGet_Common_framework=netstandard2.0;
+            NuGet_Frameworks=C:\Nugetcache\NuGet.Frameworks.5.8.1\lib\netstandard2.0;
+            NuGet_Frameworks_version=5.8.1;
+            NuGet_Frameworks_framework=netstandard2.0;
+            NuGet_Packaging=C:\Nugetcache\NuGet.Packaging.5.8.1\lib\netstandard2.0;
+            NuGet_Packaging_version=5.8.1;
+            NuGet_Packaging_framework=netstandard2.0;
+            NuGet_Configuration=C:\Nugetcache\NuGet.Configuration.5.8.1\lib\netstandard2.0;
+            NuGet_Configuration_version=5.8.1;
+            NuGet_Configuration_framework=netstandard2.0;
+            System_Security_Cryptography_ProtectedData=C:\Nugetcache\System.Security.Cryptography.ProtectedData.4.4.0\lib\netstandard2.0;
+            System_Security_Cryptography_ProtectedData_version=4.4.0;
+            System_Security_Cryptography_ProtectedData_framework=netstandard2.0;
             NuGet_Versioning=C:\Nugetcache\NuGet.Versioning.5.8.1\lib\netstandard2.0;
             NuGet_Versioning_version=5.8.1;
             NuGet_Versioning_framework=netstandard2.0;
+            System_Security_Cryptography_Cng=C:\Nugetcache\System.Security.Cryptography.Cng.5.0.0\lib\netstandard2.0;
+            System_Security_Cryptography_Cng_version=5.0.0;
+            System_Security_Cryptography_Cng_framework=netstandard2.0;
+            System_Security_Cryptography_Pkcs=C:\Nugetcache\System.Security.Cryptography.Pkcs.5.0.0\lib\netstandard2.0;
+            System_Security_Cryptography_Pkcs_version=5.0.0;
+            System_Security_Cryptography_Pkcs_framework=netstandard2.0;
+            System_Buffers=C:\Nugetcache\System.Buffers.4.5.1\lib\netstandard2.0;
+            System_Buffers_version=4.5.1;
+            System_Buffers_framework=netstandard2.0;
+            System_Formats_Asn1=C:\Nugetcache\System.Formats.Asn1.5.0.0\lib\netstandard2.0;
+            System_Formats_Asn1_version=5.0.0;
+            System_Formats_Asn1_framework=netstandard2.0;
+            System_Memory=C:\Nugetcache\System.Memory.4.5.4\lib\netstandard2.0;
+            System_Memory_version=4.5.4;
+            System_Memory_framework=netstandard2.0;
+            System_Numerics_Vectors=C:\Nugetcache\System.Numerics.Vectors.4.4.0\lib\netstandard2.0;
+            System_Numerics_Vectors_version=4.4.0;
+            System_Numerics_Vectors_framework=netstandard2.0;
+            System_Runtime_CompilerServices_Unsafe=C:\Nugetcache\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\netstandard2.0;
+            System_Runtime_CompilerServices_Unsafe_version=4.5.3;
+            System_Runtime_CompilerServices_Unsafe_framework=netstandard2.0;
         </MsBuildGeneratedProperties>
     </PropertyGroup>
 </Project>
