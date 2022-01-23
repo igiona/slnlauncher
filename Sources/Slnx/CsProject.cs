@@ -55,6 +55,9 @@ namespace Slnx
         public const string ImportDebugProjectName = "nuget.debug";
         static readonly string ImportDebugCondition = $"Exists('{ImportDebugProjectName}')";
 
+        public const string ImportPacakageReferencesProjectName = "nuget.refs";
+        static readonly string ImportPackageReferencesCondition = $"Exists('{ImportPacakageReferencesProjectName }')";
+
         XmlDocument _xml;
         string _projectOriginalContent;
         bool _isTestProject = false;
@@ -257,6 +260,7 @@ namespace Slnx
             _assemblyReferences = GetAndFixAssemblyReferences(packages);
             _projectReferences = GetAndFixProjectReferences();
             FixDebugImport();
+            FixNugetReferenceImport();
         }
 
         public void SaveCsProjectToFile()
@@ -269,26 +273,32 @@ namespace Slnx
             }
         }
 
-        private void FixDebugImport()
+        private XmlNode GetOrAppendImportNodeByProject(string project)
         {
-            //var xmlSer = new XmlSerializer(typeof(Generated.ProjectReference));
-            var ret = new List<Generated.ProjectReference>();
-            XmlNode importNode = null;
             foreach (XmlNode r in _xml.GetElementsByTagName(ImportElementTag))
             {
-                if (r.Attributes.GetNamedItem(ProjectAttributeTag)?.Value == ImportDebugProjectName)
+                if (r.Attributes.GetNamedItem(ProjectAttributeTag)?.Value == project)
                 {
-                    importNode = r;
-                    break;
+                    return r;
                 }
             }
-            if (importNode == null)
-            {
-                importNode = _xml.CreateElement(ImportElementTag);
-                importNode.Attributes.Append(_xml.CreateAttribute(ProjectAttributeTag));
-                importNode.Attributes.Append(_xml.CreateAttribute(ConditionAttributeTag));
-                _xml.DocumentElement.PrependChild(importNode);
-            }
+            var importNode = _xml.CreateElement(ImportElementTag);
+            importNode.Attributes.Append(_xml.CreateAttribute(ProjectAttributeTag));
+            importNode.Attributes.Append(_xml.CreateAttribute(ConditionAttributeTag));
+            _xml.DocumentElement.PrependChild(importNode);
+            return importNode;
+        }
+
+        private void FixNugetReferenceImport()
+        {
+            XmlNode importNode = GetOrAppendImportNodeByProject(ImportPacakageReferencesProjectName);
+            importNode.Attributes[ProjectAttributeTag].Value = ImportPacakageReferencesProjectName;
+            importNode.Attributes[ConditionAttributeTag].Value = ImportPackageReferencesCondition;
+        }
+
+        private void FixDebugImport()
+        {
+            XmlNode importNode = GetOrAppendImportNodeByProject(ImportDebugProjectName);
             importNode.Attributes[ProjectAttributeTag].Value = ImportDebugProjectName;
             importNode.Attributes[ConditionAttributeTag].Value = ImportDebugCondition;
         }
