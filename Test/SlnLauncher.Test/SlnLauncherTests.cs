@@ -98,5 +98,16 @@ namespace SlnLauncher.Test
                             Path.Combine("Sources", "Slnx")
                             ));
         }
+
+        [Test]
+        public void TestApp_CompareSlnxPackageRefs()
+        {
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportPacakageReferencesProjectName));
+            var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportPacakageReferencesProjectName));
+
+            SlnLauncher.Program.Main(TestHelper.GetArguments(TestAppSlnx), new TestAppFileWriter());
+
+            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+        }
     }
 }

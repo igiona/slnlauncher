@@ -4,11 +4,16 @@
     <env name="MY_VAR">%NUGET_ORG_URL%</env>
     
     <package id="Newtonsoft.Json" version="9.0.1" targetFramework="netstandard1.0" source="%NUGET_ORG_URL%" />
+    <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_ORG_URL%" />
+    <package id="NuGet.Packaging" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_ORG_URL%" />
     <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_ORG_URL%" />
 
     <!-- Projects -->
     <project name="TestApp.Lib" />
     <project name="TestApp.Lib.Test" />
 
-    <project name="TestApp.UiUnformattedProj" container="Ui" />
+    <project name="TestApp.UiUnformattedProj" container="Ui">
+        <ref>NuGet.Common</ref>
+        <ref>NuGet.Packaging</ref>
+    </project>
 </SlnX>

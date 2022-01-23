@@ -9,6 +9,8 @@ using Slnx.Generated;
 using NuGetClientHelper;
 using Ganss.IO;
 using Slnx.Interfaces;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace Slnx
 {
@@ -79,8 +81,9 @@ namespace Slnx
                 enforcedContainer = $"_DEBUG/{debugPackageId}";
             }
 
-            FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
             ExtendList(_packages, _slnx.package);
+            _projects = FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
+            ExpandPackaReferncesAndCreateNugetPackageReferenceFile(_slnx.project, _projects, _packages);
 
             if (string.IsNullOrEmpty(debugPackageId)) //Main SlnX
             {
@@ -263,10 +266,9 @@ namespace Slnx
             }
         }
 
-        void FindProjects(ProjectType[] requestedGlobalSettingsProjects, string searchPath, string skip, string enforcedContainer)
+        private List<CsProject> FindProjects(ProjectType[] requestedProjectsXmlType, string searchPath, string skip, string enforcedContainer)
         {
-            _projects = new List<CsProject>();
-            if (requestedGlobalSettingsProjects != null)
+            if (requestedProjectsXmlType != null)
             {
                 IEnumerable<string> knownProjects = null;
 
@@ -276,12 +278,14 @@ namespace Slnx
                 }
                 Assert(knownProjects != null, "Unable to find the path/url: '{0}'", searchPath);
 
-                InspectProjects(requestedGlobalSettingsProjects, knownProjects, skip, enforcedContainer);
+                return InspectProjects(requestedProjectsXmlType, knownProjects, skip, enforcedContainer);
             }
+            return new List<CsProject>();
         }
 
-        void InspectProjects(ProjectType[] requestedProjectsXmlType, IEnumerable<string> knownProjects, string skip, string enforcedContainer)
+        private List<CsProject> InspectProjects(ProjectType[] requestedProjectsXmlType, IEnumerable<string> knownProjects, string skip, string enforcedContainer)
         {
+            var csProjects = new List<CsProject>();
             List<string> skipList = new List<string>();
             if (!string.IsNullOrEmpty(skip))
             {
@@ -333,11 +337,13 @@ namespace Slnx
                 }
 
                 var p = new CsProject(knownProject[0], container, _fileWriter);
-                _projects.Add(p);
+
+                csProjects.Add(p);
             }
+            return csProjects;
         }
 
-        bool FilterProjectByName(string path, string requestedCsProjName, List<string> skipList)
+        private bool FilterProjectByName(string path, string requestedCsProjName, List<string> skipList)
         {
             var normalizedPath = path.Replace('/', '\\');
 
@@ -356,6 +362,38 @@ namespace Slnx
                 }
             }
             return projectMatch;
+        }
+
+        static void AppendReference(XmlNode itemGroup, NuGetPackage package)
+        {
+            itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\"/>";
+        }
+
+        private void ExpandPackaReferncesAndCreateNugetPackageReferenceFile(IReadOnlyList<ProjectType> slnxProjects, IReadOnlyList<CsProject> csProjects, IReadOnlyList<NuGetPackage> packages)
+        {
+            foreach (var p in slnxProjects.Where(x => x.@ref?.Count() > 0))
+            {
+                Assert(!p.name.Contains("*"), "Reference to projects with wildcards are not (yet?) supported");
+
+                var csProject = csProjects.Where(x => x.Name == p.name).FirstOrDefault();
+                Assert(csProject != null, "The project {0} cannot be found in the list of known CsProjects", p.name);
+
+                var xml = new XmlDocument();
+                var root = xml.CreateNode(XmlNodeType.Element, "Project", null);
+                xml.AppendChild(root);
+                var itemGroup = xml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
+                xml.DocumentElement.AppendChild(itemGroup);
+
+                foreach (var r in p.@ref)
+                {
+                    var refPackage = packages.Where(x => x.Identity.Id.ToLower() == r.ToLower()).FirstOrDefault();
+                    Assert(refPackage != null, "The project {0} has a reference to an unknown package {1}. Add it as <package> to the slnx file [{2}]", p.name, r, _slnxFile);
+                    AppendReference(itemGroup, refPackage);
+                    csProject.PackageReferences.Add(refPackage);
+                }
+                string prettyContent = XDocument.Parse(xml.OuterXml).ToString();
+                _fileWriter.WriteAllText(Path.Join(csProject.FullDir, CsProject.ImportPacakageReferencesProjectName), prettyContent);
+            }
         }
 
         /// <summary>
@@ -648,33 +686,6 @@ namespace Slnx
             }
             return nuspec;
         }
-
-        /*private IEnumerable<string> Glob(string globPath, bool recursive)
-        {
-            var m = new Microsoft.Extensions.FileSystemGlobbing.Matcher();
-            var path = Path.GetFullPath(SafeExpandAndTrimEnvironmentVariables(globPath));
-            var basePath = Path.GetDirectoryName(path).Replace("\\", "/");
-            var escapedPath = path.Replace("\\", "/");
-
-            var basePathElments = new List<string>();
-            foreach (var s in basePath.Split("/"))
-            {
-                if (s.Contains("*"))
-                {
-                    break;
-                }
-                basePathElments.Add(s);
-            }
-            var escapedBasePath = string.Join("/", basePathElments);
-            var filter = escapedPath.Remove(0, escapedBasePath.Length).Replace("\\", "/");
-            if (recursive)
-            {*/
-                //filter = string.Format($"{filter}/**/*.*");
-            /*}
-            m.AddInclude(filter);
-
-            return Microsoft.Extensions.FileSystemGlobbing.MatcherExtensions.GetResultsInFullPath(m, escapedBasePath);
-        }*/
 
         /// <summary>
         /// If field not specified, assume that it is a .NET lib.
