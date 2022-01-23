@@ -606,11 +606,22 @@ namespace Slnx.Generated {
     [System.ComponentModel.DesignerCategoryAttribute("code")]
     public partial class ProjectType {
         
+        private string[] refField;
+        
         private string nameField;
         
         private string containerField;
         
-        private string valueField;
+        /// <remarks/>
+        [System.Xml.Serialization.XmlElementAttribute("ref")]
+        public string[] @ref {
+            get {
+                return this.refField;
+            }
+            set {
+                this.refField = value;
+            }
+        }
         
         /// <remarks/>
         [System.Xml.Serialization.XmlAttributeAttribute()]
@@ -631,17 +642,6 @@ namespace Slnx.Generated {
             }
             set {
                 this.containerField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlTextAttribute()]
-        public string Value {
-            get {
-                return this.valueField;
-            }
-            set {
-                this.valueField = value;
             }
         }
     }

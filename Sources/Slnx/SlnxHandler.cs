@@ -302,7 +302,6 @@ namespace Slnx
                                                     var p = new ProjectType();
                                                     p.name = Path.GetFileNameWithoutExtension(name);
                                                     p.container = reqProjXmlType.container;
-                                                    p.Value = reqProjXmlType.Value;
                                                     return p;
                                                 }
                                             );
