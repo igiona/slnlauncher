@@ -378,13 +378,11 @@ namespace Slnx.Generated {
         
         private string versionField;
         
-        private string targetFrameworkField;
-        
         private string sourceField;
         
         private string dependencySourcesField;
         
-        private string varField;
+        private string customPathField;
         
         private bool dependenciesForceMinVersionField;
         
@@ -420,17 +418,6 @@ namespace Slnx.Generated {
         
         /// <remarks/>
         [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string targetFramework {
-            get {
-                return this.targetFrameworkField;
-            }
-            set {
-                this.targetFrameworkField = value;
-            }
-        }
-        
-        /// <remarks/>
-        [System.Xml.Serialization.XmlAttributeAttribute()]
         public string source {
             get {
                 return this.sourceField;
@@ -453,12 +440,12 @@ namespace Slnx.Generated {
         
         /// <remarks/>
         [System.Xml.Serialization.XmlAttributeAttribute()]
-        public string var {
+        public string customPath {
             get {
-                return this.varField;
+                return this.customPathField;
             }
             set {
-                this.varField = value;
+                this.customPathField = value;
             }
         }
         
