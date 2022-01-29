@@ -25,23 +25,27 @@
 
     <env name="__SLN_LAUNCHER_NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
     
+    <package id="System.Buffers" version="4.5.1" targetFramework="netstandard2.0" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="System.Memory" version="4.5.4" targetFramework="netstandard2.0" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="System.IO.FileSystem.AccessControl" version="4.7.0" targetFramework="netstandard2.0" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NDesk.Options" version="0.2.1" targetFramework="lib" IsDotNetLib="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     
-    <package id="Newtonsoft.Json" version="9.0.1" targetFramework="netstandard1.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="Newtonsoft.Json" version="13.0.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />    
+    <!-- NuGet.Packaging references Newtonsoft.Json v9.0.1, for this reason  dependenciesForceMinVersion is set to false for these packages -->
+    <package id="NuGet.Packaging" version="5.8.1" dependenciesForceMinVersion="false" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+
+    <!-- <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Configuration" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Frameworks" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Packaging" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Packaging.Core" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Protocol" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" /> -->
 
-    <!-- System.Buffers is required by other packages in a newer version, set dependenciesForceMinVersion to false -->
-    <package id="System.IO.Abstractions" version="8.0.3" targetFramework="netstandard2.0" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="Glob.cs" version="5.0.224" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-
-    <package id="NuGetClientHelper" version="1.0.0-alpha2" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    
+    <package id="NuGetClientHelper" version="1.0.0" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
     <!-- Projects -->
     <project name="SlnLauncher" container="" />
