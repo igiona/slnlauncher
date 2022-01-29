@@ -16,6 +16,7 @@ using NDesk.Options;
 using System.Runtime.InteropServices;
 using System.Diagnostics;
 using Slnx.Interfaces;
+using NuGet.Frameworks;
 
 // Important note:
 //  The NuGet Client code requires to know its version.
@@ -79,7 +80,7 @@ namespace SlnLauncher
             OptionSet p = new OptionSet()
               .Add("h|help", "Prints the list of command and exits.", v => _printHelp = v != null)
               .Add("v|version", "Prints the tool version in the standard output and exits.", v => _printVersion = v != null)
-              .Add("q|quite", "If set (-q/-q+) no popups will be shown in case of exceptions. [Default: not set]", v => quiteExecution = v != null)
+              .Add("q|quite", "If set (-q/-q+) no popup will be shown in case of exceptions. [Default: not set]", v => quiteExecution = v != null)
               .Add("<>", "SlnX file path", v => slnxFile = v)
               .Add("o|openSln", "If set (-o/-o+) opens the generated Sln file. If not set (-o-), the generated Sln will not be opened. [Default: set]", v => _openSolution = v != null)
               .Add("u|user", "If set (-u/-u+) it loads an eventually present .user file. [Default: set]", v => loadUserFile = v != null)
@@ -93,7 +94,7 @@ namespace SlnLauncher
               .Add("ns=|nuspec=", "Output path for the NuGet package created based on the current solution. [Default: not set]", v => nuspecDir = v)
               .Add("nd|nugetDependencies", "If set (-nd/-nd+), the dependencies of the provided packages will be also automatically downloaded. [Default: true]", v => autoUpdateNuGetDependencies = v != null)
               .Add("offline", "If set (-offline/-offline+), The current SlnX packagesPath attribute will be used as source for all packages. [Default: false]", v => offlineMode = v != null)
-              .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fullfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
+              .Add("nf|nugetForceMinVersion", "If set (-nf/-nf+), the tool will check that dependencies fulfill the min-version provided (not allowing newer versions). [Default: true]", v => nugetForceMinVersion = v != null);
             
             try
             {
@@ -191,7 +192,7 @@ namespace SlnLauncher
                 }
 
                 _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
-                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetPackageType.DotNetImplementationAssembly))
+                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetDotNetPackageType.DotNetImplementationAssembly))
                 {
                     if (!originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).Any())
                     {
@@ -200,11 +201,11 @@ namespace SlnLauncher
                 }
                 
                 _logger.Info($"Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file");
-                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetPackageType.DotNetCompileTimeAssembly))
+                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetDotNetPackageType.DotNetCompileTimeAssembly))
                 {
                     if (originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).FirstOrDefault() == null)
                     {
-                        _logger.Info($"The .NET compilte time package {package} has been installed as dependency.");
+                        _logger.Info($"The .NET compile time package {package} has been installed as dependency.");
                     }
                 }
 
@@ -295,7 +296,7 @@ namespace SlnLauncher
             }
         }
 
-        static IEnumerable<NuGetClientHelper.NuGetPackage> PerformPackageDownloadProcess(IEnumerable<NuGetClientHelper.NuGetPackage> packages, bool quite, bool autoUpdateDependencies, string formTitle)
+        static IEnumerable<NuGetClientHelper.NuGetPackage> PerformPackageDownloadProcess(IEnumerable<NuGetClientHelper.NuGetPackageInfo> packages, NuGetFramework requestedFramework, bool quite, bool autoUpdateDependencies, string formTitle)
         {
             ProgressDialog progress = null;
             System.Threading.Thread th = null;
@@ -319,9 +320,11 @@ namespace SlnLauncher
 
             var ret = NuGetClientHelper.NuGetClientHelper.InstallPackages(packages.ToList(), autoUpdateDependencies, (message) =>
             {
-                _logger.Debug("Package {0} successefully installed", message.ToString());
+                _logger.Debug("Package {0} successfully installed", message.ToString());
                 progress?.IncrementProgress();
-            }).ToList();
+            },
+            requestedFramework
+            ).ToList();
 
             progress?.Close();
             th?.Join();
@@ -338,32 +341,38 @@ namespace SlnLauncher
             {
                 _logger.Info($"Offline mode, using {slnx.PackagesPath} as package source.");
 
-                foreach (var p in slnx.Packages)
+                foreach (var packageInfo in slnx.PackagesInfo)
                 {
-                    p.Source = nugetCacheUri;
-                    if (p.DependencySources?.Count > 0)
+                    packageInfo.SetSource(nugetCacheUri);
+                    if (packageInfo.DependencySources?.Count > 0)
                     {
-                        p.DependencySources.Clear();
-                        p.DependencySources.Add(nugetCacheUri);
+                        packageInfo.DependencySources.Clear();
+                        packageInfo.DependencySources.Add(nugetCacheUri);
                     }
                 }
             }
 
-            slnx.Packages = PerformPackageDownloadProcess(slnx.Packages, quite, autoUpdateDependencies, "Loading packages...");
+            var frameworks = slnx.Projects.Select(p => NuGetFramework.ParseFolder(p.Framework));
+            var requestedFramework = new FrameworkReducer().ReduceUpwards(frameworks).SingleOrDefault();
+            if (requestedFramework == null)
+            {
+                throw new Exception($"It has not been possible to find a single common framework among the C# project specified in the SlnX file");
+            }
+            slnx.Packages = PerformPackageDownloadProcess(slnx.PackagesInfo, requestedFramework, quite, autoUpdateDependencies, "Loading packages...");
 
             if (slnx.DebugSlnxItems.Count != 0)
             {
                 _logger.Info("Downloading NuGet packages marked as debug...");
                 _logger.Debug("Need to download the package to properly gather the Libraries list. The dependencies are ignored to avoid package versions issues.");
 
-                foreach (var nugetPackage in slnx.DebugSlnxItems.Keys)
+                foreach (var packageInfo in slnx.DebugSlnxItems.Keys)
                 {
                     if (offlineMode)
                     {
-                        nugetPackage.Source = nugetCacheUri;
+                        packageInfo.SetSource(nugetCacheUri);
                     }
-                    var installed = PerformPackageDownloadProcess(new[] { nugetPackage }, quite, false, $"Loading debug package {nugetPackage} without dependencies...");
-                    nugetPackage.AddLibraries(installed.First().Libraries);
+                    var installed = PerformPackageDownloadProcess(new[] { packageInfo }, requestedFramework, quite, false, $"Loading debug package {packageInfo} without dependencies...");
+                    slnx.DebugPackages.Add(installed.First());
                 }
             }
         }

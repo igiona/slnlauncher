@@ -36,8 +36,10 @@ namespace Slnx
         List<SlnxHandler> _imports = new List<SlnxHandler>();
         List<CsProject> _projects = null;
         List<NuGetPackage> _packages = new List<NuGetPackage>();
+        List<NuGetPackage> _debugPackages = new List<NuGetPackage>();
+        List<NuGetPackageInfo> _packagesInfo = new List<NuGetPackageInfo>();
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
-        Dictionary<NuGetPackage, SlnxHandler> _debugSlnxItems = new Dictionary<NuGetPackage, SlnxHandler>();
+        Dictionary<NuGetPackageInfo, SlnxHandler> _debugSlnxItems = new Dictionary<NuGetPackageInfo, SlnxHandler>();
 
         public SlnxHandler(string fName, IFileWriter writer, string debugPackageId = null) : this(fName, null, writer, debugPackageId)
         {
@@ -69,7 +71,7 @@ namespace Slnx
 
             ExpandAll(_environmentVariables); // to allow import having env variable with special keys in the path
 
-            ReadImports(_environmentVariables, _packageBundles, _packages);
+            ReadImports(_environmentVariables, _packageBundles, _packagesInfo);
 
             TryApplyUserEnvironmentValues(userSettings); //re-Apply, to override value from the imports
 
@@ -81,7 +83,7 @@ namespace Slnx
                 enforcedContainer = $"_DEBUG/{debugPackageId}";
             }
 
-            ExtendList(_packages, _slnx.package);
+            ExtendList(_packagesInfo, _slnx.package);
             _projects = FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
 
             if (string.IsNullOrEmpty(debugPackageId)) //Main SlnX
@@ -92,12 +94,12 @@ namespace Slnx
                 //Read debug SlnX
                 foreach (var item in _packagesToDebug)
                 {
-                    var debugSourcePakckage = Packages.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
+                    var debugSourcePakckage = PackagesInfo.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
                     Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
                     var slnxItem = new SlnxHandler(item.Value, _fileWriter, item.Key);
                     _debugSlnxItems[debugSourcePakckage] = slnxItem;
-                    _packages.Remove(debugSourcePakckage);
+                    _packagesInfo.Remove(debugSourcePakckage);
 
                     foreach (var candidate in slnxItem.Packages)
                     {
@@ -180,6 +182,8 @@ namespace Slnx
             }
         }
 
+        public IEnumerable<NuGetPackageInfo> PackagesInfo => _packagesInfo;
+
         public IEnumerable<NuGetPackage> Packages
         {
             get
@@ -193,18 +197,17 @@ namespace Slnx
             }
         }
 
+        public List<NuGetPackage> DebugPackages => _debugPackages;
+
         /// <summary>
-        /// Return a IEnumerable containing all knwon packages, included the one marked for debugging.
+        /// Return a IEnumerable containing all known packages, included the one marked for debugging.
         /// </summary>
         public IEnumerable<NuGetPackage> AllPackages
         {
             get
             {
                 var allPackages = Packages.ToList();
-                if (DebugSlnxItems.Count() != 0)
-                {
-                    allPackages.AddRange(DebugSlnxItems.Keys);
-                }
+                allPackages.AddRange(DebugPackages);
                 return allPackages;
             }
         }
@@ -225,10 +228,7 @@ namespace Slnx
             }
         }
 
-        public Dictionary<NuGetPackage, SlnxHandler> DebugSlnxItems
-        {
-            get { return _debugSlnxItems; }
-        }
+        public Dictionary<NuGetPackageInfo, SlnxHandler> DebugSlnxItems => _debugSlnxItems;
 
         public Dictionary<string, string> EnvironementVariables
         {
@@ -420,17 +420,21 @@ namespace Slnx
 
             foreach (var item in DebugSlnxItems)
             {
-                var nugetPackage = item.Key;
+                var debugPackage = DebugPackages.Where(x => x.Identity == item.Key.Identity).SingleOrDefault();
+                if (debugPackage == null)
+                {
+                    throw new Exception($"Unable to create the debug information for {item.Value.SlnxName}, the corresponding nuget package {item.Key} is missing.");
+                }
                 foreach (var p in Projects)
                 {
-                    var debugDoc = TryGetDebugXmlDoc(p, nugetPackage);
+                    var debugDoc = TryGetDebugXmlDoc(p, debugPackage);
                     if (debugDoc != null)
                     {
                         if (!debugInfo.ContainsKey(p))
                         {
                             debugInfo[p] = debugDoc;
                         }
-                        AppendDebugElement(debugInfo[p], p, item);
+                        AppendDebugElement(debugInfo[p], p, debugPackage, item.Value);
                     }
                 }
             }
@@ -460,16 +464,16 @@ namespace Slnx
             return null;
         }
 
-        void AppendDebugElement(XmlDocument nugetDebugXml, CsProject referencingProject, KeyValuePair<NuGetClientHelper.NuGetPackage, SlnxHandler> item)
+        void AppendDebugElement(XmlDocument nugetDebugXml, CsProject referencingProject, NuGetClientHelper.NuGetPackage debugPackage, SlnxHandler debugHandler)
         {
             var propertyGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "PropertyGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(propertyGroup);
-            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NuGetClientHelper.NuGetPackage.GetDebugEnvironmentVariableKey(item.Key.Identity.Id));
+            propertyGroup.InnerXml = string.Format("<{0}>1</{0}>", NuGetClientHelper.NuGetPackage.GetDebugEnvironmentVariableKey(debugPackage.Identity.Id));
 
             var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(itemGroup);
             itemGroup.InnerXml = "";
-            foreach (var referencedProject in item.Value.Projects.Where(x => !x.IsTestProject))
+            foreach (var referencedProject in debugHandler.Projects.Where(x => !x.IsTestProject))
             {
                 if (referencingProject.AssemblyReferences.Any(r => referencedProject.Name == Path.GetFileNameWithoutExtension(r.HintPath)))
                 {
@@ -482,7 +486,7 @@ namespace Slnx
         /// The imported environment variables do NOT override eventually already present values.
         /// Projects or other settings cannot be imported !
         /// </summary>
-        private void ReadImports(Dictionary<string, string> env, Dictionary<string, List<PackageType>> bundle, List<NuGetPackage> packages)
+        private void ReadImports(Dictionary<string, string> env, Dictionary<string, List<PackageType>> bundle, List<NuGetPackageInfo> packages)
         {
             //Evaluate eventually defined import(s)
             if (_slnx.import != null)
@@ -663,20 +667,19 @@ namespace Slnx
             }
         }
 
-        private void ExtendList(List<NuGetPackage> packages, PackageType[] importedValues)
+        private void ExtendList(List<NuGetPackageInfo> packages, PackageType[] importedValues)
         {
             if (importedValues != null)
             {
                 foreach (var e in importedValues)
                 {
-                    var candidate = new NuGetPackage(SafeExpandEnvironmentVariables(e.id),
+                    var candidate = new NuGetPackageInfo(SafeExpandEnvironmentVariables(e.id),
                                                      SafeExpandEnvironmentVariables(e.version), 
-                                                     SafeExpandEnvironmentVariables(e.targetFramework), 
                                                      SafeExpandEnvironmentVariables(e.source),
                                                      SafeExpandEnvironmentVariables(e.dependencySources)?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                                                     SafeExpandEnvironmentVariables(e.var), 
                                                      IsDotNet(e), PackagesPath,
-                                                     !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion);
+                                                     !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion,
+                                                     SafeExpandEnvironmentVariables(e.customPath));
 
                     var alreadyPresent = packages.Where((x) => x.Identity.Id == candidate.Identity.Id);
                     if (alreadyPresent.Count() == 0)
@@ -777,9 +780,9 @@ namespace Slnx
         {
             if (!p.IsDotNetLibSpecified || p.IsDotNetLib)
             {
-                return NuGetPackageType.DotNetImplementationAssembly;
+                return NuGetPackageType.DotNet;
             }
-            return NuGetPackageType.Other;
+            return NuGetPackageType.Custom;
         }
 
         /// <summary>
