@@ -2,7 +2,7 @@
   <Import Project="slnx.config" Condition="Exists('slnx.config')" />
   <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
   <PropertyGroup>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>

@@ -2,7 +2,8 @@ name: .NET
 
 env:
   SlnxName: SlnLauncher
-  DotNetVersion: 5.0.x
+  DotNetVersion: 6.0.x
+  include-prerelease: true
 on:
   push:
     branches: [ master ]
