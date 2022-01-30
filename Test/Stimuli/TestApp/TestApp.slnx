@@ -3,10 +3,22 @@
     <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
     <env name="MY_VAR">%NUGET_ORG_URL%</env>
     
-    <package id="Newtonsoft.Json" version="9.0.1" targetFramework="netstandard1.0" source="%NUGET_ORG_URL%" />
-    <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_ORG_URL%" />
-    <package id="NuGet.Packaging" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_ORG_URL%" />
-    <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_ORG_URL%" />
+    <nuget>
+        <targetConfig>Debug</targetConfig>
+        <info>
+            <description>Test</description>
+            <authors>Giona Imperatori</authors>
+            <projectUrl>https://github.com/igiona/nugetclienthelper</projectUrl>
+            <tags>Test</tags>
+            <requireLicenseAcceptance>true</requireLicenseAcceptance>
+            <license type="expression">MIT</license>
+        </info>
+    </nuget>   
+    
+    <package id="Newtonsoft.Json" version="13.0.1" source="%NUGET_ORG_URL%" />
+    <package id="NuGet.Common" version="6.0.0" source="%NUGET_ORG_URL%" />
+    <package id="NuGet.Packaging" version="6.0.0" source="%NUGET_ORG_URL%" />
+    <package id="NuGet.Versioning" version="6.0.0" source="%NUGET_ORG_URL%" />
 
     <!-- Projects -->
     <project name="TestApp.Lib" />

@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<SlnX searchPath="$(slnx)" packagesPath="C:\Nugetcache">
+    <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
+    <env name="MY_VAR">%NUGET_ORG_URL%</env>
+    
+    <package id="TestApp" version="1.0.0" source="$(slnx)\..\Packages" />
+
+    <!-- Projects -->
+    <project name="DebugTestApp.ProjWithAssemblyRefToDebugPrj" />
+</SlnX>
