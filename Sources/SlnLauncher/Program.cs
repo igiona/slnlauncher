@@ -316,15 +316,16 @@ namespace SlnLauncher
             if (th != null) th.IsBackground = true;
             th?.SetApartmentState(System.Threading.ApartmentState.STA);
             th?.Start();
-            while (th != null && progress == null) System.Threading.Thread.Sleep(100);
+            while (th != null && (progress == null || !progress.IsLoaded)) System.Threading.Thread.Sleep(100);
 
-            var ret = NuGetClientHelper.NuGetClientHelper.InstallPackages(packages.ToList(), autoUpdateDependencies, (message) =>
-            {
-                _logger.Debug("Package {0} successfully installed", message.ToString());
-                progress?.IncrementProgress();
-            },
-            requestedFramework
-            ).ToList();
+            var ret = NuGetClientHelper.NuGetClientHelper.InstallPackages(packages.ToList(), autoUpdateDependencies, 
+                        (message) =>
+                            {
+                                _logger.Debug("Package {0} successfully installed", message.ToString());
+                                progress?.IncrementProgress();
+                            },
+                        requestedFramework
+                        ).ToList();
 
             progress?.Close();
             th?.Join();
