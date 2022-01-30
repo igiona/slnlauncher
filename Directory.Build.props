@@ -6,8 +6,8 @@
 
   <!-- Auto add the necessary package in case of a .Test project -->
   <ItemGroup Condition="$(ProjectName.EndsWith('.Test'))">
-    <PackageReference Include="nunit" Version="3.13.1" />
-    <PackageReference Include="NUnit3TestAdapter" Version="3.17.0" />
+	  <PackageReference Include="nunit" Version="3.13.2" />
+	  <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
 
     <!-- Microsoft.NET.Test.Sdk has a potential dependency issue on NuGet Framework, because it depends on:
             Microsoft.TestPlatform.ObjectModel
@@ -15,6 +15,7 @@
               Microsoft.TestPlatform.TestHost
                 which depends on NuGet.Frameworks
     -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" /> 
+	  <PackageReference Include="NuGet.Frameworks" Version="5.8.1" />
+	  <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
   </ItemGroup>
 </Project>

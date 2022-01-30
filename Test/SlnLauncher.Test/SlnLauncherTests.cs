@@ -9,8 +9,6 @@ namespace SlnLauncher.Test
     [TestFixture]
     public class CommandLineTest
     {
-        private string TestAppSlnx = Path.Combine(TestAppFileWriter.FolderName, "TestApp.slnx");
-
         [SetUp]
         public void Setup()
         {
@@ -21,6 +19,8 @@ namespace SlnLauncher.Test
             }
             Directory.CreateDirectory(resultFolder);
             Directory.CreateDirectory(TestHelper.GeResultPathFor(TestAppFileWriter.FolderName));
+            Directory.CreateDirectory(TestHelper.GeResultPathFor(DebugTestAppAssemblyRefFileWriter.FolderName));
+            Directory.CreateDirectory(TestHelper.GeResultPathFor(DebugTestAppNugetRefFileWriter.FolderName));
         }
 
         //[TestCase("InvalidMinVersionOnProjectRef.slnx", typeof(NuGetClientHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
@@ -39,20 +39,6 @@ namespace SlnLauncher.Test
             Assert.DoesNotThrow(() => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument)));
         }
 
-        [Test]
-        public void TestApp_CheckDump()
-        {
-            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, "dump.txt"));
-            var dumpFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, "dump.txt"));
-
-            SlnLauncher.Program.Main(TestHelper.GetArguments(TestAppSlnx, "--dump"), new TestAppFileWriter());
-
-            Assert.IsTrue(TestHelper.Compare(dumpFile, expectedFile,
-                            Path.Combine("Test", "Stimuli", "TestApp"),
-                            Path.Combine("Sources", "Slnx")
-                            ));
-        }
-
         [TestCase("dump.txt", "--dump")]
         [TestCase("MsBuildGeneratedProperties.targets", "-msb")]
         [TestCase("SetEnvVars.bat", "-b", ".")]
@@ -63,7 +49,7 @@ namespace SlnLauncher.Test
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
             var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
 
-            SlnLauncher.Program.Main(TestHelper.GetArguments(TestAppSlnx, commandLineArg), new TestAppFileWriter());
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
 
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile,
                             Path.Combine("Stimuli", "TestApp"),
@@ -79,7 +65,7 @@ namespace SlnLauncher.Test
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
             var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
 
-            SlnLauncher.Program.Main(TestHelper.GetArguments(TestAppSlnx), new TestAppFileWriter());
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
@@ -91,7 +77,7 @@ namespace SlnLauncher.Test
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, filename));
             var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, filename));
 
-            SlnLauncher.Program.Main(TestHelper.GetArguments(TestAppSlnx, "--log"), new TestAppFileWriter());
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, "--log"), new TestAppFileWriter());
 
             Assert.IsTrue(TestHelper.CompareLogFile(resultFile, expectedFile,
                             Path.Combine("Stimuli", "TestApp"),
@@ -105,9 +91,48 @@ namespace SlnLauncher.Test
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportPacakageReferencesProjectName));
             var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportPacakageReferencesProjectName));
 
-            SlnLauncher.Program.Main(TestHelper.GetArguments(TestAppSlnx), new TestAppFileWriter());
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+        }
+
+
+        [Test]
+        public void DebugTestAppAssemblyRef_CompareNugetDebugFiles()
+        {
+            var checkFiles = new[] {
+                "DebugTestApp.ProjWithAssemblyRefToDebugPrj.csproj",
+                Slnx.CsProject.ImportDebugProjectName,
+                //"DebugTestAppAssemblyRef.sln" //Requires a file comparer that ignores GUIDs differences
+            };
+
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppAssemblyRefFileWriter().SlnxName), new DebugTestAppAssemblyRefFileWriter());
+
+            foreach (var f in checkFiles)
+            {
+                var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
+                var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
+                Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            }
+        }
+
+        [Test]
+        public void DebugTestAppNugetyRef_CompareNugetDebugFiles()
+        {
+            var checkFiles = new[] {
+                "DebugTestApp.ProjWithNugetRefToDebugPrj.csproj",
+                Slnx.CsProject.ImportDebugProjectName,
+                //"DebugTestAppAssemblyRef.sln" //Requires a file comparer that ignores GUIDs differences
+            };
+
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppNugetRefFileWriter().SlnxName), new DebugTestAppNugetRefFileWriter());
+
+            foreach (var f in checkFiles)
+            {
+                var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
+                var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
+                Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            }
         }
     }
 }

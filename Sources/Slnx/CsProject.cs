@@ -64,6 +64,7 @@ namespace Slnx
         List<Generated.AssemblyReference> _assemblyReferences = null;
         List<Generated.ProjectReference> _projectReferences = null;
         List<NuGetPackage> _packageReferences = new List<NuGetPackage>();
+        List<NuGetPackage> _packageReferencesFromAssemblies = new List<NuGetPackage>();
         Logger _logger = Logger.Instance;
         IFileWriter _fileWriter = null;
 
@@ -113,7 +114,7 @@ namespace Slnx
 
                 Framework = GetFramework();
                 IsPackable = GetIsPackable();
-                InFilePackageReferences = GetInFilePackageReferences();
+                PackageReferencesInFile = GetInFilePackageReferences();
             }
             else
             {
@@ -206,19 +207,23 @@ namespace Slnx
         /// <summary>
         /// List of package references present in the cs-project file
         /// </summary>
-        public IReadOnlyList<NuGetPackageIdentity> InFilePackageReferences
+        public IReadOnlyList<NuGetPackageIdentity> PackageReferencesInFile
         {
             get;
             private set;
         }
 
+        public IReadOnlyList<NuGetPackage> PackageReferences => _packageReferences;
+
+        public IReadOnlyList<NuGetPackage> PackageReferencesFromAssemblies => _packageReferencesFromAssemblies;
+
         /// <summary>
         /// Fully resolved package references (derivate assembly references or package references).
         /// Could be extended by other classes.
         /// </summary>
-        public List<NuGetPackage> PackageReferences
+        public IReadOnlyList<NuGetPackage> AllPackageReferences
         {
-            get { return _packageReferences; }
+            get { return PackageReferences.Concat(PackageReferencesFromAssemblies).ToList(); }
         }
 
         public override string GetBuildConfiguration()
@@ -274,6 +279,14 @@ namespace Slnx
             }
         }
 
+        internal void AddPackageReference(NuGetPackage refPackage)
+        {
+            if (!_packageReferences.Any(x => x == refPackage))
+            {
+                _packageReferences.Add(refPackage);
+            }
+        }
+
         private XmlNode GetOrAppendImportNodeByProject(string project)
         {
             foreach (XmlNode r in _xml.GetElementsByTagName(ImportElementTag))
@@ -325,7 +338,7 @@ namespace Slnx
 
                     if (candidatePackage != null) //The current project references candidatePackage
                     {
-                        PackageReferences.Add(candidatePackage);
+                        _packageReferencesFromAssemblies.Add(candidatePackage);
                         var candidatePackageKey = NuGetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackage.Identity.Id);
                         var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
                         var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
