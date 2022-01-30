@@ -254,7 +254,7 @@ namespace Slnx
             //NOTE: The <ref> is limited to packages that are not being debugged, otherwise the tool cannot know the 
             //CsProj that has to be referenced instead of the nuget package.
             //A possible solution: list all DLLs in the package and assume "DllName.Replace(".dll", ".csproj") to be a valid assumption
-            ExpandPackaReferncesAndCreateNugetPackageReferenceFile(_slnx.project, _projects, _packages);
+            ExpandPackaReferncesAndCreateNugetPackageReferenceFile();
             FixProjectFiles();
             MakeNuGetDebugFile();
 
@@ -382,18 +382,19 @@ namespace Slnx
 
         static void AppendReference(XmlNode itemGroup, NuGetPackage package)
         {
-            itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\"/>";
+            var condition = string.Format("$({0}) != 1", NuGetClientHelper.NuGetPackage.GetDebugEnvironmentVariableKey(package.Identity.Id));
+            itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\" Condition=\"{condition}\"/>";
         }
 
-        private void ExpandPackaReferncesAndCreateNugetPackageReferenceFile(IReadOnlyList<ProjectType> slnxProjects, IReadOnlyList<CsProject> csProjects, IReadOnlyList<NuGetPackage> packages)
+        private void ExpandPackaReferncesAndCreateNugetPackageReferenceFile()
         {
             _logger.Info($"Adding nuget package references to the CsProjects...");
 
-            foreach (var p in slnxProjects.Where(x => x.@ref?.Count() > 0))
+            foreach (var p in _slnx.project.Where(x => x.@ref?.Count() > 0))
             {
                 Assert(!p.name.Contains("*"), "Reference to projects with wildcards are not (yet?) supported");
 
-                var csProject = csProjects.Where(x => x.Name == p.name).FirstOrDefault();
+                var csProject = _projects.Where(x => x.Name == p.name).FirstOrDefault();
                 Assert(csProject != null, "The project {0} cannot be found in the list of known CsProjects", p.name);
 
                 var xml = new XmlDocument();
@@ -404,10 +405,10 @@ namespace Slnx
 
                 foreach (var r in p.@ref)
                 {
-                    var refPackage = packages.Where(x => x.Identity.Id.ToLower() == r.ToLower()).FirstOrDefault();
+                    var refPackage = AllPackages.Where(x => x.Identity.Id.ToLower() == r.ToLower()).FirstOrDefault();
                     Assert(refPackage != null, "The project {0} has a reference to an unknown package {1}. Add it as <package> to the slnx file [{2}]", p.name, r, _slnxFile);
                     AppendReference(itemGroup, refPackage);
-                    csProject.PackageReferences.Add(refPackage);
+                    csProject.AddPackageReference(refPackage);
                 }
                 string prettyContent = XDocument.Parse(xml.OuterXml).ToString();
                 _fileWriter.WriteAllText(Path.Join(csProject.FullDir, CsProject.ImportPacakageReferencesProjectName), prettyContent);
@@ -460,6 +461,13 @@ namespace Slnx
                         return newDocument;
                     }
                 }
+                if (proj.AllPackageReferences.Any(x => x.Identity.Id == package.Identity.Id))
+                {
+                    var newDocument = new XmlDocument();
+                    var root = newDocument.CreateNode(XmlNodeType.Element, "Project", null);
+                    newDocument.AppendChild(root);
+                    return newDocument;
+                }
             }
             return null;
         }
@@ -473,12 +481,27 @@ namespace Slnx
             var itemGroup = nugetDebugXml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
             nugetDebugXml.DocumentElement.AppendChild(itemGroup);
             itemGroup.InnerXml = "";
-            foreach (var referencedProject in debugHandler.Projects.Where(x => !x.IsTestProject))
+            HashSet<string> projectReferences = new HashSet<string>();
+
+            var projectCandidates = debugHandler.Projects.Where(x => !x.IsTestProject);
+
+            foreach (var referencedProject in projectCandidates)
             {
                 if (referencingProject.AssemblyReferences.Any(r => referencedProject.Name == Path.GetFileNameWithoutExtension(r.HintPath)))
                 {
-                    itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, referencedProject.FullPath);
+                    projectReferences.Add(referencedProject.FullPath);
                 }
+            }
+
+            var matchingPackage = referencingProject.PackageReferences.Where(x => x.Identity.Id == debugPackage.Identity.Id).FirstOrDefault();
+            if (matchingPackage != null) //The debug project is referenced as NuGet package, add all Projects in the solution
+            {
+                projectCandidates.ToList().ForEach(x => projectReferences.Add(x.FullPath));
+            }
+
+            foreach (var p in projectReferences)
+            {
+                itemGroup.InnerXml = string.Format("{0}<ProjectReference Include=\"{1}\"/>", itemGroup.InnerXml, p);
             }
         }
 
@@ -736,7 +759,7 @@ namespace Slnx
                         var packageIsReferenced = Projects
                             .Where(refProject => refProject.IsPackable)
                             .Any(refProject => 
-                                    refProject.PackageReferences.Any(refPackage => refPackage.Identity.Id == package.Identity.Id)
+                                    refProject.AllPackageReferences.Any(refPackage => refPackage.Identity.Id == package.Identity.Id)
                             );
 
                         if (packageIsReferenced)

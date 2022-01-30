@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Include="TestApp" Version="1.0.0" Condition="$(TestApp_debug) != 1" />
+  </ItemGroup>
+</Project>

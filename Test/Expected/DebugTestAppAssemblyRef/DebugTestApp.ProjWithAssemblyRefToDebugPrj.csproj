@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
+  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="TestApp.Lib" Condition="$(TestApp_debug) != 1">
+      <HintPath>$(TestApp)\TestApp.Lib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

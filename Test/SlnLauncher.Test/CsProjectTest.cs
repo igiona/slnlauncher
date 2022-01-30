@@ -54,14 +54,14 @@ namespace SlnLauncher.Test
                                 new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_NoVersion.csproj")), null, null));
 
             var csProject = new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_Single.csproj")), null, null);
-            Assert.AreEqual(1, csProject.InFilePackageReferences.Count);
-            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("Microsoft.NET.Test.Sdk", "16.9.4"), csProject.InFilePackageReferences[0]);
+            Assert.AreEqual(1, csProject.PackageReferencesInFile.Count);
+            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("Microsoft.NET.Test.Sdk", "16.9.4"), csProject.PackageReferencesInFile[0]);
 
             csProject = new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_Many.csproj")), null, null);
-            Assert.AreEqual(3, csProject.InFilePackageReferences.Count);
-            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("nunit", "3.13.1"), csProject.InFilePackageReferences[0]);
-            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("NUnit3TestAdapter", "3.17.0"), csProject.InFilePackageReferences[1]);
-            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("Microsoft.NET.Test.Sdk", "16.9.4"), csProject.InFilePackageReferences[2]);
+            Assert.AreEqual(3, csProject.PackageReferencesInFile.Count);
+            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("nunit", "3.13.1"), csProject.PackageReferencesInFile[0]);
+            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("NUnit3TestAdapter", "3.17.0"), csProject.PackageReferencesInFile[1]);
+            Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("Microsoft.NET.Test.Sdk", "16.9.4"), csProject.PackageReferencesInFile[2]);
         }
     }
 }

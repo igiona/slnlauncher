@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <TestApp_debug>1</TestApp_debug>
+  </PropertyGroup>
+  <ItemGroup>
+$#$    <ProjectReference Include=".*\\Test\\Stimuli\\TestApp\\Lib\\TestApp\.Lib\.csproj" \/>
+  </ItemGroup>
+</Project>

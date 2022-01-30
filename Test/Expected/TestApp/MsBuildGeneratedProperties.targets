@@ -10,23 +10,23 @@
         <slnx><depends_on_the_installation>\slnlauncher\Sources\Slnx</slnx>
         <NUGET_ORG_URL>https://api.nuget.org/v3/index.json</NUGET_ORG_URL>
         <MY_VAR>https://api.nuget.org/v3/index.json</MY_VAR>
-        <Newtonsoft_Json>C:\Nugetcache\Newtonsoft.Json.9.0.1\lib\net45</Newtonsoft_Json>
-        <Newtonsoft_Json_version>9.0.1</Newtonsoft_Json_version>
+        <Newtonsoft_Json>C:\Nugetcache\Newtonsoft.Json.13.0.1\lib\net45</Newtonsoft_Json>
+        <Newtonsoft_Json_version>13.0.1</Newtonsoft_Json_version>
         <Newtonsoft_Json_framework>net45</Newtonsoft_Json_framework>
-        <NuGet_Common>C:\Nugetcache\NuGet.Common.5.8.1\lib\net472</NuGet_Common>
-        <NuGet_Common_version>5.8.1</NuGet_Common_version>
+        <NuGet_Common>C:\Nugetcache\NuGet.Common.6.0.0\lib\net472</NuGet_Common>
+        <NuGet_Common_version>6.0.0</NuGet_Common_version>
         <NuGet_Common_framework>net472</NuGet_Common_framework>
-        <NuGet_Frameworks>C:\Nugetcache\NuGet.Frameworks.5.8.1\lib\net472</NuGet_Frameworks>
-        <NuGet_Frameworks_version>5.8.1</NuGet_Frameworks_version>
+        <NuGet_Frameworks>C:\Nugetcache\NuGet.Frameworks.6.0.0\lib\net472</NuGet_Frameworks>
+        <NuGet_Frameworks_version>6.0.0</NuGet_Frameworks_version>
         <NuGet_Frameworks_framework>net472</NuGet_Frameworks_framework>
-        <NuGet_Packaging>C:\Nugetcache\NuGet.Packaging.5.8.1\lib\net472</NuGet_Packaging>
-        <NuGet_Packaging_version>5.8.1</NuGet_Packaging_version>
+        <NuGet_Packaging>C:\Nugetcache\NuGet.Packaging.6.0.0\lib\net472</NuGet_Packaging>
+        <NuGet_Packaging_version>6.0.0</NuGet_Packaging_version>
         <NuGet_Packaging_framework>net472</NuGet_Packaging_framework>
-        <NuGet_Configuration>C:\Nugetcache\NuGet.Configuration.5.8.1\lib\net472</NuGet_Configuration>
-        <NuGet_Configuration_version>5.8.1</NuGet_Configuration_version>
+        <NuGet_Configuration>C:\Nugetcache\NuGet.Configuration.6.0.0\lib\net472</NuGet_Configuration>
+        <NuGet_Configuration_version>6.0.0</NuGet_Configuration_version>
         <NuGet_Configuration_framework>net472</NuGet_Configuration_framework>
-        <NuGet_Versioning>C:\Nugetcache\NuGet.Versioning.5.8.1\lib\net472</NuGet_Versioning>
-        <NuGet_Versioning_version>5.8.1</NuGet_Versioning_version>
+        <NuGet_Versioning>C:\Nugetcache\NuGet.Versioning.6.0.0\lib\net472</NuGet_Versioning>
+        <NuGet_Versioning_version>6.0.0</NuGet_Versioning_version>
         <NuGet_Versioning_framework>net472</NuGet_Versioning_framework>
 
         <MsBuildGeneratedProperties Condition=" '$(MsBuildGeneratedProperties)' == '' ">
@@ -39,23 +39,23 @@
             slnx=<depends_on_the_installation>\slnlauncher\Sources\Slnx;
             NUGET_ORG_URL=https://api.nuget.org/v3/index.json;
             MY_VAR=https://api.nuget.org/v3/index.json;
-            Newtonsoft_Json=C:\Nugetcache\Newtonsoft.Json.9.0.1\lib\net45;
-            Newtonsoft_Json_version=9.0.1;
+            Newtonsoft_Json=C:\Nugetcache\Newtonsoft.Json.13.0.1\lib\net45;
+            Newtonsoft_Json_version=13.0.1;
             Newtonsoft_Json_framework=net45;
-            NuGet_Common=C:\Nugetcache\NuGet.Common.5.8.1\lib\net472;
-            NuGet_Common_version=5.8.1;
+            NuGet_Common=C:\Nugetcache\NuGet.Common.6.0.0\lib\net472;
+            NuGet_Common_version=6.0.0;
             NuGet_Common_framework=net472;
-            NuGet_Frameworks=C:\Nugetcache\NuGet.Frameworks.5.8.1\lib\net472;
-            NuGet_Frameworks_version=5.8.1;
+            NuGet_Frameworks=C:\Nugetcache\NuGet.Frameworks.6.0.0\lib\net472;
+            NuGet_Frameworks_version=6.0.0;
             NuGet_Frameworks_framework=net472;
-            NuGet_Packaging=C:\Nugetcache\NuGet.Packaging.5.8.1\lib\net472;
-            NuGet_Packaging_version=5.8.1;
+            NuGet_Packaging=C:\Nugetcache\NuGet.Packaging.6.0.0\lib\net472;
+            NuGet_Packaging_version=6.0.0;
             NuGet_Packaging_framework=net472;
-            NuGet_Configuration=C:\Nugetcache\NuGet.Configuration.5.8.1\lib\net472;
-            NuGet_Configuration_version=5.8.1;
+            NuGet_Configuration=C:\Nugetcache\NuGet.Configuration.6.0.0\lib\net472;
+            NuGet_Configuration_version=6.0.0;
             NuGet_Configuration_framework=net472;
-            NuGet_Versioning=C:\Nugetcache\NuGet.Versioning.5.8.1\lib\net472;
-            NuGet_Versioning_version=5.8.1;
+            NuGet_Versioning=C:\Nugetcache\NuGet.Versioning.6.0.0\lib\net472;
+            NuGet_Versioning_version=6.0.0;
             NuGet_Versioning_framework=net472;
         </MsBuildGeneratedProperties>
     </PropertyGroup>

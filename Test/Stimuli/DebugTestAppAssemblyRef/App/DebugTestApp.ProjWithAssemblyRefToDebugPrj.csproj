@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="TestApp.Lib" Condition="$(TestApp_debug) != 1">
+      <HintPath>TestApp.Lib.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

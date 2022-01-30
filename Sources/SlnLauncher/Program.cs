@@ -17,6 +17,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using Slnx.Interfaces;
 using NuGet.Frameworks;
+using System.Reflection.Metadata;
 
 // Important note:
 //  The NuGet Client code requires to know its version.
@@ -159,86 +160,85 @@ namespace SlnLauncher
                     {
                         CreatePowerShellModule(slnx, Path.Combine(slnx.SlnxDirectory, _psEnvVarsPath));
                     }
+
+                    var ignoreDependencyCheck = !autoUpdateNuGetDependencies;
+                    _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}, and ignore dependency is {ignoreDependencyCheck}");
+                    NuGetClientHelper.NuGetClientHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
+
+                    _logger.Info($"Checking debug packages consistency...");
+
+                    foreach (var debugPackage in slnx.DebugSlnxItems.Keys)
+                    {
+                        foreach (var package in slnx.Packages)
+                        {
+                            if (package.Dependencies.Where(x => x.PackageDependency.Id == debugPackage.Identity.Id).Any())
+                            {
+                                _logger.Warn($"{package} depends on the package {debugPackage.Identity.Id} which is selected for debugging. This might cause runtime issues! Consider marking it for debugging as well.");
+                            }
+                        }
+                    }
+
+                    _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
+                    foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetDotNetPackageType.DotNetImplementationAssembly))
+                    {
+                        if (!originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).Any())
+                        {
+                            _logger.Info($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly. Execute a dump to analyze dependency graph.");
+                        }
+                    }
+
+                    _logger.Info($"Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file");
+                    foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetDotNetPackageType.DotNetCompileTimeAssembly))
+                    {
+                        if (originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).FirstOrDefault() == null)
+                        {
+                            _logger.Info($"The .NET compile time package {package} has been installed as dependency.");
+                        }
+                    }
+
+                    MakeSln(slnx);
+                    CleanGeneratedFiles(slnx);
+                    slnx.CreateGenereatedFiles();
+
+                    if (!string.IsNullOrEmpty(nuspecDir))
+                    {
+                        nuspecDir = Path.GetFullPath(slnx.SafeExpandEnvironmentVariables(nuspecDir));
+                        if (nuspecDir == slnx.SlnxDirectory)
+                        {
+                            throw new Exception($"The provided nuspec directory is the same as the slnx folder. Please specify a sub folder.");
+                        }
+                        if (!Directory.Exists(nuspecDir))
+                        {
+                            Directory.CreateDirectory(nuspecDir);
+                        }
+                        else
+                        {
+                            if (Directory.EnumerateFileSystemEntries(nuspecDir).Any())
+                            {
+                                throw new Exception($"The provided nuspec directory is not empty: '{nuspecDir}'");
+                            }
+                        }
+                        var nuspec = slnx.GetNuGetPackageInformation();
+                        if (nuspec != null)
+                        {
+                            NuGetClientHelper.NuspecGenerator.Generate(nuspecDir, nuspec);
+                        }
+                        else
+                        {
+                            throw new Exception("Missing or invalid nuget content information in the provided SlnX file.");
+                        }
+                    }
                 }
                 catch
                 {
                     errorOccured = true;
-					throw;
+                    throw;
                 }
-
                 finally
                 {
                     if (dump)
                     {
                         Dump(slnx, errorOccured);
-                    }
-                }
-
-                var ignoreDependencyCheck = !autoUpdateNuGetDependencies;
-                _logger.Info($"Running dependency check with force min-version match set to {nugetForceMinVersion}, and ignore dependency is {ignoreDependencyCheck}");
-                NuGetClientHelper.NuGetClientHelper.CheckPackagesConsistency(slnx.Packages.ToList(), nugetForceMinVersion, ignoreDependencyCheck);
-
-                _logger.Info($"Checking debug packages consistency...");
-
-                foreach (var debugPackage in slnx.DebugSlnxItems.Keys)
-                {
-                    foreach (var package in slnx.Packages)
-                    {
-                        if (package.Dependencies.Where(x => x.PackageDependency.Id == debugPackage.Identity.Id).Any())
-                        {
-                            _logger.Warn($"{package} depends on the package {debugPackage.Identity.Id} which is selected for debugging. This might cause runtime issues! Consider marking it for debugging as well.");
-                        }
-                    }
-                }
-
-                _logger.Info($"Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file");
-                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetDotNetPackageType.DotNetImplementationAssembly))
-                {
-                    if (!originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).Any())
-                    {
-                        _logger.Info($"The .NET implementation package {package} has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.");
-                    }
-                }
-                
-                _logger.Info($"Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file");
-                foreach (var package in slnx.Packages.Where((x) => x.PackageType == NuGetClientHelper.NuGetDotNetPackageType.DotNetCompileTimeAssembly))
-                {
-                    if (originalPackageList.Where((x) => x.Identity.Id == package.Identity.Id).FirstOrDefault() == null)
-                    {
-                        _logger.Info($"The .NET compile time package {package} has been installed as dependency.");
-                    }
-                }
-
-                MakeSln(slnx);
-                CleanGeneratedFiles(slnx);
-                slnx.CreateGenereatedFiles();
-
-                if (!string.IsNullOrEmpty(nuspecDir))
-                {
-                    nuspecDir = Path.GetFullPath(slnx.SafeExpandEnvironmentVariables(nuspecDir));
-                    if (nuspecDir == slnx.SlnxDirectory)
-                    {
-                        throw new Exception($"The provided nuspec directory is the same as the slnx folder. Please specify a sub folder.");
-                    }
-                    if (!Directory.Exists(nuspecDir))
-                    {
-                        Directory.CreateDirectory(nuspecDir);
-                    }
-                    else
-                    {
-                        if (Directory.EnumerateFileSystemEntries(nuspecDir).Any())
-                        {
-                            throw new Exception($"The provided nuspec directory is not empty: '{nuspecDir}'");
-                        }
-                    }
-                    var nuspec = slnx.GetNuGetPackageInformation();
-                    if (nuspec != null)
-                    {
-                        NuGetClientHelper.NuspecGenerator.Generate(nuspecDir, nuspec);
-                    }
-                    else
-                    {
-                        throw new Exception("Missing or invalid nuget content information in the provided SlnX file.");
                     }
                 }
 
@@ -353,7 +353,7 @@ namespace SlnLauncher
             }
 
             var frameworks = slnx.Projects.Select(p => NuGetFramework.ParseFolder(p.Framework));
-            var requestedFramework = new FrameworkReducer().ReduceUpwards(frameworks).SingleOrDefault();
+            var requestedFramework = new FrameworkReducer().ReduceDownwards(frameworks).SingleOrDefault();
             if (requestedFramework == null)
             {
                 throw new Exception($"It has not been possible to find a single common framework among the C# project specified in the SlnX file");
@@ -365,14 +365,15 @@ namespace SlnLauncher
                 _logger.Info("Downloading NuGet packages marked as debug...");
                 _logger.Debug("Need to download the package to properly gather the Libraries list. The dependencies are ignored to avoid package versions issues.");
 
-                foreach (var packageInfo in slnx.DebugSlnxItems.Keys)
+                foreach ((var packageInfo, var debugSlnx) in slnx.DebugSlnxItems)
                 {
                     if (offlineMode)
                     {
                         packageInfo.SetSource(nugetCacheUri);
                     }
-                    var installed = PerformPackageDownloadProcess(new[] { packageInfo }, requestedFramework, quite, false, $"Loading debug package {packageInfo} without dependencies...");
-                    slnx.DebugPackages.Add(installed.First());
+                    var installed = PerformPackageDownloadProcess(new[] { packageInfo }, requestedFramework, quite, true, $"Loading debug package {packageInfo} without dependencies...");
+                    debugSlnx.Packages = installed;
+                    slnx.DebugPackages.Add(installed.First()); //Keep a reference to the debug package
                 }
             }
         }
@@ -417,6 +418,17 @@ namespace SlnLauncher
             _fileWriter.WriteAllText(Path.Combine(outDir, "MsBuildGeneratedProperties.targets"), content.ToString());
         }
 
+        static string PrintPackageInfo(string title, IEnumerable<NuGetClientHelper.NuGetPackageIdentity> packages)
+        {
+            var content = new StringBuilder();
+            content.AppendLine($"    | {title}");
+            foreach (var refPackage in packages)
+            {
+                content.AppendLine($"        | {refPackage}");
+            }
+            return content.ToString();
+        }
+
         static void Dump(SlnxHandler slnx, bool errorOccured)
         {
             const int firstColWidth = 40;
@@ -437,6 +449,21 @@ namespace SlnLauncher
             foreach (var p in slnx.Projects ?? Enumerable.Empty<CsProject>())
             {
                 content.AppendLine($"{p.Name,-firstColWidth} => {p.FullPath}");
+
+                if (p.PackageReferences.Count > 0)
+                {
+                    content.AppendLine(PrintPackageInfo("NuGet packages from SlnX", p.PackageReferences.Select(x => x.Identity)));
+                }
+
+                if (p.PackageReferencesFromAssemblies.Count > 0)
+                {
+                    content.AppendLine(PrintPackageInfo("NuGet packages from assemblies", p.PackageReferencesFromAssemblies.Select(x => x.Identity)));
+                }
+
+                if (p.PackageReferencesInFile.Count > 0)
+                {
+                    content.AppendLine(PrintPackageInfo("NuGet packages from .csProj (not yet used, informational only", p.PackageReferencesInFile));
+                }
             }
 
             content.AppendLine($"{Environment.NewLine}CS Projects imported for debugging:{Environment.NewLine}");
