@@ -75,6 +75,7 @@ namespace SlnLauncher
             bool offlineMode = false;
             string nuspecDir = null;
             var dump = false;
+            var dumpProjectStructure = false;
             string slnxFile = null;
             _pythonEnvVarsPath = null;
 
@@ -85,7 +86,8 @@ namespace SlnLauncher
               .Add("<>", "SlnX file path", v => slnxFile = v)
               .Add("o|openSln", "If set (-o/-o+) opens the generated Sln file. If not set (-o-), the generated Sln will not be opened. [Default: set]", v => _openSolution = v != null)
               .Add("u|user", "If set (-u/-u+) it loads an eventually present .user file. [Default: set]", v => loadUserFile = v != null)
-              .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location . [Default: not set]", v => dump = v != null)
+              .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location. [Default: not set]", v => dump = v != null)
+              .Add("p|slnxProjects", "If set (-p/-p+) it creates a SlnX file with all project and their reference in the SlnX location. [Default: not set]", v => dumpProjectStructure = v != null)
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
               .Add("b=|batchModule=", "Path to the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
               .Add("ps=|powershellModule=", "Path to the power-shell module. If set the specified power-shell module containing all defined environment variables is created. [Default: not set]", v => _psEnvVarsPath = v)
@@ -227,6 +229,11 @@ namespace SlnLauncher
                         {
                             throw new Exception("Missing or invalid nuget content information in the provided SlnX file.");
                         }
+                    }
+
+                    if (dumpProjectStructure)
+                    {
+                        DumpProjectSlnx(slnx);
                     }
                 }
                 catch
@@ -430,6 +437,42 @@ namespace SlnLauncher
             return content.ToString();
         }
 
+        static void DumpProjectSlnx(SlnxHandler slnx)
+        {
+            var emptySlnx = new Slnx.Generated.SlnXType();
+            var projectReferences = new List<Slnx.Generated.ProjectType>();
+            foreach (var csProj in slnx.Projects)
+            {
+                var project = new Slnx.Generated.ProjectType();
+                project.name = csProj.Name;
+
+                if (!string.IsNullOrEmpty(csProj.Container) && csProj.Container != CsProject.TestContainerName)
+                {
+                    project.container = csProj.Container;
+                }
+                if (csProj.AllPackageReferences.Any())
+                {
+                    var references = new List<string>();
+                    references.AddRange(csProj.AllPackageReferences.Select(x => x.Identity.Id));
+                    project.@ref = references.ToArray();
+                }
+                projectReferences.Add(project);
+            }
+            if (projectReferences.Any())
+            {
+                emptySlnx.project = projectReferences.ToArray();
+
+                var xmlSer = new XmlSerializer(typeof(SlnXType));
+                var xml = new StringBuilder();
+                using (var stream = new StringWriter(xml))
+                {
+                    xmlSer.Serialize(stream, emptySlnx);
+                }
+                string content = XDocument.Parse(xml.ToString()).ToString();
+                _fileWriter.WriteAllText(Path.Combine(slnx.SlnxDirectory, "Projects.slnx"), content.ToString());
+            }
+        }
+
         static void Dump(SlnxHandler slnx, bool errorOccured)
         {
             const int firstColWidth = 40;
@@ -451,17 +494,17 @@ namespace SlnLauncher
             {
                 content.AppendLine($"{p.Name,-firstColWidth} => {p.FullPath}");
 
-                if (p.PackageReferences.Count > 0)
+                if (p.PackageReferences.Any())
                 {
                     content.AppendLine(PrintPackageInfo("NuGet packages from SlnX", p.PackageReferences.Select(x => x.Identity)));
                 }
 
-                if (p.PackageReferencesFromAssemblies.Count > 0)
+                if (p.PackageReferencesFromAssemblies.Any())
                 {
                     content.AppendLine(PrintPackageInfo("NuGet packages from assemblies", p.PackageReferencesFromAssemblies.Select(x => x.Identity)));
                 }
 
-                if (p.PackageReferencesInFile.Count > 0)
+                if (p.PackageReferencesInFile.Any())
                 {
                     content.AppendLine(PrintPackageInfo("NuGet packages from .csProj (not yet used, informational only", p.PackageReferencesInFile));
                 }
