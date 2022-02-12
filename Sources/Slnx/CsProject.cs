@@ -24,6 +24,8 @@ namespace Slnx
 
     public class CsProject : SlnItem
     {
+        public const string TestContainerName = "Test";
+
         public enum PlatformType
         {
             x86,
@@ -80,12 +82,12 @@ namespace Slnx
                 throw new Exception(string.Format("The project '{0}' does not exist!", FullPath));
 
             _name = Path.GetFileNameWithoutExtension(FullPath);
-            _isTestProject = Name.EndsWith(".Test");
+            _isTestProject = Name.EndsWith($".{TestContainerName}");
 
             _container = FormatContainer(container);
             if (_container == null && IsTestProject) //Test project, add the Test container under the default container
             {
-                _container = FormatContainer(string.Format("Test"));
+                _container = FormatContainer(TestContainerName);
             }
 
             _projectOriginalContent = File.ReadAllText(FullPath);
