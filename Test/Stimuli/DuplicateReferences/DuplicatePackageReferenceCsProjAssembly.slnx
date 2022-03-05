@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<SlnX searchPath="$(slnx)" packagesPath="C:\Nugetcache">
+    <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
+
+    <package id="MathNet.Numerics" version="4.15.0" targetFramework="net40" source="%NUGET_ORG_URL%" />
+
+    <!-- Projects -->
+    <project name="AssemblyAndPackageReference_MathNumerics" />
+</SlnX>

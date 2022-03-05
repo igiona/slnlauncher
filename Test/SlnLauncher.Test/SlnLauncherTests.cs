@@ -39,6 +39,17 @@ namespace SlnLauncher.Test
             Assert.DoesNotThrow(() => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument)));
         }
 
+        [TestCase("DuplicatePackageReferenceOnSlnxIgnoreCase.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
+        [TestCase("DuplicatePackageReferenceOnSlnx.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
+        [TestCase("DuplicatePackageReferenceSlnxCsProjNuget.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
+        [TestCase("DuplicatePackageReferenceSlnxCsProjNugetIgnoreCase.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
+        [TestCase("DuplicatePackageReferenceSlnxCsProjAssembly.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
+        [TestCase("DuplicatePackageReferenceCsProjAssembly.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
+        public void TestPackageReferenceDuplicates(string slnxFile, Type expectedException)
+        {            
+            Assert.Throws(expectedException, () => SlnLauncher.Program.Main(TestHelper.GetArguments(Path.Combine("DuplicateReferences", slnxFile))));
+        }
+
         [TestCase("dump.txt", "--dump")]
         [TestCase("MsBuildGeneratedProperties.targets", "-msb")]
         [TestCase("SetEnvVars.bat", "-b", ".")]

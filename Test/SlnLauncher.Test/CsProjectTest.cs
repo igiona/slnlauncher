@@ -39,20 +39,26 @@ namespace SlnLauncher.Test
             Assert.AreEqual(expectedPlatform, csProject.Framework);
         }
 
+        [TestCase("PackageReference_Duplicated.csproj")]
+        [TestCase("PackageReference_DuplicatedCaseInsensitive.csproj")]
+        [TestCase("PackageReferenceDuplicatedDifferentVesions.csproj")]
+        public void DuplicatePackageReferencesFromCsProj(string proj)
+        {
+            Assert.Throws(typeof(Slnx.Exceptions.DuplicatePackageReferenceException), () =>
+                                new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", proj)), null, null));
+        }
+
+        [TestCase("PackageReference_NoInclude.csproj")]
+        [TestCase("PackageReference_NoVersion.csproj")]
+        public void InvalidPackageReferenceFromCsProj(string proj)
+        {
+            Assert.Throws(typeof(Slnx.Exceptions.InvalidPackageReferenceException), () =>
+                                new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", proj)), null, null));
+        }
+
         [Test]
         public void PackageReferences()
         {
-            Assert.Throws(typeof(Slnx.Exceptions.DuplicatePackageReferenceException), () =>
-                                new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_Duplicated.csproj")), null, null));
-            Assert.Throws(typeof(Slnx.Exceptions.DuplicatePackageReferenceException), () =>
-                                new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_DuplicatedCaseInsensitive.csproj")), null, null));
-            Assert.Throws(typeof(Slnx.Exceptions.DuplicatePackageReferenceException), () =>
-                                new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReferenceDuplicatedDifferentVesions.csproj")), null, null));
-            Assert.Throws(typeof(Slnx.Exceptions.InvalidPackageReferenceException), () =>
-                                new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_NoInclude.csproj")), null, null));
-            Assert.Throws(typeof(Slnx.Exceptions.InvalidPackageReferenceException), () =>
-                                new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_NoVersion.csproj")), null, null));
-
             var csProject = new CsProject(TestHelper.GetStimulPathFor(Path.Combine("Projects", "PackageReference_Single.csproj")), null, null);
             Assert.AreEqual(1, csProject.PackageReferencesFromCsProj.Count);
             Assert.AreEqual(new NuGetClientHelper.NuGetPackageIdentity("Microsoft.NET.Test.Sdk", "16.9.4"), csProject.PackageReferencesFromCsProj[0]);
