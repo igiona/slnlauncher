@@ -365,7 +365,7 @@ namespace Slnx
             var normalizedPath = path.Replace('/', '\\');
 
             var projectCandidate = normalizedPath.Split('\\').LastOrDefault();
-            var projectMatch = new Regex(Regex.Escape(requestedCsProjName).Replace(@"\*", ".*")).IsMatch(projectCandidate);
+            var projectMatch = new Regex("^" + Regex.Escape(requestedCsProjName).Replace(@"\*", ".*")).IsMatch(projectCandidate);
             //projectMatch = path.EndsWith(requestedCsProjName);
 
             if (projectMatch && skipList != null)
