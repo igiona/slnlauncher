@@ -116,7 +116,7 @@ namespace Slnx
 
                 Framework = GetFramework();
                 IsPackable = GetIsPackable();
-                PackageReferencesInFile = GetInFilePackageReferences();
+                PackageReferencesFromCsProj = GetInFilePackageReferences();
             }
             else
             {
@@ -209,13 +209,13 @@ namespace Slnx
         /// <summary>
         /// List of package references present in the cs-project file
         /// </summary>
-        public IReadOnlyList<NuGetPackageIdentity> PackageReferencesInFile
+        public IReadOnlyList<NuGetPackageIdentity> PackageReferencesFromCsProj
         {
             get;
             private set;
         }
 
-        public IReadOnlyList<NuGetPackage> PackageReferences => _packageReferences;
+        public IReadOnlyList<NuGetPackage> PackageReferencesFromSlnX => _packageReferences;
 
         public IReadOnlyList<NuGetPackage> PackageReferencesFromAssemblies => _packageReferencesFromAssemblies;
 
@@ -225,7 +225,7 @@ namespace Slnx
         /// </summary>
         public IReadOnlyList<NuGetPackage> AllPackageReferences
         {
-            get { return PackageReferences.Concat(PackageReferencesFromAssemblies).ToList(); }
+            get { return PackageReferencesFromSlnX.Concat(PackageReferencesFromAssemblies).ToList(); }
         }
 
         public override string GetBuildConfiguration()

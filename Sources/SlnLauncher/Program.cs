@@ -494,9 +494,9 @@ namespace SlnLauncher
             {
                 content.AppendLine($"{p.Name,-firstColWidth} => {p.FullPath}");
 
-                if (p.PackageReferences.Any())
+                if (p.PackageReferencesFromSlnX.Any())
                 {
-                    content.AppendLine(PrintPackageInfo("NuGet packages from SlnX", p.PackageReferences.Select(x => x.Identity)));
+                    content.AppendLine(PrintPackageInfo("NuGet packages from SlnX", p.PackageReferencesFromSlnX.Select(x => x.Identity)));
                 }
 
                 if (p.PackageReferencesFromAssemblies.Any())
@@ -504,9 +504,9 @@ namespace SlnLauncher
                     content.AppendLine(PrintPackageInfo("NuGet packages from assemblies", p.PackageReferencesFromAssemblies.Select(x => x.Identity)));
                 }
 
-                if (p.PackageReferencesInFile.Any())
+                if (p.PackageReferencesFromCsProj.Any())
                 {
-                    content.AppendLine(PrintPackageInfo("NuGet packages from .csProj (not yet used, informational only", p.PackageReferencesInFile));
+                    content.AppendLine(PrintPackageInfo("NuGet packages from .csProj (not yet used, informational only", p.PackageReferencesFromCsProj));
                 }
             }
 
