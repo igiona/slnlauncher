@@ -7,12 +7,12 @@
 14:09:27 | Info	| SlnLauncher	| Running dependency check with force min-version match set to True, and ignore dependency is False
 14:09:27 | Info	| SlnLauncher	| Checking debug packages consistency...
 14:09:27 | Info	| SlnLauncher	| Check if all packages that are bind via .NET ImplementationAssemblies (lib directory) are specified in the SlnX file
-14:09:27 | Info	| SlnLauncher	| The .NET implementation package Newtonsoft.Json V13.0.1 net45 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
-14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Common V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
-14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Frameworks V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
-14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Packaging V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
-14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Configuration V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
-14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Versioning V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyse dependency graph.
+14:09:27 | Info	| SlnLauncher	| The .NET implementation package Newtonsoft.Json V13.0.1 net45 has been installed as dependency. Consider define it explicitly. Execute a dump to analyze dependency graph.
+14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Common V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyze dependency graph.
+14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Frameworks V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyze dependency graph.
+14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Packaging V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyze dependency graph.
+14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Configuration V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyze dependency graph.
+14:09:27 | Info	| SlnLauncher	| The .NET implementation package NuGet.Versioning V6.0.0 net472 has been installed as dependency. Consider define it explicitly. Execute a dump to analyze dependency graph.
 14:09:27 | Info	| SlnLauncher	| Check if all packages that are bind via .NET CompileTimeAssemblies (ref directory) are specified in the SlnX file
 18:53:15 | Info	| SlnLauncher	| Creating solution file: <depends_on_the_installation\Stimuli\TestApp\TestApp.sln
 14:09:27 | Info	| SlnLauncher	| Cleaning generated files for TestApp

@@ -97,42 +97,29 @@ namespace SlnLauncher.Test
         }
 
 
-        [Test]
-        public void DebugTestAppAssemblyRef_CompareNugetDebugFiles()
+        [TestCase("DebugTestApp.ProjWithAssemblyRefToDebugPrj.csproj")]
+        [TestCase(Slnx.CsProject.ImportDebugProjectName)]
+        //[TestCase("DebugTestAppAssemblyRef.sln")] //Requires a file comparer that ignores GUIDs differences
+        public void DebugTestAppAssemblyRef_CompareNugetDebugFiles(string f)
         {
-            var checkFiles = new[] {
-                "DebugTestApp.ProjWithAssemblyRefToDebugPrj.csproj",
-                Slnx.CsProject.ImportDebugProjectName,
-                //"DebugTestAppAssemblyRef.sln" //Requires a file comparer that ignores GUIDs differences
-            };
-
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppAssemblyRefFileWriter().SlnxName), new DebugTestAppAssemblyRefFileWriter());
 
-            foreach (var f in checkFiles)
-            {
-                var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
-                var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
-                Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
-            }
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
+            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
+            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
 
-        [Test]
-        public void DebugTestAppNugetyRef_CompareNugetDebugFiles()
-        {
-            var checkFiles = new[] {
-                "DebugTestApp.ProjWithNugetRefToDebugPrj.csproj",
-                Slnx.CsProject.ImportDebugProjectName,
-                //"DebugTestAppAssemblyRef.sln" //Requires a file comparer that ignores GUIDs differences
-            };
+        [TestCase("DebugTestApp.ProjWithNugetRefToDebugPrj.csproj")]
+        [TestCase(Slnx.CsProject.ImportDebugProjectName)]
+        //[TestCase("DebugTestAppAssemblyRef.sln")] //Requires a file comparer that ignores GUIDs differences
 
+        public void DebugTestAppNugetyRef_CompareNugetDebugFiles(string f)
+        {
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppNugetRefFileWriter().SlnxName), new DebugTestAppNugetRefFileWriter());
 
-            foreach (var f in checkFiles)
-            {
-                var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
-                var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
-                Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
-            }
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
+            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
+            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
     }
 }
