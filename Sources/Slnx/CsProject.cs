@@ -65,8 +65,10 @@ namespace Slnx
         bool _isTestProject = false;
         List<Generated.AssemblyReference> _assemblyReferences = null;
         List<Generated.ProjectReference> _projectReferences = null;
-        List<NuGetPackage> _packageReferences = new List<NuGetPackage>();
+        List<NuGetPackage> _packageReferencesFromSlnx = new List<NuGetPackage>();
         List<NuGetPackage> _packageReferencesFromAssemblies = new List<NuGetPackage>();
+        List<NuGetPackageIdentity> _packageReferencesFromCsProj = new List<NuGetPackageIdentity>();
+        
         ILogger _logger;
         IFileWriter _fileWriter = null;
 
@@ -117,7 +119,7 @@ namespace Slnx
 
                 Framework = GetFramework();
                 IsPackable = GetIsPackable();
-                PackageReferencesFromCsProj = GetInFilePackageReferences();
+                AddInFilePackageReferences();
             }
             else
             {
@@ -210,13 +212,9 @@ namespace Slnx
         /// <summary>
         /// List of package references present in the cs-project file
         /// </summary>
-        public IReadOnlyList<NuGetPackageIdentity> PackageReferencesFromCsProj
-        {
-            get;
-            private set;
-        }
+        public IReadOnlyList<NuGetPackageIdentity> PackageReferencesFromCsProj => _packageReferencesFromCsProj;
 
-        public IReadOnlyList<NuGetPackage> PackageReferencesFromSlnX => _packageReferences;
+        public IReadOnlyList<NuGetPackage> PackageReferencesFromSlnX => _packageReferencesFromSlnx;
 
         public IReadOnlyList<NuGetPackage> PackageReferencesFromAssemblies => _packageReferencesFromAssemblies;
 
@@ -226,7 +224,12 @@ namespace Slnx
         /// </summary>
         public IReadOnlyList<NuGetPackage> AllPackageReferences
         {
-            get { return PackageReferencesFromSlnX.Concat(PackageReferencesFromAssemblies).ToList(); }
+            get 
+            { 
+                return PackageReferencesFromSlnX
+                        .Concat(PackageReferencesFromAssemblies)
+                        .Distinct().ToList(); 
+            }
         }
 
         public override string GetBuildConfiguration()
@@ -284,10 +287,24 @@ namespace Slnx
 
         internal void AddPackageReference(NuGetPackage refPackage)
         {
-            if (!_packageReferences.Any(x => x == refPackage))
+            if (AllPackageReferences.Any(x => x == refPackage)
+                || PackageReferencesFromCsProj.Any(x => x == refPackage.Identity)
+               )
             {
-                _packageReferences.Add(refPackage);
+                throw new Exceptions.DuplicatePackageReferenceException($"Can't add {refPackage} as SlnX-package reference to the project {Name}, a reference to that package already exists");
             }
+            _packageReferencesFromSlnx.Add(refPackage);
+        }
+
+        private void AddPackageReferenceFromAssembly(NuGetPackage refPackage)
+        {
+            if (AllPackageReferences.Any(x => x == refPackage)
+                || PackageReferencesFromCsProj.Any(x => x == refPackage.Identity)
+               )
+            {
+                throw new Exceptions.DuplicatePackageReferenceException($"Can't add {refPackage} as assembly-package reference to the project {Name}, a reference to that package already exists");
+            }
+            _packageReferencesFromAssemblies.Add(refPackage);
         }
 
         private XmlNode GetOrAppendImportNodeByProject(string project)
@@ -341,7 +358,7 @@ namespace Slnx
 
                     if (candidatePackage != null) //The current project references candidatePackage
                     {
-                        _packageReferencesFromAssemblies.Add(candidatePackage);
+                        AddPackageReferenceFromAssembly(candidatePackage);
                         var candidatePackageKey = NuGetPackage.EscapeStringAsEnvironmentVariableAsKey(candidatePackage.Identity.Id);
                         var candidatePackageMsBuilVar = string.Format(KeyAsMsBuildProjectVariableTemplate, candidatePackageKey);
                         var assemblyRoot = Path.GetDirectoryName(assemblyRef.HintPath);
@@ -390,18 +407,27 @@ namespace Slnx
             return ret;
         }
 
-        private List<NuGetPackageIdentity> GetInFilePackageReferences()
+        private void AddInFilePackageReferences()
         {
+            _packageReferencesFromCsProj.Clear();
             var xmlSer = new XmlSerializer(typeof(Generated.PackageReference));
-            var ret = new List<NuGetPackageIdentity>();
             foreach (XmlNode r in _xml.GetElementsByTagName(PackageReferenceElementTag))
             {
                 var packageRef = (Generated.PackageReference)xmlSer.Deserialize(new StringReader(StripOuterXmlNamespace(r)));
                 if (!string.IsNullOrEmpty(packageRef.Include) && !string.IsNullOrEmpty(packageRef.Version))
                 {
-                    if (!ret.Any(x => x.Id.ToLower() == packageRef.Include.ToLower()))
+                    var candidateIdentity = new NuGetPackageIdentity(packageRef.Include, packageRef.Version);
+                    
+                    if (!_packageReferencesFromCsProj.Any(x => x.Id.Equals(candidateIdentity.Id, StringComparison.OrdinalIgnoreCase)))
                     {
-                        ret.Add(new NuGetPackageIdentity(packageRef.Include, packageRef.Version));
+                        if (!AllPackageReferences.Any(x => x.Identity == candidateIdentity))
+                        {
+                            _packageReferencesFromCsProj.Add(candidateIdentity);
+                        }
+                        else
+                        {
+                            throw new Exceptions.DuplicatePackageReferenceException($"Can't add {candidateIdentity} as CsProj-package reference to the project {Name}, a reference to that package already exists");
+                        }
                     }
                     else
                     {
@@ -413,7 +439,6 @@ namespace Slnx
                     throw new Exceptions.InvalidPackageReferenceException($"Error in project {Name}, the element {r.OuterXml} doesn't have the Include or the Version attributes properly set.");
                 }
             }
-            return ret;
         }
 
         /// <summary>
