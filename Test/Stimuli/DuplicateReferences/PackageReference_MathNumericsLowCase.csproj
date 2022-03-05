@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
+  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <Platforms>My Own Platform</Platforms>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="mathnet.numerics" Version="4.15.0" />
+  </ItemGroup>
+</Project>
