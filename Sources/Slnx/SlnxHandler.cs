@@ -493,7 +493,7 @@ namespace Slnx
                 }
             }
 
-            var matchingPackage = referencingProject.PackageReferences.Where(x => x.Identity.Id == debugPackage.Identity.Id).FirstOrDefault();
+            var matchingPackage = referencingProject.PackageReferencesFromSlnX.Where(x => x.Identity.Id == debugPackage.Identity.Id).FirstOrDefault();
             if (matchingPackage != null) //The debug project is referenced as NuGet package, add all Projects in the solution
             {
                 projectCandidates.ToList().ForEach(x => projectReferences.Add(x.FullPath));
