@@ -1,8 +1,24 @@
 CS Projects:
 
 TestApp.Lib                              => <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\TestApp.Lib.csproj
+    | NuGet packages from assemblies
+        | Newtonsoft.Json V13.0.1
+        | NuGet.Versioning V6.0.0
+
 TestApp.Lib.Test                         => <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\Test\TestApp.Lib.Test.csproj
+    | NuGet packages from assemblies
+        | Newtonsoft.Json V13.0.1
+        | NuGet.Versioning V6.0.0
+
 TestApp.UiUnformattedProj                => <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Ui\TestApp.UiUnformattedProj.csproj
+    | NuGet packages from SlnX
+        | NuGet.Common V6.0.0
+        | NuGet.Packaging V6.0.0
+
+    | NuGet packages from assemblies
+        | Newtonsoft.Json V13.0.1
+        | NuGet.Versioning V6.0.0
+
 
 CS Projects imported for debugging:
 
