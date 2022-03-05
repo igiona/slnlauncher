@@ -67,12 +67,13 @@ namespace Slnx
         List<Generated.ProjectReference> _projectReferences = null;
         List<NuGetPackage> _packageReferences = new List<NuGetPackage>();
         List<NuGetPackage> _packageReferencesFromAssemblies = new List<NuGetPackage>();
-        Logger _logger = Logger.Instance;
+        ILogger _logger;
         IFileWriter _fileWriter = null;
 
-        public CsProject(string fullpath, string container, IFileWriter writer)
+        public CsProject(string fullpath, string container, IFileWriter writer, ILogger logger = null)
         {
-            _logger.Debug($"Processing project: {fullpath}");
+             _logger = logger;
+            _logger?.Debug($"Processing project: {fullpath}");
             _fileWriter = writer;
             _typeGuid = CsProjectTypeGuid.ToUpper();
 
@@ -120,7 +121,7 @@ namespace Slnx
             }
             else
             {
-                _logger.Error($"The current solution contains a legacy project: {Name}, which are not supported anymore!");
+                _logger?.Error($"The current solution contains a legacy project: {Name}, which are not supported anymore!");
                 throw new Exception("Legacy project are not supported anymore by the slnlauncher (>=v3.0.0). Upgrade you project (.NET Framework/Core) to the new SDK style.");
             }
 
@@ -263,7 +264,7 @@ namespace Slnx
 
         public void TryFixProjectFileAndGatherReferences(IEnumerable<NuGetPackage> packages)
         {
-            _logger.Debug($"Fixing project: {Name}");
+            _logger?.Debug($"Fixing project: {Name}");
 
             _assemblyReferences = GetAndFixAssemblyReferences(packages);
             _projectReferences = GetAndFixProjectReferences();

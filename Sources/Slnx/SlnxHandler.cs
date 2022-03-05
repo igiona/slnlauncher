@@ -27,7 +27,7 @@ namespace Slnx
         string _slnxFile;
         string _slnxName;
         SlnXType _slnx;
-        Logger _logger = Logger.Instance;
+        ILogger _logger;
         IFileWriter _fileWriter = null;
 
         Dictionary<string, string> _specialSlnxKeys = new Dictionary<string, string>();
@@ -41,12 +41,13 @@ namespace Slnx
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
         Dictionary<NuGetPackageInfo, SlnxHandler> _debugSlnxItems = new Dictionary<NuGetPackageInfo, SlnxHandler>();
 
-        public SlnxHandler(string fName, IFileWriter writer, string debugPackageId = null) : this(fName, null, writer, debugPackageId)
+        public SlnxHandler(string fName, IFileWriter writer, ILogger logger, string debugPackageId = null) : this(fName, null, writer, logger, debugPackageId)
         {
         }
 
-        public SlnxHandler(string fName, SlnXType userSettings, IFileWriter writer, string debugPackageId)
+        public SlnxHandler(string fName, SlnXType userSettings, IFileWriter writer, ILogger logger, string debugPackageId)
         {
+            _logger = logger;
             _fileWriter = writer;
             if (!string.IsNullOrEmpty(debugPackageId))
             {
@@ -97,7 +98,7 @@ namespace Slnx
                     var debugSourcePakckage = PackagesInfo.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
                     Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
-                    var slnxItem = new SlnxHandler(item.Value, _fileWriter, item.Key);
+                    var slnxItem = new SlnxHandler(item.Value, _fileWriter, _logger, item.Key);
                     _debugSlnxItems[debugSourcePakckage] = slnxItem;
                     _packagesInfo.Remove(debugSourcePakckage);
 
@@ -112,7 +113,7 @@ namespace Slnx
                         var known = Packages.Where(x => x.Identity.Id == candidate.Identity.Id).FirstOrDefault();
                         if (known == null)
                         {
-                            _logger.Warn($"The package {candidate} required by the SlnX {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
+                            _logger?.Warn($"The package {candidate} required by the SlnX {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
                         }
                         else
                         {
@@ -267,15 +268,15 @@ namespace Slnx
 
         private void FixProjectFiles()
         {
-            _logger.Info($"Trying to fix the Assembly and Project of the known projects");
+            _logger?.Info($"Trying to fix the Assembly and Project of the known projects");
             if (Packages.Count() == 0)
             {
-                _logger.Info($"No NuGet package found. If this is not correct, it might be because this method was called before installing the NuGet packages.");
+                _logger?.Info($"No NuGet package found. If this is not correct, it might be because this method was called before installing the NuGet packages.");
             }
 
             foreach (var csProj in Projects)
             {
-                _logger.Info($"Trying to fix the Assembly and Project reference of {csProj.Name}");
+                _logger?.Info($"Trying to fix the Assembly and Project reference of {csProj.Name}");
                 
                 csProj.TryFixProjectFileAndGatherReferences(AllPackages);
                 csProj.SaveCsProjectToFile();
@@ -352,7 +353,7 @@ namespace Slnx
                     container = string.Join("/", enforcedContainer, container);
                 }
 
-                var p = new CsProject(knownProject[0], container, _fileWriter);
+                var p = new CsProject(knownProject[0], container, _fileWriter, _logger);
 
                 csProjects.Add(p);
             }
@@ -388,7 +389,7 @@ namespace Slnx
 
         private void ExpandPackaReferncesAndCreateNugetPackageReferenceFile()
         {
-            _logger.Info($"Adding nuget package references to the CsProjects...");
+            _logger?.Info($"Adding nuget package references to the CsProjects...");
 
             foreach (var p in _slnx.project.Where(x => x.@ref?.Count() > 0))
             {
@@ -527,7 +528,7 @@ namespace Slnx
                         }
 
                         var slnx = SlnxHandler.ReadSlnx(slnxImportFile);
-                        var imported = new SlnxHandler(slnxImportFile, _fileWriter);
+                        var imported = new SlnxHandler(slnxImportFile, _fileWriter, _logger);
                         _imports.Add(imported);
 
                         ExtendDictionary(env, slnx.env, false);
@@ -768,7 +769,7 @@ namespace Slnx
                         }
                         else
                         {
-                            Logger.Instance.Info($"The package {package} has no reference in packable projects. It will be excluded from the NuSpec dependencies.");
+                            _logger?.Info($"The package {package} has no reference in packable projects. It will be excluded from the NuSpec dependencies.");
                         }
                     }
                 }
