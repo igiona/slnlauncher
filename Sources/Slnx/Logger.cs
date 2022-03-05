@@ -7,18 +7,7 @@ using System.Threading.Tasks;
 
 namespace Slnx
 {
-    public enum LogLevel
-    {
-        None,
-        Fatal,
-        Error,
-        Warning,
-        Info,
-        Debug,
-        Trace
-    }
-
-    public class Logger : NuGet.Common.ILogger
+    public class Logger : NuGet.Common.ILogger, ILogger
     {
         private LogLevel _enabledLevel = LogLevel.None;
         private LogLevel _higestLevelDetected = LogLevel.None;
@@ -27,33 +16,11 @@ namespace Slnx
         private object _lock = new object();
         private object _lockMaxLevel = new object();
         
-        private static Logger _instance;
         private IFileWriter _fileWriter = null;
-
-        public static Logger Instance
-        {
-            get
-            {
-                return _instance ?? throw new NullReferenceException("The logger has not been created yet");
-            }
-        }
-
-        public static void DestroyInstance()
-        {
-            _instance = null;
-        }
 
         public Logger(IFileWriter fileWriter)
         {
-            if (_instance == null)
-            {
-                _fileWriter = fileWriter;
-                _instance = this;
-            }
-            else
-            {
-                throw new InvalidOperationException("The logger is already initialized. Call Logger.Instance instead.");
-            }
+            _fileWriter = fileWriter;
         }
 
         public LogLevel MaxLogLevelDetected

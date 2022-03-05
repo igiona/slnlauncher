@@ -57,8 +57,6 @@ namespace SlnLauncher
         [STAThread]
         public static void Main(string[] argv, IFileWriter fileWriter)
         {
-            Logger.DestroyInstance();
-
             _fileWriter = fileWriter ?? throw new ArgumentNullException(nameof(fileWriter));
             _logger = new Logger(fileWriter);
             Application.EnableVisualStyles();
@@ -138,7 +136,7 @@ namespace SlnLauncher
                     slnxUser = SlnxHandler.ReadSlnx(slnxUserFile);
                 }
 
-                var slnx = new SlnxHandler(slnxFile, slnxUser, _fileWriter, null);
+                var slnx = new SlnxHandler(slnxFile, slnxUser, _fileWriter, _logger, null);
                 var originalPackageList = new List<NuGetClientHelper.NuGetPackage>(slnx.Packages);
                 bool errorOccured = false;
                 try
