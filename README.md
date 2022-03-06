@@ -4,11 +4,11 @@
 
 *...from developers for developers...*
 
-The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).
+The SlnLauncher is a tool that allows to dynamically and automatically create VisualStudio solution files (.sln).
 
 As input, it takes a SlnX file that contains all the required information.
 
-The SlnLauncher takes care of finding the C# projects, downloading the NuGet packages of your projects while ensuring package versions consistency and automatically formatting .csproj for a seamless integration.
+The SlnLauncher takes care of finding the C# projects, downloading and referencing the NuGet packages of your projects while ensuring package versions consistency and automatically formatting .csproj for a seamless integration.
 
 The SlnLauncher allows developers to forget once for all issues related to VisualStudio like:
 
@@ -19,13 +19,13 @@ The SlnLauncher allows developers to forget once for all issues related to Visua
 
 It doesn't matter anymore where a repository is locally checked out, the SlnLauncher will find what's needed and plug all the components together for you.
 
-Addtionally, the "[Package Debug Feature](#PackageDebugFeature)" allows to seamlessly debug your own NuGet packages from source code by simply adding one element in the SlnX file.
+Additionally, the "[Package Debug Feature](#PackageDebugFeature)" allows to seamlessly debug your own NuGet packages from source code by simply adding one element in the SlnX file.
 This great feature can be exploited to reduce the burdens of a multi-repo code base, leaving to the developers only the benefits of it!
 
 # Installation
 
 The SlnLauncher is currently packetized in a Choco package.<br>
-The choco package can be installed via [chocolatey](https://community.chocolatey.org/packages/slnlauncher).<br>
+The Choco package can be installed via [chocolatey](https://community.chocolatey.org/packages/slnlauncher).<br>
 The release notes can be found here: https://github.com/igiona/slnlauncher/releases
 
 ``` PowerShell 
@@ -44,15 +44,15 @@ choco install slnlauncher
 
 - Starting from the v3.0.0 of the tool, legacy-style projects are not supported anymore.
 Upgrade them to the Microsoft.NET.Sdk style. You will love it :)<br>
-You can build .NET project with theh new style as well. It's not a Core-thing only!
+You can build .NET project with the new style as well. It's not a .NET Core-thing only!
 
 # How it works?
 
-The SlnX file feeded to the SlnLauncher contains all the necessary information to create a working VisualStudio solution file:
+The SlnX file fed to the SlnLauncher contains all the necessary information to create a working VisualStudio solution file:
 
 * Where to look for projects
 * Where to store NuGet packages
-* The required C# projects
+* The required C# projects and their NuGet references
 * The required NuGet packages
 
 The application searches all the specified projects&packages, evaluates all assembly and nuget references/dependencies.
@@ -78,43 +78,53 @@ and sets the variable "My\_First\_Project" accordingly.
 <br>
 ## Assemblies and Packages
 
-A similar approach is used for the referenced assembly files.
-This is one of the reasons why with the SlnLauncher [NuGet package are not used as NuGet package](#NuGetNotAsNuGet), but simply as assemblies collection.
-
-## <a name="NuGetNotAsNuGet"></a>NuGet packages, not as NuGet packages
-
 - - -
 
 **NOTE**: By default the tool downloads the NuGet packages dependencies automatically (see parameter *-nd*). In the log files warnings/infos will be generated for the packages not defined in the SlnX file.
 
 - - -
 
-The SlnLauncher finds the NuGet packages you specify, and it installs them. Why? Why not just giving a reference to the NuGet packages in the C# projects?
+## NuGet packages, not as PackageReference in project files
+The SlnLauncher finds the NuGet packages you specify, and downloads them. 
+Why? 
+Why not just giving a reference to the NuGet packages in the C# projects, for example using the NugetManager of VisualStudio?
 
 The reason is quite simple: Visual Studio doesn't do a very good job in managing different NuGet package versions.
-By plugging together different packages with different dependencies, it can happen that a version-collision occures and Visual Studio is so kind that it doesn't mention that. Leaving you in not always knowing what you're actually debugging.
+By plugging together different packages with different dependencies, it can happen that a version-collision occurs and Visual Studio at most produces a warning.
+Leaving you in not always knowing what you're actually debugging.
+To avoid these issues, the SlnLauncher takes over the job, ensuring that only **one** version of a package-content is made available to all the projects.
+If a collision occurs, tool makes you aware of that and then it is up to you to resolve it :-)
 
-To avoid these issues, the SlnLauncher takes over the job, ensuring that only **one** version of a package-content is made avaialable to all the projects.
+There are essentially two ways to reference the content of a package:
+* [NuGet package can be used as assemblies collection, and not as NuGet packages](#NuGetNotAsNuGet)
+* [NuGet package as injected package-reference](#NuGetAsNuGet)
 
-If a collision occures, tool makes you aware of that and then it is up to you to resolve it :-)
-
+### <a name="NuGetNotAsNuGet"></a>NuGet packages, not as NuGet packages
+As per projects, a similar approach is used for the referenced assembly files.<br>
 That said, simply reference the necessary DLL(s) coming from a NuGet package (from the *packagesPath* folder) via VisualStudio as for any other assembly.
 
 The SlnLauncher will take over the task of rewriting the path with the necessary environmental variable.
 
+### <a name="NuGetAsNuGet"></a>NuGet packages, as NuGet packages but...
+Starting from the version 3 of the tool, NuGet package references can be specified within the SlnX file (see [<ref>](#refElement)).<br>
+The SlnLauncher will then configure the projects to reference the packages as PackageReference.<br>
+This is achieved via a helper import file automatically created & referenced by the tool.
+
+This approach has the advantage of not having to necessarily import runtime DLLs, or to exactly know which DLL is required to compile a certain feature.
+
 ## <a name="PackageDebugFeature"></a>Package Debug Feature
 
-If in your company you have libraries packed and released in NuGet packages, this is feature is for sure for you.
-One of the biggest hassle of using NuGet packages in application is their debuggability. This can be somehow solved by packging PDBs in NuGet packages.
+If in your company you have libraries packed and released in NuGet packages, this is feature is for sure for you.<br>
+One of the biggest hassles of using NuGet packages in application is their debuggability. This can be somehow solved by packaging PDBs in NuGet packages.
 
-But what about refactorings?
+But what about refactoring?
 
 A simple change of method name can involve quite some work: fix the library, test it, create the nuget package for it, update (manually!) all piece of code that called that method.
 That SlnX launcher helps you here in one single simple step.
 
 ### 1) Add a \<debug> tag for the NuGet package
 
-Add the debug element to your SlnX file, for all packages you intendend to debug/refactor.
+Add the debug element to your SlnX file, for all packages you intended to debug/refactor.
 
 - - -
 
@@ -136,15 +146,18 @@ With these information, the SlnLauncher will search for the additional projects 
 
 - - -
 
-But thre is more to it: the tool will also create a file called *nuget.debug* for each relevant project. This file contains all the properties necessary to properly and **automatically** update the project dependencies in your solution. Don't worry, the tool takes care of adding a properly formatted import statement in all your CsProj files.<br>It works seamlessy for you.
+But there is more to it: the tool will also create a file called *slnx.config* for each relevant project. This file contains all the properties necessary to properly and **automatically** update the project dependencies in your solution. Don't worry, the tool takes care of adding a properly formatted import statement in all your CsProj files.<br>It works seamlessly for you.
 
 ## Known limitations and issues
 
-* Only projects in the Microsoft.NET.Sdk format are supported.
+* Only projects in the Microsoft.NET.Sdk format are supported.<br>
 Workaround: Update your project files, you and your team will only profit of it :-)
-* Only one nuspec can be generated per SlnX file
-Workaround: use multiple SlnX files, one per application. It's anyway the better choice :-)
-* Package Debug feature: the debug-SlnX file will not override variables set by the main SlnX file. This can cause troubles in loading finding projects etc.
+* Only one nuspec can be generated per SlnX file<br>
+Workaround: use multiple SlnX files, one per application.
+* Only one target-framework per SlnX file
+This means that you cannot build a VisualStudio solution that contains a .Net framework project and a .Net Core project at the same time.<br>
+Workaround: use multiple SlnX files, one per application.
+* Package Debug feature: the debug-SlnX file will not override variables set by the main SlnX file. This can cause troubles in loading finding projects etc.<br>
 Workaround:
     * Use unique environment variable names or use them only with static values, for example your company NuGet server, etc.
     * Do not use environment variable in the *searchPath* or similar elements, the chances of collision are big (developers love the Copy&Paste feature :-) )
@@ -154,14 +167,6 @@ Workaround 1: check out only the branch your currently working on<br>
 Workaround 2: migrate to Git :-)
 * If you want to build on your build server using (for example) dotnet, you need to prepare the command shell with all the necessary environment variable.<br>
 No worries, that's why the tool allows you to create a Batch/Python/MsBuild/PowerShell file exactly to do so :-) !
-
-Possible limitation?
-
-* Only one framework per NuGet package can specified. This "limitation" is explained best by an example:<br>
-The NuGet package Newtonsoft.Json package provides its APIs built for multiple frameworks (e.g. net45 and netstandard1.0)<br>
-You have your own library NuGet package built on .NET Standard 2.0 called "CoreLib" that references Newtonsoft-nestandard1.0<br>
-You have an application built on .NET Framework 4.5 called "App1" that references CoreLib and Newtonsoft-net45<br>
-The SlnLauncher will not be able to uniquely set the reference to the packages and therefore it will raise an exception.
 
 # <a name="CommandLineArgs"></a> Command line arguments
 
@@ -200,6 +205,7 @@ by the current luancher version.
 | help                 | h     | boolean | No        | false   | If set, it prints the list of command and exits.                                                                                                                                                                                                                                                                                                                          |
 | version              | v     | boolean | No        | false   | If set, it displays the tool's version and exists.                                                                                                                                                                                                                                                                                                                        |
 | dump                 | d     | boolean | No        | false   | If set it dumps all project&packages information as well as the environment variables in dump.txt located in the SlnX location.                                                                                                                                                                                                                                           |
+| slnxProjects         | p     | boolean | No        | false   | If set (-p/-p+) it creates a SlnX file with all project and their reference in the SlnX location.                                                                                                                                                                                                                                                                         |
 | log                  |       | boolean | No        | false   | If set, it enables the logging to a file. If the SlnX file location exists, the log file will be create in there. Otherwise the location of the SlnLauncher.exe will be used.                                                                                                                                                                                             |
 | logVerbosity         | lv    | string  | No        | Warning | Set the log level of verbosity. Valid values: None,Fatal,Error,Warning,Info,Debug,Trace.                                                                                                                                                                                                                                                                                  |
 | quite                | q     | boolean | No        | false   | No pop-ups or windows will be shown (e.g. in case of exceptions, while loading NuGet packages, etc.)                                                                                                                                                                                                                                                                      |
@@ -208,19 +214,19 @@ by the current luancher version.
 | batchModule          | b     | string  | No        | null    | If set, \<value> is used as relative (to the SlnX file) folder path for the creation of the python module (SetEnvVars.bat) containing all defined environment variables.                                                                                                                                                                                                  |
 | powershellModule     | ps    | string  | No        | null    | If set, \<value> is used as relative (to the SlnX file) folder path for the creation of the power-shell module (SetEnvVars.py1) containing all defined environment variables.                                                                                                                                                                                             |
 | nuspec               | ns    | string  | No        | null    | If set, \<value> is used as relative (to the SlnX file) folder path in which all required files for a NuGet package will be copied and generated based on the current solution (projects DLLs/PDBs, .nusepc, dependencies).<br>Afterwards, the following command can be execute to create the NuGet package of the solution:<br> >nuget pack \<value>\\\<SlnxName>.nuspec |
-| choco                | c     | string  | No        | null    | To be implemented....                                                                                                                                                                                                                                                                                                                                                     |
 | openSln              | o     | boolean | No        | true    | If set, it will open the generated Sln (with the default operating system tool) file before exiting the launcher.                                                                                                                                                                                                                                                         |
 | nugetDependencies    | nd    | boolean | No        | true    | If set, the dependencies of the provided packages will be also automatically downloaded.                                                                                                                                                                                                                                                                                  |
-| nugetForceMinVersion | nf    | boolean | No        | true    | <a name="nugetForceMinVersion" /> If set, the tool will check that all the packages dependencies fullfill the min-version provided in the NuGet package (not allowing newer versions).<br>If not, the version simply has to satisfy the [version range](https://docs.microsoft.com/en-us/nuget/concepts/package-versioning) required by the package.                      |
+| nugetForceMinVersion | nf    | boolean | No        | true    | <a name="nugetForceMinVersion" /> If set, the tool will check that all the packages dependencies fulfill the min-version provided in the NuGet package (not allowing newer versions).<br>If not, the version simply has to satisfy the [version range](https://docs.microsoft.com/en-us/nuget/concepts/package-versioning) required by the package.                      |
 | user                 | u     | boolean | No        | true    | If set (-u/-u+) it loads an eventually present .user file.                                                                                                                                                                                                                                                                                                                |
 | offline              |       | boolean | No        | true    | If set (-offline/-offline+), The current SlnX packagesPath attribute will be used as source for all packages. In this way no internet connection is required.                                                                                                                                                                                                             |
+| choco                | c     | string  | No        | null    | To be implemented....                                                                                                                                                                                                                                                                                                                                                     |
 |                      |       | string  | Yes       | null    | Any "unnamed" argument will be used a file path to the SlnX file to be parsed.<br>The last "unnamed" argument will be used as SlnX file path. All others will be ignored.                                                                                                                                                                                                 |
 <br>
 
 # Environment variables and special keys
 
 The SlnLauncher makes use of environment variables in order to link project and assembly references in the CsProject files.<br>
-Some of these variables are [automatically generated](#GenereatedEnvVars) based on different criterias, for example the package-id of a NuGet package or the name of C# project.<br>
+Some of these variables are [automatically generated](#GenereatedEnvVars) based on different criteria, for example the package-id of a NuGet package or the name of C# project.<br>
 Using the [env](#EnvElement) element, additional variable can be specified in the SlnX file.<br>
 The environments variable have a key (or name) and a value.<br>
 In windows they can be accessed with the following format "%*key*%", in the Microsoft build files via "$(*key*)" 
@@ -258,8 +264,8 @@ Example: "NuGet.Protocol" becomes "NuGet\_Protocol"
 
 ``` XML
     ...
-    <package id="My.Package.Id" version="0.2.1" targetFramework="net45" source="http://somesource" />
-    <project name="My.Project.Name" container="" />
+    <package id="My.Package.Id" version="0.2.1" source="http://somesource" /> <!-- Provide a net45 and net5 target -->
+    <project name="My.Project.Name" container="" /> <!-- Target net48 -->
     ...
 ```
 For the above elements in a SlnX file, the tool will generate the following variables
@@ -267,8 +273,8 @@ For the above elements in a SlnX file, the tool will generate the following vari
 | -------------------------- | ---------------------------------------------------------------------------------- |
 | My\_Package\_Id            | C:\NugetCache\My.Package.Id.0.2.1\lib\net45                                        |
 | My\_Package\_Id\_version   | 0.2.1                                                                              |
-| My\_Package\_Id\_framework | net5                                                                               |
-| My\_Package\_Id\_debug     | 1: if the NuGet package is markjed to be compiled via source code.<br>0: otherwise |
+| My\_Package\_Id\_framework | net45                                                                              |
+| My\_Package\_Id\_debug     | 1: if the NuGet package is marked to be compiled via source code.<br>0: otherwise  |
 | My\_Project\_Name          | C:\myRepo\Source\MyProjectNameDirectory                                            |
 
 - - -
@@ -300,8 +306,10 @@ For example: $(slnx)
         </info>
     </nuget>
     <env name=""></env>
-    <package id="" version="0.2.1" targetFramework="" source="https://..." dependencySources="https://..." />
-    <project name="SlnLauncher" container="" />
+    <package id="MyPackage" version="0.2.1" source="https://..." dependencySources="https://..." />
+    <project name="SlnLauncher" container="">
+        <ref>MyPackage</ref>
+    </package>
     <debug />
 </SlnX>
 ```
@@ -349,7 +357,7 @@ With the *content* element it is possible to add additional assemblies to the ge
 | targetConfig | Release | Folder name in the "bin" directory of the projects.<br>Usually "Debug" or "Release                                                                                                                                                                                                                                                                                                                                                                                                                |
 | readme       | *none*  | Path to the ReadMe file to be included in the NuGet package.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | content      | *none*  | See the [content](#ContentElement)                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| info         | *none*  | The child nodes included in the info element will be directly included in the nuspec file.<br>See the [nuspec documentation](https://docs.microsoft.com/en-us/nuget/reference/nuspec) for reference.<br>At least the following fields are requrired by the NuGet packager:<span class="colour" style="color:rgb(0, 0, 255)"></span><br><span class="colour" style="color:rgb(0, 0, 255)"></span>    \<description>\</description><br>    \<authors>\</authors><br>    \<projectUrl>\</projectUrl> |
+| info         | *none*  | The child nodes included in the info element will be directly included in the nuspec file.<br>See the [nuspec documentation](https://docs.microsoft.com/en-us/nuget/reference/nuspec) for reference.<br>At least the following fields are required by the NuGet packager:<span class="colour" style="color:rgb(0, 0, 255)"></span><br><span class="colour" style="color:rgb(0, 0, 255)"></span>    \<description>\</description><br>    \<authors>\</authors><br>    \<projectUrl>\</projectUrl>  |
 <br>
 
 ### <a name="ContentElement"></a> content 
@@ -383,8 +391,8 @@ Value of the environment variable with the name specified in the attribute.
 - - -
 
 **NOTE**
-For the main SlnX file and all other imported SlnX files (via import or debug), if an environment variable is already set, it will not be overriden by the value defined in the env element within the SlnX file.
-On the other hand all variables in the User SlnX (.slnx.user file) file will override any previousely set value.
+For the main SlnX file and all other imported SlnX files (via import or debug), if an environment variable is already set, it will not be overridden by the value defined in the env element within the SlnX file.
+On the other hand all variables in the User SlnX (.slnx.user file) file will override any previously set value.
 
 - - -
 
@@ -395,29 +403,33 @@ On the other hand all variables in the User SlnX (.slnx.user file) file will ove
 
 ### <a name="PackageElement"></a>package
 
-Defintion of a NuGet package to be installed.
+Definition of a NuGet package to be installed.
 
 | Attribute                   | Default | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | --------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | id                          | -       | Name of the NuGet package                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | version                     | -       | Version of the NuGet package (see [Version specification](https://docs.microsoft.com/en-us/nuget/concepts/package-versioning))                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| targetFramework             | *none*  | Target .NET framework version of the NuGet package, that the application is going to link to.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| customPath                  | *none*  | Valid only if IsDotNetLib is set to false. It will be used to set the package full-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | source                      | -       | The URI or local path in which the NuGet package will be searched. If specified, the tool always searches in this location first, it searches in the default locations (nuget.org) only if the package is not found here or in the dependencySources list.                                                                                                                                                                                                                                                                                                                                                                                                         |
 | dependencySources           | -       | Additional comma-separated URI(s) or local path(s) used to search for dependency packages. Useful if the dependencies are not located in the same source as the main package.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| IsDoNetLib                  | true    | The tool will set the \<package-id> environment variable (assemblies path) based on this parameter.<br>If the package attribute IsDotNetLib is set, the path will be se to:<br>"\<package-install-path>\lib\\\<targetFramewok>" if the package is recognised as "implementation assembly" package<br>"\<package-install-path>\ref\\\<targetFramewok>" if the package is recognised as "compile time assembly" package<br>Otherwise to:<br>\<package-install-path>\\\<targetFramework><br><br>**NOTE:**<br>For packages not following the standard .NET NuGet package format, set this field to False and use \<targetFramework> to point to the disered directory. |
+| IsDoNetLib                  | true    | The tool will set the \<package-id> environment variable (assemblies path) based on this parameter.<br>If the package attribute IsDotNetLib is set, the path will be se to:<br>"\<package-install-path>\lib\\\<targetFramewok>" if the package is recognized as "implementation assembly" package<br>"\<package-install-path>\ref\\\<targetFramewok>" if the package is recognized as "compile time assembly" package<br>Otherwise to:<br>\<package-install-path>\\\<targetFramework><br><br>**NOTE:**<br>For packages not following the standard .NET NuGet package format, set this field to False and use \<targetFramework> to point to the desired directory. |
 | dependenciesForceMinVersion | true    | If set to false, will disable the nugetForceMinVersion for the current package dependencies. Refer to the <a href="#nugetForceMinVersion">nugetForceMinVersion</a>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | var                         | *none*  | Deprecated. Will be removed in future releases.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 <br>
 
 ### project
 
-Defintion of a C# project to be added to the solution.
+Definition of a C# project to be added to the solution.
 
 | Attribute | Default | Description                                                                                                                                                                                                                                                                    |
 | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | name      | -       | Name of the environment variable to be set.<br>Wild cards (\*) can be used to match multiple projects.                                                                                                                                                                         |
 | container | *none*  | This value can be used to define a subdirectory in the VS Solution file, in which the project will be placed.<br>The container can have multiple sub-directories (ex: Libs/Bar/Foo)<br>If not set, all Test projects are automatically placed under a container called "Test". |
 
+| Child node | Default | Description                         |
+| ---------- | ------- | ----------------------------------- |
+| ref        | *none*  | Zero of more of [ref](#refElement). |
+<br>
 - - -
 
 **NOTE:**
@@ -426,6 +438,10 @@ If set to false, this project is not being considered in the generation of the n
 Useful to avoid to include test assemblies in the package.<br>
 Additionally, if a dependency package is not referenced or is referenced only by non-packable packages, it will be excluded from the nuspec dependency list.
 - - -
+<br>
+
+### <a name="refElement"></a> content 
+Id of the NuGet package to be referenced.
 <br>
 
 ### debug
@@ -449,10 +465,10 @@ The following statements are equivalent:
 
 Definition of a set of NuGet packages.
 
-| Attribute | Default | Description                                                                                                                                                                                                                                         |
-| --------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| path      | *none*  | Path to another SlnX file to be inclued.<br>**NOTE:**<br>Only the defined *env* and *bundle* elements are imported into the main SlnX file.<br>This means that the import elements of an imported file are not evaluated (import is not recursive). |
-| bundle    | -       | The name of the a defined *bundle* to imported.<br>If a package id imported via *bundle* is already known, it will not be overriden.                                                                                                                |
+| Attribute | Default | Description                                                                                                                                                                                                                                          |
+| --------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| path      | *none*  | Path to another SlnX file to be included.<br>**NOTE:**<br>Only the defined *env* and *bundle* elements are imported into the main SlnX file.<br>This means that the import elements of an imported file are not evaluated (import is not recursive). |
+| bundle    | -       | The name of the a defined *bundle* to imported.<br>If a package id imported via *bundle* is already known, it will not be overridden.                                                                                                                |
 <br>
 
 ### bundle
@@ -471,22 +487,26 @@ Definition of a set of NuGet packages.
 <SlnX searchPath="$(slnx)" packagesPath="C:\Nugetcache">
     <env name="NUGET_URL">https://api.nuget.org/v3/index.json</env>
 
-    <package id="NDesk.Options" version="0.2.1" targetFramework="" source="%NUGET_URL%" />
+    <package id="NDesk.Options" version="0.2.1" customPath="lib" IsDotNet="false" source="%NUGET_URL%" />
 
-    <package id="Newtonsoft.Json" version="9.0.1" targetFramework="netstandard1.0" source="%NUGET_URL%" />
-    <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
-    <package id="NuGet.Configuration" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
-    <package id="NuGet.Frameworks" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
-    <package id="NuGet.Packaging" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
-    <package id="NuGet.Packaging.Core" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
-    <package id="NuGet.Protocol" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
-    <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
-    <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%NUGET_URL%" />
+    <package id="Newtonsoft.Json" version="9.0.1" source="%NUGET_URL%" />
+    <package id="NuGet.Common" version="5.8.1" source="%NUGET_URL%" />
+    <package id="NuGet.Configuration" version="5.8.1" source="%NUGET_URL%" />
+    <package id="NuGet.Frameworks" version="5.8.1" source="%NUGET_URL%" />
+    <package id="NuGet.Packaging" version="5.8.1" source="%NUGET_URL%" />
+    <package id="NuGet.Packaging.Core" version="5.8.1" source="%NUGET_URL%" />
+    <package id="NuGet.Protocol" version="5.8.1" source="%NUGET_URL%" />
+    <package id="NuGet.Resolver" version="5.8.1" source="%NUGET_URL%" />
+    <package id="NuGet.Versioning" version="5.8.1" source="%NUGET_URL%" />
 
-    <package id="NugetHelper" version="0.0.2" targetFramework="netstandard2.0" source="D:\GitRepositories" />
+    <package id="NugetClientHelper" version="1.0.0" source="%NUGET_URL%" />
 
     <!-- Projects -->
-    <project name="SlnLauncher" container="" />
-    <project name="Slnx" container="Lib" />
+    <project name="SlnLauncher" container="">
+        <ref>NugetClientHelper</ref>
+    </project>
+    <project name="Slnx" container="Lib">
+        <ref>NugetClientHelper</ref>
+    </project>
 </SlnX>
 ```
