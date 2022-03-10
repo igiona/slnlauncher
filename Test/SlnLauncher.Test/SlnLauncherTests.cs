@@ -110,7 +110,7 @@ namespace SlnLauncher.Test
 
         [TestCase("DebugTestApp.ProjWithAssemblyRefToDebugPrj.csproj")]
         [TestCase(Slnx.CsProject.ImportDebugProjectName)]
-        //[TestCase("DebugTestAppAssemblyRef.sln")] //Requires a file comparer that ignores GUIDs differences
+        [TestCase("DebugTestAppAssemblyRef.sln")] //Requires a file comparer that ignores GUIDs differences
         public void DebugTestAppAssemblyRef_CompareNugetDebugFiles(string f)
         {
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppAssemblyRefFileWriter().SlnxName), new DebugTestAppAssemblyRefFileWriter());
@@ -122,7 +122,7 @@ namespace SlnLauncher.Test
 
         [TestCase("DebugTestApp.ProjWithNugetRefToDebugPrj.csproj")]
         [TestCase(Slnx.CsProject.ImportDebugProjectName)]
-        //[TestCase("DebugTestAppAssemblyRef.sln")] //Requires a file comparer that ignores GUIDs differences
+        [TestCase("DebugTestAppNugetRef.sln")] //Requires a file comparer that ignores GUIDs differences
 
         public void DebugTestAppNugetyRef_CompareNugetDebugFiles(string f)
         {

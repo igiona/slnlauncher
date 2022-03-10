@@ -4,11 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace SlnLauncher.Test
 {
     public static class TestHelper
     {
+        const string LineRegexTag = "$#$";
         const string StimulFolder = "Stimuli";
         const string ExpectedFolder = "Expected";
         const string ResultsFolder = "Results";
@@ -67,20 +69,30 @@ namespace SlnLauncher.Test
                 {
                     var resLine = resultLines[i];
                     var expLine = expectedLines[i];
-                    if (!string.IsNullOrEmpty(skipUpTo))
+                    if (expLine.StartsWith(LineRegexTag))
                     {
-                        var skipChars = resLine.IndexOf(skipUpTo);
-                        if (skipChars != -1) { resLine = resLine.Substring(skipChars); }
-                        skipChars = expLine.IndexOf(skipUpTo);
-                        if (skipChars != -1) { expLine = expLine.Substring(skipChars); }
-                    }
-
-                    if (resLine != expLine)
-                    {
-                        if (!skip.Any(x => resLine.Contains(x)))
+                        if (!Regex.IsMatch(resLine, expLine.Substring(LineRegexTag.Length)))
                         {
-                            Console.WriteLine($"Error at line {i} in {resultFile}");
                             break;
+                        }
+                    }
+                    else
+                    {
+                        if (!string.IsNullOrEmpty(skipUpTo))
+                        {
+                            var skipChars = resLine.IndexOf(skipUpTo);
+                            if (skipChars != -1) { resLine = resLine.Substring(skipChars); }
+                            skipChars = expLine.IndexOf(skipUpTo);
+                            if (skipChars != -1) { expLine = expLine.Substring(skipChars); }
+                        }
+
+                        if (resLine != expLine)
+                        {
+                            if (!skip.Any(x => resLine.Contains(x)))
+                            {
+                                Console.WriteLine($"Error at line {i + 1} in {resultFile}");
+                                break;
+                            }
                         }
                     }
                 }
