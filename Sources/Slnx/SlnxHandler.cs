@@ -252,17 +252,39 @@ namespace Slnx
 
         public void CreateGenereatedFiles()
         {
-            //NOTE: The <ref> is limited to packages that are not being debugged, otherwise the tool cannot know the 
-            //CsProj that has to be referenced instead of the nuget package.
-            //A possible solution: list all DLLs in the package and assume "DllName.Replace(".dll", ".csproj") to be a valid assumption
-            ExpandPackaReferncesAndCreateNugetPackageReferenceFile();
+            var refs = CreatPackageReferenceContent();
             FixProjectFiles();
-            MakeNuGetDebugFile();
+            var debugInfo = CreateNuGetDebugContent();
+
+            var slnxConfig = debugInfo;
+
+            foreach (var r in refs)
+            {
+                if (slnxConfig.ContainsKey(r.Key))
+                {
+                    var importedNode = slnxConfig[r.Key].ImportNode(r.Value.DocumentElement, true);
+                    slnxConfig[r.Key].DocumentElement.AppendChild(importedNode);
+                }
+                else
+                {
+                    slnxConfig.Add(r.Key, r.Value);
+                }
+            }
+
+            foreach (var cfg in slnxConfig)
+            {
+                string prettyContent = XDocument.Parse(cfg.Value.OuterXml).ToString();
+                _fileWriter.WriteAllText(Path.Join(cfg.Key.FullDir, CsProject.ImportSlnxConfigName), prettyContent);
+            }
+        }
+        public void CreateGenereatedFilesRecurisvely()
+        {
+            CreateGenereatedFiles();
+
 
             foreach (var debugSlnxItem in _debugSlnxItems.Values)
             {
-                debugSlnxItem.FixProjectFiles();
-                debugSlnxItem.MakeNuGetDebugFile();
+                debugSlnxItem.CreateGenereatedFiles();
             }
         }
 
@@ -387,9 +409,10 @@ namespace Slnx
             itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\" Condition=\"{condition}\"/>";
         }
 
-        private void ExpandPackaReferncesAndCreateNugetPackageReferenceFile()
+        private Dictionary<CsProject, XmlDocument> CreatPackageReferenceContent()
         {
             _logger?.Info($"Adding nuget package references to the CsProjects...");
+            var ret = new Dictionary<CsProject, XmlDocument>();
 
             foreach (var p in _slnx.project.Where(x => x.@ref?.Count() > 0))
             {
@@ -411,12 +434,12 @@ namespace Slnx
                     AppendReference(itemGroup, refPackage);
                     csProject.AddPackageReference(refPackage);
                 }
-                string prettyContent = XDocument.Parse(xml.OuterXml).ToString();
-                _fileWriter.WriteAllText(Path.Join(csProject.FullDir, CsProject.ImportPacakageReferencesProjectName), prettyContent);
+                ret.Add(csProject, xml);
             }
+            return ret;
         }
 
-        void MakeNuGetDebugFile()
+        private Dictionary<CsProject, XmlDocument> CreateNuGetDebugContent()
         {
             var debugInfo = new Dictionary<CsProject, XmlDocument>();
 
@@ -427,25 +450,20 @@ namespace Slnx
                 {
                     throw new Exception($"Unable to create the debug information for {item.Value.SlnxName}, the corresponding nuget package {item.Key} is missing.");
                 }
-                foreach (var p in Projects)
+                foreach (var csProject in Projects)
                 {
-                    var debugDoc = TryGetDebugXmlDoc(p, debugPackage);
+                    var debugDoc = TryGetDebugXmlDoc(csProject, debugPackage);
                     if (debugDoc != null)
                     {
-                        if (!debugInfo.ContainsKey(p))
+                        if (!debugInfo.ContainsKey(csProject))
                         {
-                            debugInfo[p] = debugDoc;
+                            debugInfo[csProject] = debugDoc;
                         }
-                        AppendDebugElement(debugInfo[p], p, debugPackage, item.Value);
+                        AppendDebugElement(debugInfo[csProject], csProject, debugPackage, item.Value);
                     }
                 }
             }
-
-            foreach (var di in debugInfo)
-            {
-                string prettyContent = XDocument.Parse(di.Value.OuterXml).ToString();
-                _fileWriter.WriteAllText(Path.Join(di.Key.FullDir, CsProject.ImportDebugProjectName), prettyContent);
-            }
+            return debugInfo;
         }
 
         XmlDocument TryGetDebugXmlDoc(CsProject proj, NuGetClientHelper.NuGetPackage package)

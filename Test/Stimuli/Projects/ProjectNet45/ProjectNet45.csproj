@@ -1,6 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
-  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+  <Import Project="slnx.config" Condition="Exists('slnx.config')" />
   <PropertyGroup>
     <TargetFramework>net45</TargetFramework>
   </PropertyGroup>
