@@ -54,11 +54,10 @@ namespace Slnx
         const string IncludeAttributeTag = "Include";
         const string HintPathAttributeTag = "HintPath";
 
-        public const string ImportDebugProjectName = "nuget.debug";
-        static readonly string ImportDebugCondition = $"Exists('{ImportDebugProjectName}')";
+        public const string ImportSlnxConfigName = "slnx.config";
+        static readonly string ImportSlnxConfigCondition = $"Exists('{ImportSlnxConfigName}')";
 
-        public const string ImportPacakageReferencesProjectName = "nuget.refs";
-        static readonly string ImportPackageReferencesCondition = $"Exists('{ImportPacakageReferencesProjectName }')";
+        private const string ObsoleteImportDebugProjectName = "nuget.debug";
 
         XmlDocument _xml;
         string _projectOriginalContent;
@@ -271,8 +270,8 @@ namespace Slnx
 
             _assemblyReferences = GetAndFixAssemblyReferences(packages);
             _projectReferences = GetAndFixProjectReferences();
-            FixDebugImport();
-            FixNugetReferenceImport();
+            RemoveImportNodeByProject(ObsoleteImportDebugProjectName);
+            FixSlnxConfigImport();
         }
 
         public void SaveCsProjectToFile()
@@ -323,20 +322,25 @@ namespace Slnx
             return importNode;
         }
 
-        private void FixNugetReferenceImport()
+        private void RemoveImportNodeByProject(string project)
         {
-            XmlNode importNode = GetOrAppendImportNodeByProject(ImportPacakageReferencesProjectName);
-            importNode.Attributes[ProjectAttributeTag].Value = ImportPacakageReferencesProjectName;
-            importNode.Attributes[ConditionAttributeTag].Value = ImportPackageReferencesCondition;
+            foreach (XmlNode r in _xml.GetElementsByTagName(ImportElementTag))
+            {
+                if (r.Attributes.GetNamedItem(ProjectAttributeTag)?.Value == project)
+                {
+                    r.ParentNode.RemoveChild(r);
+                    break;
+                }
+            }
         }
 
-        private void FixDebugImport()
+        private void FixSlnxConfigImport()
         {
-            XmlNode importNode = GetOrAppendImportNodeByProject(ImportDebugProjectName);
-            importNode.Attributes[ProjectAttributeTag].Value = ImportDebugProjectName;
-            importNode.Attributes[ConditionAttributeTag].Value = ImportDebugCondition;
+            XmlNode importNode = GetOrAppendImportNodeByProject(ImportSlnxConfigName);
+            importNode.Attributes[ProjectAttributeTag].Value = ImportSlnxConfigName;
+            importNode.Attributes[ConditionAttributeTag].Value = ImportSlnxConfigCondition;
         }
-
+        
         private List<Generated.AssemblyReference> GetAndFixAssemblyReferences(IEnumerable<NuGetPackage> packages)
         {
             var xmlSer = new XmlSerializer(typeof(Generated.AssemblyReference));

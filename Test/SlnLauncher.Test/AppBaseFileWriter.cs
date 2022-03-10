@@ -5,7 +5,7 @@ namespace SlnLauncher.Test
 {
     internal class AppBaseFileWriter : IFileWriter
     {
-        string _folderName;
+        protected string _folderName;
 
         public AppBaseFileWriter(string folderName)
         {
@@ -36,13 +36,15 @@ namespace SlnLauncher.Test
 
         public void WriteAllText(string path, string text, bool append)
         {
-            using (var f = new StreamWriter(GetPath(path), append))
+            var destinationPath = GetPath(path);
+            Directory.CreateDirectory(Path.GetDirectoryName(destinationPath));
+            using (var f = new StreamWriter(destinationPath, append))
             {
                 f.Write(text);
             }
         }
 
-        private string GetPath(string path)
+        protected virtual string GetPath(string path)
         {
             var filePartialPath = Path.Combine(_folderName, Path.GetFileName(path));
             return TestHelper.GeResultPathFor(filePartialPath);

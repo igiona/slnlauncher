@@ -11,5 +11,11 @@ namespace SlnLauncher.Test
         internal DebugTestAppAssemblyRefFileWriter() : base (FolderName)
         {
         }
+
+        protected override string GetPath(string path)
+        {
+            var filePartialPath = Path.Combine(_folderName, Path.GetFileName(Path.GetDirectoryName(path)), Path.GetFileName(path));
+            return TestHelper.GeResultPathFor(filePartialPath);
+        }
     }
 }

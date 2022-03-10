@@ -198,7 +198,7 @@ namespace SlnLauncher
 
                     MakeSln(slnx);
                     CleanGeneratedFiles(slnx);
-                    slnx.CreateGenereatedFiles();
+                    slnx.CreateGenereatedFilesRecurisvely();
 
                     if (!string.IsNullOrEmpty(nuspecDir))
                     {
@@ -750,7 +750,7 @@ EndGlobal
             foreach (var slnx in GetAllSlnxHanlders(mainSlnx))
             {
                 _logger.Info($"Cleaning generated files for {slnx.SlnxName}");
-                foreach (var pattern in new[] { CsProject.ImportDebugProjectName, CsProject.ImportPacakageReferencesProjectName })
+                foreach (var pattern in new[] { CsProject.ImportSlnxConfigName })
                 {
                     foreach (string f in Directory.EnumerateFiles(slnx.ProjectsSearchPath, pattern, new EnumerationOptions() { RecurseSubdirectories = true }))
                     {

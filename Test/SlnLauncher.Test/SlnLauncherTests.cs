@@ -71,6 +71,7 @@ namespace SlnLauncher.Test
         [TestCase("TestApp.Lib.csproj")]
         [TestCase("TestApp.Lib.Test.csproj")]
         [TestCase("TestApp.UiUnformattedProj.csproj")]
+        [TestCase("TestApp.sln")]
         public void TestApp_CsProj(string fileName)
         {
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
@@ -99,37 +100,39 @@ namespace SlnLauncher.Test
         [Test]
         public void TestApp_CompareSlnxPackageRefs()
         {
-            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportPacakageReferencesProjectName));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportPacakageReferencesProjectName));
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportSlnxConfigName));
+            var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportSlnxConfigName));
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
 
-
-        [TestCase("DebugTestApp.ProjWithAssemblyRefToDebugPrj.csproj")]
-        [TestCase(Slnx.CsProject.ImportDebugProjectName)]
-        [TestCase("DebugTestAppAssemblyRef.sln")] //Requires a file comparer that ignores GUIDs differences
-        public void DebugTestAppAssemblyRef_CompareNugetDebugFiles(string f)
+        [TestCase("DebugTestApp.ProjWithAssemblyRefToDebugPrj.csproj", "App")]
+        [TestCase(Slnx.CsProject.ImportSlnxConfigName, "App")]
+        [TestCase("TestApp.UiUnformattedProj.csproj", "Ui")]
+        [TestCase(Slnx.CsProject.ImportSlnxConfigName, "Ui")]
+        [TestCase("DebugTestAppAssemblyRef.sln", DebugTestAppAssemblyRefFileWriter.FolderName)]
+        public void DebugTestAppAssemblyRef_CompareGeneratedFiles(string f, string subFolder)
         {
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppAssemblyRefFileWriter().SlnxName), new DebugTestAppAssemblyRefFileWriter());
 
-            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, f));
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, subFolder, f));
+            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, subFolder, f));
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
 
-        [TestCase("DebugTestApp.ProjWithNugetRefToDebugPrj.csproj")]
-        [TestCase(Slnx.CsProject.ImportDebugProjectName)]
-        [TestCase("DebugTestAppNugetRef.sln")] //Requires a file comparer that ignores GUIDs differences
-
-        public void DebugTestAppNugetyRef_CompareNugetDebugFiles(string f)
+        [TestCase("DebugTestApp.ProjWithNugetRefToDebugPrj.csproj", "App")]
+        [TestCase(Slnx.CsProject.ImportSlnxConfigName, "App")]
+        [TestCase("TestApp.UiUnformattedProj.csproj", "Ui")]
+        [TestCase(Slnx.CsProject.ImportSlnxConfigName, "Ui")]
+        [TestCase("DebugTestAppNugetRef.sln", DebugTestAppNugetRefFileWriter.FolderName)]
+        public void DebugTestAppNugetyRef_CompareGeneratedFiles(string f, string subFolder)
         {
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppNugetRefFileWriter().SlnxName), new DebugTestAppNugetRefFileWriter());
 
-            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, f));
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
+            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
     }
