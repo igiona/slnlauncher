@@ -297,13 +297,17 @@ namespace Slnx
 
         private void AddPackageReferenceFromAssembly(NuGetPackage refPackage)
         {
-            if (AllPackageReferences.Any(x => x == refPackage)
-                || PackageReferencesFromCsProj.Any(x => x == refPackage.Identity)
-               )
+            //Multiple assembly references might lead to the same package being referenced
+            //Therefore AllPackageReferences should not be used here
+            if (PackageReferencesFromCsProj.Any(x => x == refPackage.Identity)
+                || PackageReferencesFromSlnX.Any(x => x == refPackage))
             {
                 throw new Exceptions.DuplicatePackageReferenceException($"Can't add {refPackage} as assembly-package reference to the project {Name}, a reference to that package already exists");
             }
-            _packageReferencesFromAssemblies.Add(refPackage);
+            if (!_packageReferencesFromAssemblies.Contains(refPackage))
+            {
+                _packageReferencesFromAssemblies.Add(refPackage);
+            }
         }
 
         private XmlNode GetOrAppendImportNodeByProject(string project)

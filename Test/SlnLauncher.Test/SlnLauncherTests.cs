@@ -46,8 +46,14 @@ namespace SlnLauncher.Test
         [TestCase("DuplicatePackageReferenceSlnxCsProjAssembly.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
         [TestCase("DuplicatePackageReferenceCsProjAssembly.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
         public void TestPackageReferenceDuplicates(string slnxFile, Type expectedException)
-        {            
+        {
             Assert.Throws(expectedException, () => SlnLauncher.Program.Main(TestHelper.GetArguments(Path.Combine("DuplicateReferences", slnxFile))));
+        }
+
+        [TestCase("ValidDuplicateCsProjAssembly.slnx")]
+        public void TestPackageReferenceDuplicates(string slnxFile)
+        {
+            Assert.DoesNotThrow(() => SlnLauncher.Program.Main(TestHelper.GetArguments(Path.Combine("DuplicateReferences", slnxFile))));
         }
 
         [TestCase("dump.txt", "--dump")]

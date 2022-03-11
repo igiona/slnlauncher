@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
+  <Import Project="slnx.config" Condition="Exists('slnx.config')" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
     <Platforms>My Own Platform</Platforms>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Math.Numerics" Condition="$(Math_Numerics_debug) != 1">
-      <HintPath>$(Math_Numerics)\MathNet.Numerics.dll</HintPath>
+    <Reference Include="Math.Numerics" Condition="$(MathNet_Numerics_debug) != 1">
+      <HintPath>$(MathNet_Numerics)\MathNet.Numerics.dll</HintPath>
     </Reference>
     <PackageReference Include="mathnet.numerics" Version="4.15.0" />
   </ItemGroup>

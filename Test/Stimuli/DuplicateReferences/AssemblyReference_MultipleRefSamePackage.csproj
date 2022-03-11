@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="slnx.config" Condition="Exists('slnx.config')" />
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net45</TargetFramework>
+    <Platforms>My Own Platform</Platforms>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DynamicLanguageRuntime" Condition="$(DynamicLanguageRuntime_debug) != 1">
+      <HintPath>$(DynamicLanguageRuntime)\Microsoft.Scripting.dll</HintPath>
+    </Reference>
+    <Reference Include="DynamicLanguageRuntime" Condition="$(DynamicLanguageRuntime_debug) != 1">
+      <HintPath>$(DynamicLanguageRuntime)\Microsoft.Dynamic.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
