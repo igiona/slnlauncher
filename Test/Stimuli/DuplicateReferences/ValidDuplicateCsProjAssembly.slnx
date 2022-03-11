@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<SlnX searchPath="$(slnx)" packagesPath="C:\Nugetcache">
+    <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
+
+    <package id="DynamicLanguageRuntime" version="1.1.2" source="%NUGET_ORG_URL%" />
+
+    <!-- Projects -->
+    <project name="AssemblyReference_MultipleRefSamePackage" />
+</SlnX>
