@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using NUnit.Framework;
+using NuGetClientHelper;
 
 namespace SlnLauncher.Test
 {
@@ -22,6 +23,17 @@ namespace SlnLauncher.Test
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppAssemblyRefFileWriter.FolderName));
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppNugetRefFileWriter.FolderName));
         }
+
+        [Test]
+        public void OfflineModeTest()
+        {
+            var args = TestHelper.GetArguments("OfflineTest.slnx", "--offline");
+            var p = new NuGetPackageInfo("MyLocalTestApp", "1.0.0", TestHelper.GetStimulPathFor("Packages"), NuGetPackageType.DotNet, TestHelper.GetResultPathFor("Cache"));
+            //Ensure the packet doesn't exists
+            Assert.Throws(typeof(NuGetClientHelper.Exceptions.PackageInstallationException), () => SlnLauncher.Program.Main(args));
+            //Manually install the package from the local copy
+            NuGetClientHelper.NuGetClientHelper.InstallPackages(new[] { p }, false, null, NuGet.Frameworks.NuGetFramework.ParseFolder("net48"));
+            Assert.DoesNotThrow(() => SlnLauncher.Program.Main(args));
         }
 
         //[TestCase("InvalidMinVersionOnProjectRef.slnx", typeof(NuGetClientHelper.Exceptions.InvalidMinVersionDependencyFoundException))]

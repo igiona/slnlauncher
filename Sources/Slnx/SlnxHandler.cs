@@ -40,15 +40,18 @@ namespace Slnx
         List<NuGetPackageInfo> _packagesInfo = new List<NuGetPackageInfo>();
         Dictionary<string, string> _packagesToDebug = new Dictionary<string, string>();
         Dictionary<NuGetPackageInfo, SlnxHandler> _debugSlnxItems = new Dictionary<NuGetPackageInfo, SlnxHandler>();
+        bool _offlineMode = false;
+        Uri _offlineCache = null;
 
-        public SlnxHandler(string fName, IFileWriter writer, ILogger logger, string debugPackageId = null) : this(fName, null, writer, logger, debugPackageId)
+        public SlnxHandler(string fName, IFileWriter writer, ILogger logger, bool offlineMode, string debugPackageId = null) : this(fName, null, writer, logger, debugPackageId, offlineMode)
         {
         }
 
-        public SlnxHandler(string fName, SlnXType userSettings, IFileWriter writer, ILogger logger, string debugPackageId)
+        public SlnxHandler(string fName, SlnXType userSettings, IFileWriter writer, ILogger logger, string debugPackageId, bool offlineMode)
         {
             _logger = logger;
             _fileWriter = writer;
+            _offlineMode = offlineMode;
             if (!string.IsNullOrEmpty(debugPackageId))
             {
                 userSettings = null; //Ignore use settings in case of an import via <debug package.../>
@@ -59,7 +62,6 @@ namespace Slnx
             _slnxFile = Path.GetFileName(fName);
             _slnxName = Path.GetFileNameWithoutExtension(fName);
             _specialSlnxKeys["slnx"] = _slnxDirectory;
-
             _slnx = ReadSlnx(fName);
 
             AppendSpecialKeys(false);
@@ -84,7 +86,12 @@ namespace Slnx
                 enforcedContainer = $"_DEBUG/{debugPackageId}";
             }
 
-            ExtendList(_packagesInfo, _slnx.package);
+            if (offlineMode)
+            {
+                _offlineCache = new Uri(PackagesPath);
+                _logger.Info($"Offline mode for {SlnxName}, using {PackagesPath} as package source.");
+            }
+            ExtendList(_packagesInfo, _slnx.package, _offlineCache);
             _projects = FindProjects(_slnx.project, ProjectsSearchPath, _slnx.skip, enforcedContainer);
 
             if (string.IsNullOrEmpty(debugPackageId)) //Main SlnX
@@ -98,7 +105,7 @@ namespace Slnx
                     var debugSourcePakckage = PackagesInfo.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
                     Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
-                    var slnxItem = new SlnxHandler(item.Value, _fileWriter, _logger, item.Key);
+                    var slnxItem = new SlnxHandler(item.Value, _fileWriter, _logger, offlineMode, item.Key);
                     _debugSlnxItems[debugSourcePakckage] = slnxItem;
                     _packagesInfo.Remove(debugSourcePakckage);
 
@@ -546,7 +553,7 @@ namespace Slnx
                         }
 
                         var slnx = SlnxHandler.ReadSlnx(slnxImportFile);
-                        var imported = new SlnxHandler(slnxImportFile, _fileWriter, _logger);
+                        var imported = new SlnxHandler(slnxImportFile, _fileWriter, _logger, _offlineMode);
                         _imports.Add(imported);
 
                         ExtendDictionary(env, slnx.env, false);
@@ -555,7 +562,7 @@ namespace Slnx
                     else //if (!string.IsNullOrEmpty(import.bundle))
                     {
                         Assert(_packageBundles.ContainsKey(import.bundle), "Missing bundle with key '{0}'", import.bundle);
-                        ExtendList(packages, bundle[import.bundle].ToArray());
+                        ExtendList(packages, bundle[import.bundle].ToArray(), _offlineCache);
                     }
                 }
             }
@@ -709,16 +716,18 @@ namespace Slnx
             }
         }
 
-        private void ExtendList(List<NuGetPackageInfo> packages, PackageType[] importedValues)
+        private void ExtendList(List<NuGetPackageInfo> packages, PackageType[] importedValues, Uri offlineCache)
         {
             if (importedValues != null)
             {
                 foreach (var e in importedValues)
                 {
+                    string source = offlineCache?.ToString() ?? SafeExpandEnvironmentVariables(e.source);
+                    var dependenciesSources = new[] { offlineCache?.ToString() } ?? SafeExpandEnvironmentVariables(e.dependencySources)?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                     var candidate = new NuGetPackageInfo(SafeExpandEnvironmentVariables(e.id),
                                                      SafeExpandEnvironmentVariables(e.version), 
-                                                     SafeExpandEnvironmentVariables(e.source),
-                                                     SafeExpandEnvironmentVariables(e.dependencySources)?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
+                                                     source,
+                                                     dependenciesSources,
                                                      IsDotNet(e), PackagesPath,
                                                      !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion,
                                                      SafeExpandEnvironmentVariables(e.customPath));
