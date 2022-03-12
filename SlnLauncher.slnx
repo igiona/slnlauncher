@@ -45,7 +45,7 @@
 
     <package id="Glob.cs" version="5.0.224" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     
-    <package id="NuGetClientHelper" version="1.0.0" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGetClientHelper" version="1.0.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
     <!-- Projects -->
     <project name="SlnLauncher" container="" />
