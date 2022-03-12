@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<SlnX searchPath="$(slnx)\Projects" packagesPath="$(slnx)\..\Results\Cache">
+    <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
+
+    <package id="MyLocalTestApp" version="1.0.0" source="%NUGET_ORG_URL%" />
+
+    <!-- Projects -->
+    <project name="ProjectNet48" />
+</SlnX>
