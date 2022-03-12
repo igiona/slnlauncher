@@ -47,7 +47,7 @@ namespace SlnLauncher.Test
         protected virtual string GetPath(string path)
         {
             var filePartialPath = Path.Combine(_folderName, Path.GetFileName(path));
-            return TestHelper.GeResultPathFor(filePartialPath);
+            return TestHelper.GetResultPathFor(filePartialPath);
         }
     }
 }

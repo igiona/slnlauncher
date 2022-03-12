@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using NUnit.Framework;
+using NuGetClientHelper;
 
 namespace SlnLauncher.Test
 {
@@ -12,15 +13,27 @@ namespace SlnLauncher.Test
         [SetUp]
         public void Setup()
         {
-            var resultFolder = TestHelper.GeResultsPath();
+            var resultFolder = TestHelper.GetResultsPath();
             if (Directory.Exists(resultFolder))
             {
                 Directory.Delete(resultFolder, true);
             }
             Directory.CreateDirectory(resultFolder);
-            Directory.CreateDirectory(TestHelper.GeResultPathFor(TestAppFileWriter.FolderName));
-            Directory.CreateDirectory(TestHelper.GeResultPathFor(DebugTestAppAssemblyRefFileWriter.FolderName));
-            Directory.CreateDirectory(TestHelper.GeResultPathFor(DebugTestAppNugetRefFileWriter.FolderName));
+            Directory.CreateDirectory(TestHelper.GetResultPathFor(TestAppFileWriter.FolderName));
+            Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppAssemblyRefFileWriter.FolderName));
+            Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppNugetRefFileWriter.FolderName));
+        }
+
+        [Test]
+        public void OfflineModeTest()
+        {
+            var args = TestHelper.GetArguments("OfflineTest.slnx", "--offline");
+            var p = new NuGetPackageInfo("MyLocalTestApp", "1.0.0", TestHelper.GetStimulPathFor("Packages"), NuGetPackageType.DotNet, TestHelper.GetResultPathFor("Cache"));
+            //Ensure the packet doesn't exists
+            Assert.Throws(typeof(NuGetClientHelper.Exceptions.PackageInstallationException), () => SlnLauncher.Program.Main(args));
+            //Manually install the package from the local copy
+            NuGetClientHelper.NuGetClientHelper.InstallPackages(new[] { p }, false, null, NuGet.Frameworks.NuGetFramework.ParseFolder("net48"));
+            Assert.DoesNotThrow(() => SlnLauncher.Program.Main(args));
         }
 
         //[TestCase("InvalidMinVersionOnProjectRef.slnx", typeof(NuGetClientHelper.Exceptions.InvalidMinVersionDependencyFoundException))]
@@ -64,7 +77,7 @@ namespace SlnLauncher.Test
         public void TestApp_FileGeneration(string fileName, params string[] commandLineArg)
         {
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
 
@@ -81,7 +94,7 @@ namespace SlnLauncher.Test
         public void TestApp_CsProj(string fileName)
         {
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
@@ -93,7 +106,7 @@ namespace SlnLauncher.Test
         {
             var filename = "SlnLauncher.log";
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, filename));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, filename));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(TestAppFileWriter.FolderName, filename));
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, "--log"), new TestAppFileWriter());
 
@@ -107,7 +120,7 @@ namespace SlnLauncher.Test
         public void TestApp_CompareSlnxPackageRefs()
         {
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportSlnxConfigName));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportSlnxConfigName));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(TestAppFileWriter.FolderName, Slnx.CsProject.ImportSlnxConfigName));
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
@@ -124,7 +137,7 @@ namespace SlnLauncher.Test
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppAssemblyRefFileWriter().SlnxName), new DebugTestAppAssemblyRefFileWriter());
 
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, subFolder, f));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, subFolder, f));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, subFolder, f));
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
 
@@ -138,7 +151,7 @@ namespace SlnLauncher.Test
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppNugetRefFileWriter().SlnxName), new DebugTestAppNugetRefFileWriter());
 
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
-            var resultFile = TestHelper.GeResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
     }

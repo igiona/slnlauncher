@@ -18,6 +18,7 @@ using System.Diagnostics;
 using Slnx.Interfaces;
 using NuGet.Frameworks;
 using System.Reflection.Metadata;
+using NuGetClientHelper;
 
 // Important note:
 //  The NuGet Client code requires to know its version.
@@ -136,12 +137,12 @@ namespace SlnLauncher
                     slnxUser = SlnxHandler.ReadSlnx(slnxUserFile);
                 }
 
-                var slnx = new SlnxHandler(slnxFile, slnxUser, _fileWriter, _logger, null);
+                var slnx = new SlnxHandler(slnxFile, slnxUser, _fileWriter, _logger, null, offlineMode);
                 var originalPackageList = new List<NuGetClientHelper.NuGetPackage>(slnx.Packages);
                 bool errorOccured = false;
                 try
                 {
-                    DownloadPackages(slnx, quiteExecution, autoUpdateNuGetDependencies, offlineMode);
+                    DownloadPackages(slnx, quiteExecution, autoUpdateNuGetDependencies);
 
                     if (_createMsBuild)
                     {
@@ -338,26 +339,9 @@ namespace SlnLauncher
             return ret;
         }
 
-        static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies, bool offlineMode)
+        static void DownloadPackages(SlnxHandler slnx, bool quite, bool autoUpdateDependencies)
         {
             _logger.Info("Downloading required NuGet packages...");
-            Uri nugetCacheUri = new Uri(slnx.PackagesPath);
-            
-            if (offlineMode)
-            {
-                _logger.Info($"Offline mode, using {slnx.PackagesPath} as package source.");
-
-                foreach (var packageInfo in slnx.PackagesInfo)
-                {
-                    packageInfo.SetSource(nugetCacheUri);
-                    if (packageInfo.DependencySources?.Count > 0)
-                    {
-                        packageInfo.DependencySources.Clear();
-                        packageInfo.DependencySources.Add(nugetCacheUri);
-                    }
-                }
-            }
-
             var frameworks = slnx.Projects.Select(p => NuGetFramework.ParseFolder(p.Framework));
             var requestedFramework = new FrameworkReducer().ReduceDownwards(frameworks).SingleOrDefault();
             if (requestedFramework == null)
@@ -373,10 +357,7 @@ namespace SlnLauncher
 
                 foreach ((var packageInfo, var debugSlnx) in slnx.DebugSlnxItems)
                 {
-                    if (offlineMode)
-                    {
-                        packageInfo.SetSource(nugetCacheUri);
-                    }
+                    _logger.Debug("Evaluating {0}.", packageInfo);
                     var installed = PerformPackageDownloadProcess(new[] { packageInfo }, requestedFramework, quite, true, $"Loading debug package {packageInfo} without dependencies...");
                     debugSlnx.Packages = installed;
                     slnx.DebugPackages.Add(installed.First()); //Keep a reference to the debug package

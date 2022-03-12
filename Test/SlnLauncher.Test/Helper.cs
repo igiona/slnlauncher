@@ -109,12 +109,12 @@ namespace SlnLauncher.Test
             return GetFolderFor(file, StimulFolder);
         }
 
-        internal static string GeResultPathFor(string file)
+        internal static string GetResultPathFor(string file)
         {
             return GetFolderFor(file, ResultsFolder);
         }
 
-        internal static string GeResultsPath()
+        internal static string GetResultsPath()
         {
             return GetFolder(ResultsFolder);
         }

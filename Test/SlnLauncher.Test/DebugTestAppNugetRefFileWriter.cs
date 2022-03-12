@@ -15,7 +15,7 @@ namespace SlnLauncher.Test
         protected override string GetPath(string path)
         {
             var filePartialPath = Path.Combine(_folderName, Path.GetFileName(Path.GetDirectoryName(path)), Path.GetFileName(path));
-            return TestHelper.GeResultPathFor(filePartialPath);
+            return TestHelper.GetResultPathFor(filePartialPath);
         }
     }
 }
