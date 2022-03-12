@@ -723,11 +723,11 @@ namespace Slnx
                 foreach (var e in importedValues)
                 {
                     string source = offlineCache?.ToString() ?? SafeExpandEnvironmentVariables(e.source);
-                    var dependenciesSources = new[] { offlineCache?.ToString() } ?? SafeExpandEnvironmentVariables(e.dependencySources)?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                    var dependenciesSources = offlineCache?.ToString() ?? SafeExpandEnvironmentVariables(e.dependencySources);
                     var candidate = new NuGetPackageInfo(SafeExpandEnvironmentVariables(e.id),
                                                      SafeExpandEnvironmentVariables(e.version), 
                                                      source,
-                                                     dependenciesSources,
+                                                     dependenciesSources?.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
                                                      IsDotNet(e), PackagesPath,
                                                      !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion,
                                                      SafeExpandEnvironmentVariables(e.customPath));
