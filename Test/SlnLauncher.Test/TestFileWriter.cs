@@ -41,7 +41,7 @@ namespace SlnLauncher.Test
 
         private string GetPath(string path)
         {
-            return TestHelper.GeResultPathFor(Path.GetFileName(path));
+            return TestHelper.GetResultPathFor(Path.GetFileName(path));
         }
     }
 }
