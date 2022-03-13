@@ -69,6 +69,7 @@ namespace SlnLauncher.Test
             Assert.DoesNotThrow(() => SlnLauncher.Program.Main(TestHelper.GetArguments(Path.Combine("DuplicateReferences", slnxFile))));
         }
 
+        [TestCase("nuget.config")]
         [TestCase("dump.txt", "--dump")]
         [TestCase("MsBuildGeneratedProperties.targets", "-msb")]
         [TestCase("SetEnvVars.bat", "-b", ".")]

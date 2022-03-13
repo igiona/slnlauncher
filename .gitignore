@@ -359,8 +359,8 @@ MigrationBackup/
 .unotes/
 
 # SlnLauncher generated file, required to debug nuget packages
-nuget.debug
-nuget.refs
+nuget.config
+slnx.config
 **/Test/Results
 *.sln
 ./*.log
