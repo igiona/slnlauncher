@@ -161,11 +161,6 @@ namespace Slnx
             get { return _slnxPath; }
         }
 
-        public string SlnxFolder
-        {
-            get { return Path.GetDirectoryName(SlnxPath); }
-        }
-
         public string SlnxName
         {
             get { return _slnxName; }
@@ -175,7 +170,7 @@ namespace Slnx
         {
             get
             {
-                var slnFile = string.Format("{0}\\{1}{2}", SlnxFolder, Path.GetFileNameWithoutExtension(SlnxPath), SlnExtension);
+                var slnFile = Path.ChangeExtension(SlnxPath, SlnExtension);
                 if (!string.IsNullOrEmpty(_slnx?.sln))
                     slnFile = _slnx.sln;
                 return slnFile;
@@ -257,7 +252,7 @@ namespace Slnx
             return slnx;
         }
 
-        public void CreateGenereatedFiles()
+        private void CreateGenereatedFiles()
         {
             var refs = CreatPackageReferenceContent();
             FixProjectFiles();
@@ -284,10 +279,24 @@ namespace Slnx
                 _fileWriter.WriteAllText(Path.Join(cfg.Key.FullDir, CsProject.ImportSlnxConfigName), prettyContent);
             }
         }
+        
+        private void CreateNugetConfig()
+        {
+            var xml = new XmlDocument();
+            var configuration = xml.CreateNode(XmlNodeType.Element, "configuration", null);
+            var packageSources = xml.CreateNode(XmlNodeType.Element, "packageSources", null);
+            packageSources.InnerXml = string.Format("<clear/><add key=\"LocalCache\" value=\"{0}\" />", new Uri(PackagesPath));
+            xml.AppendChild(configuration);
+            xml.DocumentElement.AppendChild(packageSources);
+
+            string prettyContent = XDocument.Parse(xml.OuterXml).ToString();
+            _fileWriter.WriteAllText(Path.Combine(SlnxDirectory, "nuget.config"), prettyContent);
+        }
+
         public void CreateGenereatedFilesRecurisvely()
         {
+            CreateNugetConfig();
             CreateGenereatedFiles();
-
 
             foreach (var debugSlnxItem in _debugSlnxItems.Values)
             {
