@@ -343,11 +343,13 @@ namespace SlnLauncher
         {
             _logger.Info("Downloading required NuGet packages...");
             var frameworks = slnx.Projects.Select(p => NuGetFramework.ParseFolder(p.Framework));
-            var requestedFramework = new FrameworkReducer().ReduceDownwards(frameworks).SingleOrDefault();
-            if (requestedFramework == null)
+            var reducedFrameworks = new FrameworkReducer().ReduceUpwards(frameworks);
+
+            if (reducedFrameworks.Count() != 1)
             {
-                throw new Exception($"It has not been possible to find a single common framework among the C# project specified in the SlnX file");
+                throw new Exceptions.MultiFrameworkAppException($"It has not been possible to find a single common framework among the C# project specified in the SlnX file. Mixed .NET Framework and Core projects are not supported");
             }
+            var requestedFramework = reducedFrameworks.First();
             slnx.Packages = PerformPackageDownloadProcess(slnx.PackagesInfo, requestedFramework, quite, autoUpdateDependencies, "Loading packages...");
 
             if (slnx.DebugSlnxItems.Count != 0)
