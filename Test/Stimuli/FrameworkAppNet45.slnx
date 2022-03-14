@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<SlnX searchPath="$(slnx)\Projects" packagesPath="C:\Nugetcache">
+    <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
+
+    <!-- Projects -->
+    <project name="ProjectNet45" />
+</SlnX>

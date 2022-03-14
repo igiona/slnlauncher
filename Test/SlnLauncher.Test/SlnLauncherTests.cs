@@ -52,6 +52,20 @@ namespace SlnLauncher.Test
             Assert.DoesNotThrow(() => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, argument)));
         }
 
+        [TestCase("FrameworkAppNet45Net5.slnx")]
+        public void MultiFramework_Unsupported(string slnxFile, params string[] commandLineArg)
+        {
+            Assert.Throws<Exceptions.MultiFrameworkAppException>(() => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, commandLineArg)));
+        }
+
+        [TestCase("FrameworkAppNet5.slnx")]
+        [TestCase("FrameworkAppNet45.slnx")]
+        [TestCase("FrameworkAppNet45Net48.slnx")]
+        public void MultiFramework_Supported(string slnxFile, params string[] commandLineArg)
+        {
+            Assert.DoesNotThrow(() => SlnLauncher.Program.Main(TestHelper.GetArguments(slnxFile, commandLineArg)));
+        }
+
         [TestCase("DuplicatePackageReferenceOnSlnxIgnoreCase.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
         [TestCase("DuplicatePackageReferenceOnSlnx.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
         [TestCase("DuplicatePackageReferenceSlnxCsProjNuget.slnx", typeof(Slnx.Exceptions.DuplicatePackageReferenceException))]
