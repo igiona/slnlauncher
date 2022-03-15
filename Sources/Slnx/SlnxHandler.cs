@@ -264,7 +264,7 @@ namespace Slnx
             {
                 if (slnxConfig.ContainsKey(r.Key))
                 {
-                    var importedNode = slnxConfig[r.Key].ImportNode(r.Value.DocumentElement, true);
+                    var importedNode = slnxConfig[r.Key].ImportNode(r.Value.DocumentElement.FirstChild, true);
                     slnxConfig[r.Key].DocumentElement.AppendChild(importedNode);
                 }
                 else
