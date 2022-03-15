@@ -1,10 +1,10 @@
-set TestApp_Lib=<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib
+$#$set TestApp_Lib=.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib
 set TestApp_Lib_framework=net48
-set TestApp_Lib_Test=<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\Test
+$#$set TestApp_Lib_Test=.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib\\Test
 set TestApp_Lib_Test_framework=net48
-set TestApp_UiUnformattedProj=<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Ui
+$#$set TestApp_UiUnformattedProj=.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Ui
 set TestApp_UiUnformattedProj_framework=net48
-set slnx=<depends_on_the_installation>\slnlauncher\Sources\Slnx
+$#$set slnx=.*\\slnlauncher\\Sources\\Slnx
 set NUGET_ORG_URL=https://api.nuget.org/v3/index.json
 set MY_VAR=https://api.nuget.org/v3/index.json
 set Newtonsoft_Json=C:\Nugetcache\Newtonsoft.Json.13.0.1\lib\net45

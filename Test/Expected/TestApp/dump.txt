@@ -1,16 +1,16 @@
 CS Projects:
 
-TestApp.Lib                              => <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\TestApp.Lib.csproj
+$#$TestApp\.Lib                              => .*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib\\TestApp\.Lib.csproj
     | NuGet packages from assemblies
         | Newtonsoft.Json V13.0.1
         | NuGet.Versioning V6.0.0
 
-TestApp.Lib.Test                         => <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\Test\TestApp.Lib.Test.csproj
+$#$TestApp\.Lib\.Test                         => .*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib\\Test\\TestApp\.Lib\.Test\.csproj
     | NuGet packages from assemblies
         | Newtonsoft.Json V13.0.1
         | NuGet.Versioning V6.0.0
 
-TestApp.UiUnformattedProj                => <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Ui\TestApp.UiUnformattedProj.csproj
+$#$TestApp\.UiUnformattedProj                => .*\\slnlauncher\\Test\\Stimuli\\TestApp\\Ui\\TestApp\.UiUnformattedProj\.csproj
     | NuGet packages from SlnX
         | NuGet.Common V6.0.0
         | NuGet.Packaging V6.0.0
@@ -44,13 +44,13 @@ NuGet packages required by the projects imported for debugging:
 
 Environment variables:
 
-TestApp_Lib = <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib
+$#$TestApp_Lib = .*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib
 TestApp_Lib_framework = net48
-TestApp_Lib_Test = <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\Test
+$#$TestApp_Lib_Test = .*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib\\Test
 TestApp_Lib_Test_framework = net48
-TestApp_UiUnformattedProj = <depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Ui
+$#$TestApp_UiUnformattedProj = .*\\slnlauncher\\Test\\Stimuli\\TestApp\\Ui
 TestApp_UiUnformattedProj_framework = net48
-slnx = <depends_on_the_installation>\slnlauncher\Sources\Slnx
+$#$slnx = .*\\slnlauncher\\Sources\\Slnx
 NUGET_ORG_URL = https://api.nuget.org/v3/index.json
 MY_VAR = https://api.nuget.org/v3/index.json
 Newtonsoft_Json = C:\Nugetcache\Newtonsoft.Json.13.0.1\lib\net45

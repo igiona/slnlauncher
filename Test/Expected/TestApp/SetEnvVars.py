@@ -1,12 +1,12 @@
 import os
 
-os.environ['TestApp_Lib'] = r'<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib'
+$#$os\.environ\['TestApp_Lib'\] = r'.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib'
 os.environ['TestApp_Lib_framework'] = r'net48'
-os.environ['TestApp_Lib_Test'] = r'<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\Test'
+$#$os\.environ\['TestApp_Lib_Test'\] = r'.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib\\Test'
 os.environ['TestApp_Lib_Test_framework'] = r'net48'
-os.environ['TestApp_UiUnformattedProj'] = r'<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Ui'
+$#$os\.environ\['TestApp_UiUnformattedProj'\] = r'.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Ui'
 os.environ['TestApp_UiUnformattedProj_framework'] = r'net48'
-os.environ['slnx'] = r'<depends_on_the_installation>\slnlauncher\Sources\Slnx'
+$#$os\.environ\['slnx'\] = r'.*\\slnlauncher\\Sources\\Slnx'
 os.environ['NUGET_ORG_URL'] = r'https://api.nuget.org/v3/index.json'
 os.environ['MY_VAR'] = r'https://api.nuget.org/v3/index.json'
 os.environ['Newtonsoft_Json'] = r'C:\Nugetcache\Newtonsoft.Json.13.0.1\lib\net45'
