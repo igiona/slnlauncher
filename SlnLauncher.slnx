@@ -34,18 +34,9 @@
     <!-- NuGet.Packaging references Newtonsoft.Json v9.0.1, for this reason  dependenciesForceMinVersion is set to false for these packages -->
     <package id="NuGet.Packaging" version="5.8.1" dependenciesForceMinVersion="false" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
-    <!-- <package id="NuGet.Common" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Configuration" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Frameworks" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Packaging" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Packaging.Core" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Protocol" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Resolver" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="NuGet.Versioning" version="5.8.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" /> -->
-
     <package id="Glob.cs" version="5.0.224" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     
-    <package id="NuGetClientHelper" version="1.0.1" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
+    <package id="NuGetClientHelper" version="1.0.2" targetFramework="netstandard2.0" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
 
     <!-- Projects -->
     <project name="SlnLauncher" container="" />

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
-        <TestApp_Lib><depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib</TestApp_Lib>
+$#$        <TestApp_Lib>.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib</TestApp_Lib>
         <TestApp_Lib_framework>net48</TestApp_Lib_framework>
-        <TestApp_Lib_Test><depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\Test</TestApp_Lib_Test>
+$#$        <TestApp_Lib_Test>.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib\\Test</TestApp_Lib_Test>
         <TestApp_Lib_Test_framework>net48</TestApp_Lib_Test_framework>
-        <TestApp_UiUnformattedProj><depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Ui</TestApp_UiUnformattedProj>
+$#$        <TestApp_UiUnformattedProj>.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Ui</TestApp_UiUnformattedProj>
         <TestApp_UiUnformattedProj_framework>net48</TestApp_UiUnformattedProj_framework>
-        <slnx><depends_on_the_installation>\slnlauncher\Sources\Slnx</slnx>
+$#$        <slnx>.*\\slnlauncher\\Sources\\Slnx\</slnx\>
         <NUGET_ORG_URL>https://api.nuget.org/v3/index.json</NUGET_ORG_URL>
         <MY_VAR>https://api.nuget.org/v3/index.json</MY_VAR>
         <Newtonsoft_Json>C:\Nugetcache\Newtonsoft.Json.13.0.1\lib\net45</Newtonsoft_Json>
@@ -30,13 +30,13 @@
         <NuGet_Versioning_framework>net472</NuGet_Versioning_framework>
 
         <MsBuildGeneratedProperties Condition=" '$(MsBuildGeneratedProperties)' == '' ">
-            TestApp_Lib=<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib;
+$#$            TestApp_Lib=.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib;
             TestApp_Lib_framework=net48;
-            TestApp_Lib_Test=<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Lib\Test;
+$#$            TestApp_Lib_Test=.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Lib\\Test;
             TestApp_Lib_Test_framework=net48;
-            TestApp_UiUnformattedProj=<depends_on_the_installation>\slnlauncher\Test\Stimuli\TestApp\Ui;
+$#$            TestApp_UiUnformattedProj=.*\\slnlauncher\\Test\\Stimuli\\TestApp\\Ui;
             TestApp_UiUnformattedProj_framework=net48;
-            slnx=<depends_on_the_installation>\slnlauncher\Sources\Slnx;
+$#$            slnx=.*\\slnlauncher\\Sources\\Slnx\;
             NUGET_ORG_URL=https://api.nuget.org/v3/index.json;
             MY_VAR=https://api.nuget.org/v3/index.json;
             Newtonsoft_Json=C:\Nugetcache\Newtonsoft.Json.13.0.1\lib\net45;

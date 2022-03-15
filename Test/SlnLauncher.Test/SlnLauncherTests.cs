@@ -10,9 +10,79 @@ namespace SlnLauncher.Test
     [TestFixture]
     public class CommandLineTest
     {
+        static Dictionary<string, string> _originalVariables = null;
+
+        private void BackupVariables()
+        {
+            var cp = (System.Collections.Hashtable)System.Environment.GetEnvironmentVariables();
+            var keys = cp.Keys.Cast<string>().ToArray();
+            var values = cp.Values.Cast<string>().ToArray();
+
+            _originalVariables = new Dictionary<string, string>();
+            for (int i = 0; i < keys.Length; i++)
+            {
+                _originalVariables[keys[i]] = values[i];
+            }
+        }
+
+        private void ClearUndesiredVariables()
+        {
+            //Remove the variable that are set
+            //by the Slnlauncher while opening the SlnLauncher solution to allow the tests to set different values.
+            var skip = new[]
+            {
+                "NuGet_",
+                "Newtonsoft_"
+            };
+            var cp = (System.Collections.Hashtable)System.Environment.GetEnvironmentVariables();
+            var keys = cp.Keys.Cast<string>().ToArray();
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (skip.Any(x => keys[i].StartsWith(x)))
+                {
+                    Environment.SetEnvironmentVariable(keys[i], null);
+                }
+            }
+        }
+
+        private void RestoreVariables()
+        {
+            var cp = (System.Collections.Hashtable)System.Environment.GetEnvironmentVariables();
+            var keys = cp.Keys.Cast<string>().ToArray();
+            for (int i = 0; i < keys.Length; i++)
+            {
+                if (!_originalVariables.ContainsKey(keys[i])) //Reset all new vars
+                {
+                    Console.WriteLine("Resetting: {0}", keys[i]);
+                    System.Environment.SetEnvironmentVariable(keys[i], null);
+                }
+            }
+            for (int i = 0; i < _originalVariables.Count(); i++)
+            {
+                System.Environment.SetEnvironmentVariable(_originalVariables.Keys.ElementAt(i), _originalVariables.Values.ElementAt(i));
+            }
+        }
+
+        [OneTimeTearDown]
+        public void Teardown()
+        {
+            RestoreVariables();
+        }
+
         [SetUp]
         public void Setup()
         {
+            if (_originalVariables == null)
+            {
+                BackupVariables();
+                ClearUndesiredVariables();
+            }
+            else
+            {
+                RestoreVariables();
+                ClearUndesiredVariables();
+            }
+
             var resultFolder = TestHelper.GetResultsPath();
             if (Directory.Exists(resultFolder))
             {
@@ -96,10 +166,7 @@ namespace SlnLauncher.Test
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
 
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile,
-                            Path.Combine("Stimuli", "TestApp"),
-                            Path.Combine("Sources", "Slnx")
-                            ));
+            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
 
         [TestCase("TestApp.Lib.csproj")]
