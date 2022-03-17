@@ -360,9 +360,10 @@ namespace SlnLauncher
                 foreach ((var packageInfo, var debugSlnx) in slnx.DebugSlnxItems)
                 {
                     _logger.Debug("Evaluating {0}.", packageInfo);
-                    var installed = PerformPackageDownloadProcess(new[] { packageInfo }, requestedFramework, quite, true, $"Loading debug package {packageInfo} without dependencies...");
-                    debugSlnx.Packages = installed;
-                    slnx.DebugPackages.Add(installed.First()); //Keep a reference to the debug package
+                    var installedDebugPackage = PerformPackageDownloadProcess(new[] { packageInfo }, requestedFramework, quite, false, $"Loading debug package {packageInfo} without dependencies...");
+                    var installedNuGetPackages = PerformPackageDownloadProcess(debugSlnx.PackagesInfo, requestedFramework, quite, autoUpdateDependencies, $"Loading debug package {packageInfo} defined NuGet packages...");
+                    debugSlnx.Packages = installedDebugPackage.Concat(installedNuGetPackages);
+                    slnx.DebugPackages.Add(installedDebugPackage.First()); //Keep a reference to the debug package
                 }
             }
         }
