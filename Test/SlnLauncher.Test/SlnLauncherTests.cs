@@ -92,6 +92,11 @@ namespace SlnLauncher.Test
             Directory.CreateDirectory(TestHelper.GetResultPathFor(TestAppFileWriter.FolderName));
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppAssemblyRefFileWriter.FolderName));
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppNugetRefFileWriter.FolderName));
+
+            //The NuSpecGenerator doesn't have a mean to provide the IFileWriter yet
+            var pack = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack"));
+            if (Directory.Exists(pack))
+                Directory.Delete(pack, true);
         }
 
         [Test]
@@ -172,12 +177,8 @@ namespace SlnLauncher.Test
         [TestCase("TestApp.nuspec", "-ns", "pack")]
         public void TestApp_NuspecPassl(string fileName, params string[] commandLineArg)
         {
-            var pack = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack"));
-            if (Directory.Exists(pack))
-                Directory.Delete(pack, true);
-
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
-            var resultFile = Path.Combine(pack, fileName);
+            var resultFile = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack", fileName));
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
 
@@ -190,10 +191,7 @@ namespace SlnLauncher.Test
         [TestCase("TestApp.slnx", typeof(Exception), "-ns", ".")] //Can't generated the nuspec in the SlnX folder
         public void TestApp_NuspecFail(string slnxName, Type ex, params string[] commandLineArg)
         {
-            var pack = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack"));
             var slnx = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, slnxName));
-            if (Directory.Exists(pack))
-                Directory.Delete(pack, true);
 
             var errro = Assert.Throws(ex,() =>
                 SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter())
