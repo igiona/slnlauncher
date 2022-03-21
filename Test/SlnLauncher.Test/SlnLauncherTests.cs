@@ -175,7 +175,7 @@ namespace SlnLauncher.Test
         }
 
         [TestCase("TestApp.nuspec", "-ns", "pack")]
-        public void TestApp_NuspecPassl(string fileName, params string[] commandLineArg)
+        public void TestApp_NuspecPass(string fileName, params string[] commandLineArg)
         {
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
             var resultFile = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack", fileName));
@@ -187,16 +187,34 @@ namespace SlnLauncher.Test
 
         [TestCase("TestApp.FailNoContent.slnx", typeof(Exception), "-ns", "pack")]
         [TestCase("TestApp.FailNoAssemblies.slnx", typeof(Exception), "-ns", "pack")]
-        [TestCase("TestApp.FailNoProjectOut.slnx", typeof(FileNotFoundException), "-ns", "pack")]
         [TestCase("TestApp.slnx", typeof(Exception), "-ns", ".")] //Can't generated the nuspec in the SlnX folder
         public void TestApp_NuspecFail(string slnxName, Type ex, params string[] commandLineArg)
         {
             var slnx = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, slnxName));
 
-            var errro = Assert.Throws(ex,() =>
-                SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter())
+            var errro = Assert.Throws(ex, () =>
+                 SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter())
             );
             Console.WriteLine(errro.Message);
+        }
+
+
+        [TestCase("TestApp.FailNoProjectOut.slnx", "-ns", "pack")]
+        public void TestApp_NuspecFail2(string slnxName, params string[] commandLineArg)
+        {
+            var slnx = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, slnxName));
+
+            try
+            {
+                SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter());
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine(error.Message);
+                Assert.True(error.GetType() == typeof(FileNotFoundException) || error.GetType() == typeof(DirectoryNotFoundException));
+                return;
+            }
+            Assert.Fail();
         }
 
         [TestCase("TestApp.Lib.csproj")]
