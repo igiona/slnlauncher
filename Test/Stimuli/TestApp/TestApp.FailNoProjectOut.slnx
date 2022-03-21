@@ -3,7 +3,7 @@
     <env name="NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
     <env name="MY_VAR">%NUGET_ORG_URL%</env>
     
-    <nuget excludeProjects="true">
+    <nuget>
         <targetConfig>Debug</targetConfig>
         <version>2.3.4</version>
         <info>
@@ -15,7 +15,6 @@
             <license type="expression">MIT</license>
         </info>
         <content>
-            <item targetFramework="net48">**\*.dll</item>
             <item targetFolder="My/Local/Folder">**\*.csproj</item>
         </content>
     </nuget>   

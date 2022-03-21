@@ -367,3 +367,4 @@ slnx.config
 ./SetEnvVars.ps1
 ./SetEnvVars.bat
 ./SetEnvVars.py
+**/TestApp/pack

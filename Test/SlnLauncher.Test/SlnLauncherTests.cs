@@ -92,6 +92,11 @@ namespace SlnLauncher.Test
             Directory.CreateDirectory(TestHelper.GetResultPathFor(TestAppFileWriter.FolderName));
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppAssemblyRefFileWriter.FolderName));
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppNugetRefFileWriter.FolderName));
+
+            //The NuSpecGenerator doesn't have a mean to provide the IFileWriter yet
+            var pack = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack"));
+            if (Directory.Exists(pack))
+                Directory.Delete(pack, true);
         }
 
         [Test]
@@ -167,6 +172,49 @@ namespace SlnLauncher.Test
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
 
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+        }
+
+        [TestCase("TestApp.nuspec", "-ns", "pack")]
+        public void TestApp_NuspecPass(string fileName, params string[] commandLineArg)
+        {
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
+            var resultFile = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack", fileName));
+
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
+
+            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+        }
+
+        [TestCase("TestApp.FailNoContent.slnx", typeof(Exception), "-ns", "pack")]
+        [TestCase("TestApp.FailNoAssemblies.slnx", typeof(Exception), "-ns", "pack")]
+        [TestCase("TestApp.slnx", typeof(Exception), "-ns", ".")] //Can't generated the nuspec in the SlnX folder
+        public void TestApp_NuspecFail(string slnxName, Type ex, params string[] commandLineArg)
+        {
+            var slnx = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, slnxName));
+
+            var errro = Assert.Throws(ex, () =>
+                 SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter())
+            );
+            Console.WriteLine(errro.Message);
+        }
+
+
+        [TestCase("TestApp.FailNoProjectOut.slnx", "-ns", "pack")]
+        public void TestApp_NuspecFail2(string slnxName, params string[] commandLineArg)
+        {
+            var slnx = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, slnxName));
+
+            try
+            {
+                SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter());
+            }
+            catch (Exception error)
+            {
+                Console.WriteLine(error.Message);
+                Assert.True(error.GetType() == typeof(FileNotFoundException) || error.GetType() == typeof(DirectoryNotFoundException));
+                return;
+            }
+            Assert.Fail();
         }
 
         [TestCase("TestApp.Lib.csproj")]

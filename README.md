@@ -376,11 +376,14 @@ For example: *\*\*\\\*.dll* would include all DLL found under the *$(slnx)* path
 | Attribute       | Default | Description                                                                                            |
 | --------------- | ------- | ------------------------------------------------------------------------------------------------------ |
 | targetFramework | -       | Target .NET framework folder name in which the assemblies will be copied in the nuspec. (e.g. "net45") |
+| targetFolder    | -       | Directory relative to the NuGet package root in which the specified file(s) will be copied into.       |
 
 - - -
 
 **NOTE**
-The first assembly file (.dll/.exe) will be used to retrieve the NuSpec version number.
+* The first assembly file (.dll/.exe) will be used to retrieve the NuSpec version number.
+* targetFramework and targetFolder are exclusive in each item element
+* targetFolder should not be used to place assemblies under the lib/ folder
 - - -
 <br>
 

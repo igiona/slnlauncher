@@ -14,10 +14,6 @@
             <requireLicenseAcceptance>true</requireLicenseAcceptance>
             <license type="expression">MIT</license>
         </info>
-        <content>
-            <item targetFramework="net48">**\*.dll</item>
-            <item targetFolder="My/Local/Folder">**\*.csproj</item>
-        </content>
     </nuget>   
     
     <package id="Newtonsoft.Json" version="13.0.1" source="%NUGET_ORG_URL%" />

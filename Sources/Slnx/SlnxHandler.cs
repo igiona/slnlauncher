@@ -779,11 +779,11 @@ namespace Slnx
                     {
                         if (p.IsPackable)
                         {
-                            nuspec.AddLibraryElements(p.Framework, p.GetAssemblyPath(targetConfig));
+                            nuspec.AddLibraryElement(p.Framework, p.GetAssemblyPath(targetConfig));
                             var pdb = p.GetPdbPath(targetConfig);
                             if (File.Exists(pdb))
                             {
-                                nuspec.AddLibraryElements(p.Framework, pdb);
+                                nuspec.AddLibraryElement(p.Framework, pdb);
                             }
                         }
                     }
@@ -816,7 +816,8 @@ namespace Slnx
                     {
                         var value = SafeExpandAndTrimEnvironmentVariables(item.Value);
                         Assert(!string.IsNullOrEmpty(value), $"The value of the item element is not set");
-                        Assert(item.targetFramework != null, $"The targetFramework attribute in the item element is not set. The value of the element is: {item.Value}");
+                        Assert(item.targetFramework != null || item.targetFolder != null, $"The targetFramework or the targetFolder attribute in the item element must be set. The value of the element is: {item.Value}");
+                        Assert((item.targetFramework != null && item.targetFolder == null) || (item.targetFramework == null && item.targetFolder != null), $"The targetFramework and the targetFolder attribute cannot be both set on an item. The value of the element is: {item.Value}");
 
                         var filtered = Glob.Expand(value);
 
@@ -824,7 +825,14 @@ namespace Slnx
 
                         foreach (var f in filtered)
                         {
-                            nuspec.AddLibraryElements(item.targetFramework, f.FullName);
+                            if (item.targetFramework != null)
+                            {
+                                nuspec.AddLibraryElement(item.targetFramework, f.FullName);
+                            }
+                            if (item.targetFolder != null)
+                            {
+                                nuspec.AddGenericFile(item.targetFolder, f.FullName);
+                            }
                         }
                     }
                 }

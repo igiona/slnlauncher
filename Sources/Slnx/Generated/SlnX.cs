@@ -308,6 +308,8 @@ namespace Slnx.Generated {
         
         private string targetFrameworkField;
         
+        private string targetFolderField;
+        
         private string valueField;
         
         /// <remarks/>
@@ -318,6 +320,17 @@ namespace Slnx.Generated {
             }
             set {
                 this.targetFrameworkField = value;
+            }
+        }
+        
+        /// <remarks/>
+        [System.Xml.Serialization.XmlAttributeAttribute()]
+        public string targetFolder {
+            get {
+                return this.targetFolderField;
+            }
+            set {
+                this.targetFolderField = value;
             }
         }
         
