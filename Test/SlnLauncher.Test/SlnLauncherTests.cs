@@ -169,6 +169,38 @@ namespace SlnLauncher.Test
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
 
+        [TestCase("TestApp.nuspec", "-ns", "pack")]
+        public void TestApp_NuspecPassl(string fileName, params string[] commandLineArg)
+        {
+            var pack = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack"));
+            if (Directory.Exists(pack))
+                Directory.Delete(pack, true);
+
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(TestAppFileWriter.FolderName, fileName));
+            var resultFile = Path.Combine(pack, fileName);
+
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
+
+            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+        }
+
+        [TestCase("TestApp.FailNoContent.slnx", typeof(Exception), "-ns", "pack")]
+        [TestCase("TestApp.FailNoAssemblies.slnx", typeof(Exception), "-ns", "pack")]
+        [TestCase("TestApp.FailNoProjectOut.slnx", typeof(FileNotFoundException), "-ns", "pack")]
+        [TestCase("TestApp.slnx", typeof(Exception), "-ns", ".")] //Can't generated the nuspec in the SlnX folder
+        public void TestApp_NuspecFail(string slnxName, Type ex, params string[] commandLineArg)
+        {
+            var pack = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack"));
+            var slnx = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, slnxName));
+            if (Directory.Exists(pack))
+                Directory.Delete(pack, true);
+
+            var errro = Assert.Throws(ex,() =>
+                SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter())
+            );
+            Console.WriteLine(errro.Message);
+        }
+
         [TestCase("TestApp.Lib.csproj")]
         [TestCase("TestApp.Lib.Test.csproj")]
         [TestCase("TestApp.UiUnformattedProj.csproj")]
