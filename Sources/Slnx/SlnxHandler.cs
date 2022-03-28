@@ -252,11 +252,11 @@ namespace Slnx
             return slnx;
         }
 
-        private void CreateGenereatedFiles()
+        private void CreateGenereatedFiles(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems, List<NuGetPackage> debugPackages)
         {
             var refs = CreatPackageReferenceContent();
             FixProjectFiles();
-            var debugInfo = CreateNuGetDebugContent();
+            var debugInfo = CreateNuGetDebugContent(debugItems, debugPackages);
 
             var slnxConfig = debugInfo;
 
@@ -296,11 +296,11 @@ namespace Slnx
         public void CreateGenereatedFilesRecurisvely()
         {
             CreateNugetConfig();
-            CreateGenereatedFiles();
+            CreateGenereatedFiles(DebugSlnxItems, DebugPackages);
 
-            foreach (var debugSlnxItem in _debugSlnxItems.Values)
+            foreach (var debugSlnxItem in DebugSlnxItems.Values)
             {
-                debugSlnxItem.CreateGenereatedFiles();
+                debugSlnxItem.CreateGenereatedFiles(DebugSlnxItems, DebugPackages);
             }
         }
 
@@ -455,16 +455,16 @@ namespace Slnx
             return ret;
         }
 
-        private Dictionary<CsProject, XmlDocument> CreateNuGetDebugContent()
+        private Dictionary<CsProject, XmlDocument> CreateNuGetDebugContent(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems, List<NuGetPackage> debugPackages)
         {
             var debugInfo = new Dictionary<CsProject, XmlDocument>();
 
-            foreach (var item in DebugSlnxItems)
+            foreach (var item in debugItems.Where(x => !x.Key.Identity.Id.Equals(SlnxName, StringComparison.OrdinalIgnoreCase)))
             {
-                var debugPackage = DebugPackages.Where(x => x.Identity == item.Key.Identity).SingleOrDefault();
+                var debugPackage = debugPackages.Where(x => x.Identity == item.Key.Identity).SingleOrDefault();
                 if (debugPackage == null)
                 {
-                    throw new Exception($"Unable to create the debug information for {item.Value.SlnxName}, the corresponding nuget package {item.Key} is missing.");
+                    throw new Exception($"Unable to create the debug information for {item.Value.SlnxName}, the corresponding NuGet package {item.Key} is missing.");
                 }
                 foreach (var csProject in Projects)
                 {
