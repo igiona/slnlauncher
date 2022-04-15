@@ -285,9 +285,21 @@ namespace Slnx
             var xml = new XmlDocument();
             var configuration = xml.CreateNode(XmlNodeType.Element, "configuration", null);
             var packageSources = xml.CreateNode(XmlNodeType.Element, "packageSources", null);
-            packageSources.InnerXml = string.Format("<clear/><add key=\"LocalCache\" value=\"{0}\" />", new Uri(PackagesPath));
+            packageSources.InnerXml = "<clear/>";
             xml.AppendChild(configuration);
             xml.DocumentElement.AppendChild(packageSources);
+
+            var sources = AllPackages
+                    .SelectAllSources()
+                    .Concat(DebugSlnxItems.SelectMany(x => x.Value.AllPackages.SelectAllSources()))
+                    .Prepend(new Uri(PackagesPath))
+                    .Distinct()
+                    .Select(x => x.CreateNugetConfigSource(xml));
+
+            foreach (var source in sources)
+            {
+                packageSources.AppendChild(source);
+            }
 
             string prettyContent = XDocument.Parse(xml.OuterXml).ToString();
             _fileWriter.WriteAllText(Path.Combine(SlnxDirectory, "nuget.config"), prettyContent);
