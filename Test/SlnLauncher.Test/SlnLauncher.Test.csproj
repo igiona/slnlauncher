@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="slnx.config" Condition="Exists('slnx.config')" />
   <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
-  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
   <PropertyGroup>
     <TargetFramework>net5.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
@@ -13,16 +13,5 @@
   <ItemGroup>
     <ProjectReference Include="$(SlnLauncher)\SlnLauncher.csproj" />
     <ProjectReference Include="$(Slnx)\Slnx.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="NuGet.Protocol" Condition="$(NuGet_Protocol_debug) != 1">
-      <HintPath>$(NuGet_Protocol)\NuGet.Protocol.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Resolver" Condition="$(NuGet_Resolver_debug) != 1">
-      <HintPath>$(NuGet_Resolver)\NuGet.Resolver.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGetClientHelper" Condition="$(NuGetClientHelper_debug) != 1">
-      <HintPath>$(NuGetClientHelper)\NuGetClientHelper.dll</HintPath>
-    </Reference>
   </ItemGroup>
 </Project>

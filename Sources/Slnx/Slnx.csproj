@@ -1,25 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="slnx.config" Condition="Exists('slnx.config')" />
   <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
-  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>Slnx</AssemblyName>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="Glob" Condition="$(Glob_cs_debug) != 1">
-      <HintPath>$(Glob_cs)\Glob.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Common" Condition="$(NuGet_Common_debug) != 1">
-      <HintPath>$(NuGet_Common)\NuGet.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Versioning" Condition="$(NuGet_Versioning_debug) != 1">
-      <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGetClientHelper" Condition="$(NuGetClientHelper_debug) != 1">
-      <HintPath>$(NuGetClientHelper)\NuGetClientHelper.dll</HintPath>
-    </Reference>
-    <Reference Include="System.IO.Abstractions" Condition="$(System_IO_Abstractions_debug) != 1">
-      <HintPath>$(System_IO_Abstractions)\System.IO.Abstractions.dll</HintPath>
-    </Reference>
-  </ItemGroup>
 </Project>
