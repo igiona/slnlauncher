@@ -21,7 +21,7 @@ jobs:
       with:
         dotnet-version: ${{ env.DotNetVersion }}
     - name: Setup SlnLauncher installation
-      run: choco install slnlauncher
+      run: choco install slnlauncher --version=2.4.1
     - name: Create solution
       run: slnlauncher -q -u- -o- -ps . "$($env:SlnxName).slnx"
     - name: Restore dependencies
