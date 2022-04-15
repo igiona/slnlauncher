@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="slnx.config" Condition="Exists('slnx.config')" />
   <Import Project="nuget.refs" Condition="Exists('nuget.refs')" />
-  <Import Project="nuget.debug" Condition="Exists('nuget.debug')" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0-windows</TargetFramework>
@@ -12,14 +12,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="$(Slnx)\Slnx.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="NDesk.Options" Condition="$(NDesk_Options_debug) != 1">
-      <HintPath>$(NDesk_Options)\NDesk.Options.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGetClientHelper" Condition="$(NuGetClientHelper_debug) != 1">
-      <HintPath>$(NuGetClientHelper)\NuGetClientHelper.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Update="ProgressDialog.cs">
@@ -42,34 +34,5 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="Newtonsoft.Json" Condition="$(Newtonsoft_Json_debug) != 1">
-      <HintPath>$(Newtonsoft_Json)\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Common" Condition="$(NuGet_Common_debug) != 1">
-      <HintPath>$(NuGet_Common)\NuGet.Common.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Configuration" Condition="$(NuGet_Configuration_debug) != 1">
-      <HintPath>$(NuGet_Configuration)\NuGet.Configuration.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Frameworks" Condition="$(NuGet_Frameworks_debug) != 1">
-      <HintPath>$(NuGet_Frameworks)\NuGet.Frameworks.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Packaging" Condition="$(NuGet_Packaging_debug) != 1">
-      <HintPath>$(NuGet_Packaging)\NuGet.Packaging.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Packaging.Core" Condition="$(NuGet_Packaging_Core_debug) != 1">
-      <HintPath>$(NuGet_Packaging_Core)\NuGet.Packaging.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Protocol" Condition="$(NuGet_Protocol_debug) != 1">
-      <HintPath>$(NuGet_Protocol)\NuGet.Protocol.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Resolver" Condition="$(NuGet_Resolver_debug) != 1">
-      <HintPath>$(NuGet_Resolver)\NuGet.Resolver.dll</HintPath>
-    </Reference>
-    <Reference Include="NuGet.Versioning" Condition="$(NuGet_Versioning_debug) != 1">
-      <HintPath>$(NuGet_Versioning)\NuGet.Versioning.dll</HintPath>
-    </Reference>
   </ItemGroup>
 </Project>
