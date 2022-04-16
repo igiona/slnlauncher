@@ -356,7 +356,7 @@ namespace Slnx
                 if (!string.IsNullOrEmpty(assemblyRef.HintPath)) // && !assemblyRef.HintPath.StartsWith("$"))
                 {
                     var candidatePackageName = assemblyRef.Include.Split(',').First();
-                    NuGetPackage candidatePackage = packages.Where((x) => x.Identity.Id == candidatePackageName).FirstOrDefault();
+                    NuGetPackage candidatePackage = packages.Where((x) => x.Identity.Id.Equals(candidatePackageName, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
 
                     if (candidatePackage == null) //The assembly name might not match the package name
                     {

@@ -102,8 +102,8 @@ namespace Slnx
                 //Read debug SlnX
                 foreach (var item in _packagesToDebug)
                 {
-                    var debugSourcePakckage = PackagesInfo.Where(x => x.Identity.Id == item.Key).FirstOrDefault();
-                    Assert(debugSourcePakckage != null, $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
+                    var debugSourcePakckage = PackagesInfo.Where(x => x.Identity.Id.Equals(item.Key, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                    Assert(debugSourcePakckage != default(NuGetPackageInfo), $"The package {item.Key} is marked for debug, but it is not present as nuget package in the main SlnX file.");
 
                     var slnxItem = new SlnxHandler(item.Value, _fileWriter, _logger, offlineMode, item.Key);
                     _debugSlnxItems[debugSourcePakckage] = slnxItem;
@@ -117,8 +117,8 @@ namespace Slnx
                             continue;
                         }
 
-                        var known = Packages.Where(x => x.Identity.Id == candidate.Identity.Id).FirstOrDefault();
-                        if (known == null)
+                        var known = Packages.Where(x => x.Identity.Id.Equals(candidate.Identity.Id, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
+                        if (known == default(NuGetPackage))
                         {
                             _logger?.Warn($"The package {candidate} required by the SlnX {item.Key} selected for debug, is not present in the current SlnX file {_slnxName}{SlnxExtension}");
                         }
@@ -528,7 +528,7 @@ namespace Slnx
                         return newDocument;
                     }
                 }
-                if (proj.AllPackageReferences.Any(x => x.Identity.Id == package.Identity.Id))
+                if (proj.AllPackageReferences.Any(x => x.Identity.Id.Equals(package.Identity.Id, StringComparison.OrdinalIgnoreCase)))
                 {
                     var newDocument = new XmlDocument();
                     var root = newDocument.CreateNode(XmlNodeType.Element, "Project", null);
@@ -560,7 +560,7 @@ namespace Slnx
                 }
             }
 
-            var matchingPackage = referencingProject.PackageReferencesFromSlnX.Where(x => x.Identity.Id == debugPackage.Identity.Id).FirstOrDefault();
+            var matchingPackage = referencingProject.PackageReferencesFromSlnX.Where(x => x.Identity.Id.Equals(debugPackage.Identity.Id, StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (matchingPackage != null) //The debug project is referenced as NuGet package, add all Projects in the solution
             {
                 projectCandidates.ToList().ForEach(x => projectReferences.Add(x.FullPath));
@@ -773,7 +773,7 @@ namespace Slnx
                                                      !e.dependenciesForceMinVersionSpecified || e.dependenciesForceMinVersion,
                                                      SafeExpandEnvironmentVariables(e.customPath));
 
-                    var alreadyPresent = packages.Where((x) => x.Identity.Id == candidate.Identity.Id);
+                    var alreadyPresent = packages.Where((x) => x.Identity.Id.Equals(candidate.Identity.Id, StringComparison.OrdinalIgnoreCase));
                     if (alreadyPresent.Count() == 0)
                     {
                         packages.Add(candidate);
@@ -828,7 +828,7 @@ namespace Slnx
                         var packageIsReferenced = Projects
                             .Where(refProject => refProject.IsPackable)
                             .Any(refProject => 
-                                    refProject.AllPackageReferences.Any(refPackage => refPackage.Identity.Id == package.Identity.Id)
+                                    refProject.AllPackageReferences.Any(refPackage => refPackage.Identity.Id.Equals(package.Identity.Id, StringComparison.OrdinalIgnoreCase))
                             );
 
                         if (packageIsReferenced)
