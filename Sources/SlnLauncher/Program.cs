@@ -75,6 +75,7 @@ namespace SlnLauncher
             string nuspecDir = null;
             var dump = false;
             var dumpProjectStructure = false;
+            var keepGenerated = false;
             string slnxFile = null;
             _pythonEnvVarsPath = null;
 
@@ -87,6 +88,7 @@ namespace SlnLauncher
               .Add("u|user", "If set (-u/-u+) it loads an eventually present .user file. [Default: set]", v => loadUserFile = v != null)
               .Add("d|dump", "If set (-d/-d+) it dumps all project paths and environment variables in dump.txt located in the SlnX location. [Default: not set]", v => dump = v != null)
               .Add("p|slnxProjects", "If set (-p/-p+) it creates a SlnX file with all project and their reference in the SlnX location. [Default: not set]", v => dumpProjectStructure = v != null)
+              .Add("k|keepGenerated", "If set (-k/-k+) it prevent the cleanup of all the slnx.config generated files. Note: this doesn't prevent the files to be overwritten. [Default: not set]", v => keepGenerated = v != null)
               .Add("py=|pythonModule=", "Path for the python module. If set the specified python module containing all defined environment variables is created. [Default: not set]", v => _pythonEnvVarsPath = v)
               .Add("b=|batchModule=", "Path to the batch module. If set the specified batch module containing all defined environment variables is created. [Default: not set]", v => _batchEnvVarsPath = v)
               .Add("ps=|powershellModule=", "Path to the power-shell module. If set the specified power-shell module containing all defined environment variables is created. [Default: not set]", v => _psEnvVarsPath = v)
@@ -198,7 +200,11 @@ namespace SlnLauncher
                     }
 
                     MakeSln(slnx);
-                    CleanGeneratedFiles(slnx);
+
+                    if (!keepGenerated)
+                    {
+                        slnx.CleanGenereatedFilesRecurisvely();
+                    }
                     slnx.CreateGenereatedFilesRecurisvely();
 
                     if (!string.IsNullOrEmpty(nuspecDir))
@@ -718,30 +724,6 @@ Global
 EndGlobal
 ", Guid.NewGuid().ToString());
             _fileWriter.WriteAllText(outFile, slnSb.ToString());
-        }
-
-        static List<SlnxHandler> GetAllSlnxHanlders(SlnxHandler mainSlnx)
-        {
-            var slnxToProcess = new List<SlnxHandler>();
-            slnxToProcess.Add(mainSlnx);
-            if (mainSlnx.DebugSlnxItems != null)
-                slnxToProcess.AddRange(mainSlnx.DebugSlnxItems.Values);
-            return slnxToProcess;
-        }
-
-        static void CleanGeneratedFiles(SlnxHandler mainSlnx)
-        {
-            foreach (var slnx in GetAllSlnxHanlders(mainSlnx))
-            {
-                _logger.Info($"Cleaning generated files for {slnx.SlnxName}");
-                foreach (var pattern in new[] { CsProject.ImportSlnxConfigName })
-                {
-                    foreach (string f in Directory.EnumerateFiles(slnx.ProjectsSearchPath, pattern, new EnumerationOptions() { RecurseSubdirectories = true }))
-                    {
-                        _fileWriter.DeleteFile(f);
-                    }
-                }
-            }
         }
 
         static LogLevel ParseLogLevel(string v)

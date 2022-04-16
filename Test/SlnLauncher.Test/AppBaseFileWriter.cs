@@ -18,10 +18,14 @@ namespace SlnLauncher.Test
             return File.Exists(filePath);
         }
 
-        public void DeleteFile(string filePath)
+        public virtual void DeleteFile(string filePath)
         {
             filePath = GetPath(filePath);
-            File.Delete(filePath);
+
+            if (!filePath.Contains("TestSubFolder") || File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
         }
 
         public void AppendAllText(string path, string text)

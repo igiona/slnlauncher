@@ -305,6 +305,18 @@ namespace Slnx
             _fileWriter.WriteAllText(Path.Combine(SlnxDirectory, "nuget.config"), prettyContent);
         }
 
+        private void CleanGenereatedFiles()
+        {
+            _logger.Info($"Cleaning generated files for {SlnxName}");
+            foreach (var pattern in new[] { CsProject.ImportSlnxConfigName })
+            {
+                foreach (string f in Directory.EnumerateFiles(ProjectsSearchPath, pattern, new EnumerationOptions() { RecurseSubdirectories = true }))
+                {
+                    _fileWriter.DeleteFile(f);
+                }
+            }
+        }
+
         public void CreateGenereatedFilesRecurisvely()
         {
             CreateNugetConfig();
@@ -313,6 +325,14 @@ namespace Slnx
             foreach (var debugSlnxItem in DebugSlnxItems.Values)
             {
                 debugSlnxItem.CreateGenereatedFiles(DebugSlnxItems, DebugPackages);
+            }
+        }
+
+        public void CleanGenereatedFilesRecurisvely()
+        {
+            foreach (var slnx in DebugSlnxItems.Values.Prepend(this))
+            {
+                slnx.CleanGenereatedFiles();
             }
         }
 

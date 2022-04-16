@@ -4,6 +4,7 @@ using System.Linq;
 using System.IO;
 using NUnit.Framework;
 using NuGetClientHelper;
+using NUnit.Framework.Constraints;
 
 namespace SlnLauncher.Test
 {
@@ -255,6 +256,29 @@ namespace SlnLauncher.Test
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+        }
+
+        [Test]
+        public void TestApp_TestKeepGeneratedFileFlagSet()
+        {
+            var stimuliFile = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "TestSubFolder", Slnx.CsProject.ImportSlnxConfigName));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(TestAppFileWriter.FolderName, "TestSubFolder", Slnx.CsProject.ImportSlnxConfigName));
+            Directory.CreateDirectory(Path.GetDirectoryName(resultFile));
+            File.Copy(stimuliFile, resultFile);
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter(true).SlnxName, "-k"), new TestAppFileWriter(true));
+            Assert.That(resultFile, Does.Exist);
+        }
+
+        [TestCase("-k-")]
+        [TestCase(null)] //Use default
+        public void TestApp_TestKeepGeneratedFileFlagUnset(string arg)
+        {
+            var stimuliFile = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "TestSubFolder", Slnx.CsProject.ImportSlnxConfigName));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(TestAppFileWriter.FolderName, "TestSubFolder", Slnx.CsProject.ImportSlnxConfigName));
+            Directory.CreateDirectory(Path.GetDirectoryName(resultFile));
+            File.Copy(stimuliFile, resultFile);
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter(true).SlnxName, arg), new TestAppFileWriter(true));
+            Assert.That(resultFile, Does.Not.Exist);
         }
 
         [TestCase("DebugTestApp.ProjWithAssemblyRefToDebugPrj.csproj", "App")]
