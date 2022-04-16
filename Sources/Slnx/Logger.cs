@@ -168,7 +168,7 @@ namespace Slnx
 
         Task NuGet.Common.ILogger.LogAsync(NuGet.Common.LogLevel level, string data)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
 
         void NuGet.Common.ILogger.Log(NuGet.Common.ILogMessage message)
@@ -178,7 +178,7 @@ namespace Slnx
 
         Task NuGet.Common.ILogger.LogAsync(NuGet.Common.ILogMessage message)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 }
