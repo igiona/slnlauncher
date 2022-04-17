@@ -25,9 +25,6 @@
 
     <env name="__SLN_LAUNCHER_NUGET_ORG_URL">https://api.nuget.org/v3/index.json</env>
     
-    <package id="System.Buffers" version="4.5.1" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="System.Memory" version="4.5.4" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
-    <package id="System.IO.FileSystem.AccessControl" version="4.7.0" dependenciesForceMinVersion="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     <package id="NDesk.Options" version="0.2.1" customPath="lib" IsDotNetLib="false" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />
     
     <package id="Newtonsoft.Json" version="13.0.1" source="%__SLN_LAUNCHER_NUGET_ORG_URL%" />    
@@ -42,26 +39,12 @@
     <project name="SlnLauncher" container="">
         <ref>NDesk.Options</ref>
         <ref>NuGetClientHelper</ref>
-        <ref>Newtonsoft.Json</ref>
-        <ref>NuGet.Common</ref>
-        <ref>NuGet.Configuration</ref>
-        <ref>NuGet.Frameworks</ref>
-        <ref>NuGet.Packaging</ref>
-        <ref>NuGet.Packaging.Core</ref>
-        <ref>NuGet.Protocol</ref>
-        <ref>NuGet.Resolver</ref>
-        <ref>NuGet.Versioning</ref>
     </project>
     <project name="Slnx" container="Lib">
         <ref>Glob.cs</ref>
-        <ref>NuGet.Common</ref>
-        <ref>NuGet.Versioning</ref>
         <ref>NuGetClientHelper</ref>
-        <ref>System.IO.Abstractions</ref>
     </project>
     <project name="SlnLauncher.Test">
-        <ref>NuGet.Protocol</ref>
-        <ref>NuGet.Resolver</ref>
         <ref>NuGetClientHelper</ref>
     </project>
 </SlnX>

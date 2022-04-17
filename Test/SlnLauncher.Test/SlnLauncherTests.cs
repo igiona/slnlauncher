@@ -308,5 +308,15 @@ namespace SlnLauncher.Test
             var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
             Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
+
+
+        [TestCase("DebugTestAppNugetRefCapitalPackage.slnx")]
+        public void DebugTestAppNugetyRef_Pass(string slnx)
+        {
+            Assert.That( 
+                    () => SlnLauncher.Program.Main(TestHelper.GetArguments(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, slnx)), new DebugTestAppNugetRefFileWriter()),
+                    Throws.Nothing
+                );
+        }
     }
 }
