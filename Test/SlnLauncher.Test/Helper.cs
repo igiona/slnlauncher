@@ -90,7 +90,7 @@ namespace SlnLauncher.Test
                         {
                             if (!skip.Any(x => resLine.Contains(x)))
                             {
-                                Console.WriteLine($"Error at line {i + 1} in {resultFile}");
+                                Console.WriteLine($"Error at line {i + 1} in {resultFile} vs {expectedFile}");
                                 break;
                             }
                         }

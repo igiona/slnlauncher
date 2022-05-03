@@ -2,7 +2,7 @@
 <package>
   <metadata>
     <id>slnlauncher</id>
-    <version>3.1.1</version>
+    <version>3.1.2</version>
     <title>SlnLauncher (Portable)</title>
     <summary>The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).</summary>
     <description>The SlnLauncher is a tool that allows to dyncamically and automatically create VisualStudio solution files (.sln).

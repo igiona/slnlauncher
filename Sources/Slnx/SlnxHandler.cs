@@ -451,10 +451,16 @@ namespace Slnx
             return projectMatch;
         }
 
-        static void AppendReference(XmlNode itemGroup, NuGetPackage package)
+        void AppendReference(XmlNode itemGroup, NuGetPackage package)
         {
-            var condition = string.Format("$({0}) != 1", NuGetClientHelper.NuGetPackage.GetDebugEnvironmentVariableKey(package.Identity.Id));
-            itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\" Condition=\"{condition}\"/>";
+            string condition = string.Empty;
+            var isDebugPackage = DebugSlnxItems.Keys.Any(p => p.Identity.Id.Equals(package.Identity.Id, StringComparison.OrdinalIgnoreCase));
+            if (isDebugPackage)
+            {
+                condition = "ExcludeAssets=\"All\""; //Ignore the assets of the packages being debugged, but keep it in the reference list
+            }
+
+            itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\" {condition}/>";
         }
 
         private Dictionary<CsProject, XmlDocument> CreatPackageReferenceContent()
