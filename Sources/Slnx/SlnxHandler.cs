@@ -254,7 +254,7 @@ namespace Slnx
 
         private void CreateGenereatedFiles(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems, List<NuGetPackage> debugPackages)
         {
-            var refs = CreatPackageReferenceContent();
+            var refs = CreatPackageReferenceContent(debugItems);
             FixProjectFiles();
             var debugInfo = CreateNuGetDebugContent(debugItems, debugPackages);
 
@@ -451,10 +451,10 @@ namespace Slnx
             return projectMatch;
         }
 
-        void AppendReference(XmlNode itemGroup, NuGetPackage package)
+        static void AppendReference(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems, XmlNode itemGroup, NuGetPackage package)
         {
             string condition = string.Empty;
-            var isDebugPackage = DebugSlnxItems.Keys.Any(p => p.Identity.Id.Equals(package.Identity.Id, StringComparison.OrdinalIgnoreCase));
+            var isDebugPackage = debugItems.Keys.Any(p => p.Identity.Id.Equals(package.Identity.Id, StringComparison.OrdinalIgnoreCase));
             if (isDebugPackage)
             {
                 condition = "ExcludeAssets=\"All\""; //Ignore the assets of the packages being debugged, but keep it in the reference list
@@ -463,7 +463,7 @@ namespace Slnx
             itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\" {condition}/>";
         }
 
-        private Dictionary<CsProject, XmlDocument> CreatPackageReferenceContent()
+        private Dictionary<CsProject, XmlDocument> CreatPackageReferenceContent(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems)
         {
             _logger?.Info($"Adding nuget package references to the CsProjects...");
             var ret = new Dictionary<CsProject, XmlDocument>();
@@ -485,7 +485,7 @@ namespace Slnx
                 {
                     var refPackage = AllPackages.Where(x => x.Identity.Id.ToLower() == r.ToLower()).FirstOrDefault();
                     Assert(refPackage != null, "The project {0} has a reference to an unknown package {1}. Add it as <package> to the slnx file [{2}]", p.name, r, _slnxFile);
-                    AppendReference(itemGroup, refPackage);
+                    AppendReference(debugItems, itemGroup, refPackage);
                     csProject.AddPackageReference(refPackage);
                 }
                 ret.Add(csProject, xml);
