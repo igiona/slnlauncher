@@ -93,6 +93,7 @@ namespace SlnLauncher.Test
             Directory.CreateDirectory(TestHelper.GetResultPathFor(TestAppFileWriter.FolderName));
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppAssemblyRefFileWriter.FolderName));
             Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugTestAppNugetRefFileWriter.FolderName));
+            Directory.CreateDirectory(TestHelper.GetResultPathFor(DebugExtendedTestAppNugetRefFileWriter.FolderName));
 
             //The NuSpecGenerator doesn't have a mean to provide the IFileWriter yet
             var pack = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, "pack"));
@@ -317,6 +318,24 @@ namespace SlnLauncher.Test
                     () => SlnLauncher.Program.Main(TestHelper.GetArguments(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, slnx)), new DebugTestAppNugetRefFileWriter()),
                     Throws.Nothing
                 );
+        }
+
+        /// <summary>
+        /// ExtendedTestApp => TestApp
+        /// DebugExtendedTestAppNugetRef => TestApp, ExtendedTestApp
+        /// 
+        /// DebugExtendedTestAppNugetRef in debug mode for both dependencies
+        ///
+        /// Make sure that the debug information are properly propagated in the slnx.config
+        /// </summary>
+        [TestCase("slnx.config", "Src")]
+        public void DebugExtendedTestApp_CompareGeneratedFiles(string f, string subFolder)
+        {
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugExtendedTestAppNugetRefFileWriter().SlnxName), new DebugExtendedTestAppNugetRefFileWriter());
+            
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugExtendedTestAppNugetRefFileWriter.FolderName, subFolder, f));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugExtendedTestAppNugetRefFileWriter.FolderName, subFolder, f));
+            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
         }
     }
 }
