@@ -11,6 +11,8 @@ using Ganss.IO;
 using Slnx.Interfaces;
 using System.Xml;
 using System.Xml.Linq;
+using System.Diagnostics;
+using System.Security.Principal;
 
 namespace Slnx
 {
@@ -451,16 +453,16 @@ namespace Slnx
             return projectMatch;
         }
 
-        static void AppendReference(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems, XmlNode itemGroup, NuGetPackage package)
+        static void AppendReference(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems, XmlNode itemGroup, NuGetPackageIdentity packageIdentity)
         {
             string condition = string.Empty;
-            var isDebugPackage = debugItems.Keys.Any(p => p.Identity.Id.Equals(package.Identity.Id, StringComparison.OrdinalIgnoreCase));
+            var isDebugPackage = debugItems.Keys.Any(p => p.Identity.Id.Equals(packageIdentity.Id, StringComparison.OrdinalIgnoreCase));
             if (isDebugPackage)
             {
                 condition = "ExcludeAssets=\"All\""; //Ignore the assets of the packages being debugged, but keep it in the reference list
             }
 
-            itemGroup.InnerXml += $"<PackageReference Include=\"{package.Identity.Id}\" Version=\"{package.Identity.MinVersion}\" {condition}/>";
+            itemGroup.InnerXml += $"<PackageReference Include=\"{packageIdentity.Id}\" Version=\"{packageIdentity.MinVersion}\" {condition}/>";
         }
 
         private Dictionary<CsProject, XmlDocument> CreatPackageReferenceContent(Dictionary<NuGetPackageInfo, SlnxHandler> debugItems)
@@ -468,26 +470,35 @@ namespace Slnx
             _logger?.Info($"Adding nuget package references to the CsProjects...");
             var ret = new Dictionary<CsProject, XmlDocument>();
 
-            foreach (var p in _slnx.project.Where(x => x.@ref?.Count() > 0))
+            foreach (var p in _slnx.project)
             {
                 Assert(!p.name.Contains("*"), "Reference to projects with wildcards are not (yet?) supported");
 
+                var referencedPackages = p.@ref ?? Enumerable.Empty<string>();
                 var csProject = _projects.Where(x => x.Name == p.name).FirstOrDefault();
                 Assert(csProject != null, "The project {0} cannot be found in the list of known CsProjects", p.name);
-
                 var xml = new XmlDocument();
                 var root = xml.CreateNode(XmlNodeType.Element, "Project", null);
                 xml.AppendChild(root);
                 var itemGroup = xml.CreateNode(XmlNodeType.Element, "ItemGroup", null);
                 xml.DocumentElement.AppendChild(itemGroup);
 
-                foreach (var r in p.@ref)
+                foreach (var r in referencedPackages)
                 {
                     var refPackage = AllPackages.Where(x => x.Identity.Id.ToLower() == r.ToLower()).FirstOrDefault();
                     Assert(refPackage != null, "The project {0} has a reference to an unknown package {1}. Add it as <package> to the slnx file [{2}]", p.name, r, _slnxFile);
-                    AppendReference(debugItems, itemGroup, refPackage);
+                    AppendReference(debugItems, itemGroup, refPackage.Identity);
                     csProject.AddPackageReference(refPackage);
                 }
+
+                //Produce the debug information also for all debug packages not directly referenced by the current csProject
+                //This instructs VS Studio not to take into account the debug package (via ExludeAssets = All) from a
+                //dependency project which eventually (directly or indirectly) refers to such package.
+                foreach (var r in debugItems?.Keys.Where(x => !referencedPackages.Contains(x.Identity.Id, StringComparer.OrdinalIgnoreCase)))
+                {
+                    AppendReference(debugItems, itemGroup, r.Identity);
+                }
+
                 ret.Add(csProject, xml);
             }
             return ret;
