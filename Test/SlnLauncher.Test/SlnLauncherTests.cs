@@ -173,7 +173,7 @@ namespace SlnLauncher.Test
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
 
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
 
         [TestCase("TestApp.nuspec", "-ns", "pack")]
@@ -184,7 +184,7 @@ namespace SlnLauncher.Test
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName, commandLineArg), new TestAppFileWriter());
 
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
 
         [TestCase("TestApp.FailNoContent.slnx", typeof(Exception), "-ns", "pack")]
@@ -230,7 +230,7 @@ namespace SlnLauncher.Test
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
 
         [Test]
@@ -256,7 +256,7 @@ namespace SlnLauncher.Test
 
             SlnLauncher.Program.Main(TestHelper.GetArguments(new TestAppFileWriter().SlnxName), new TestAppFileWriter());
 
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
 
         [Test]
@@ -293,7 +293,7 @@ namespace SlnLauncher.Test
 
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, subFolder, f));
             var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugTestAppAssemblyRefFileWriter.FolderName, subFolder, f));
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
 
         [TestCase("DebugTestApp.ProjWithNugetRefToDebugPrj.csproj", "App")]
@@ -307,7 +307,7 @@ namespace SlnLauncher.Test
 
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
             var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugTestAppNugetRefFileWriter.FolderName, subFolder, f));
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
 
 
@@ -328,14 +328,15 @@ namespace SlnLauncher.Test
         ///
         /// Make sure that the debug information are properly propagated in the slnx.config
         /// </summary>
-        [TestCase("slnx.config", "Src")]
+        [TestCase(Slnx.CsProject.ImportSlnxConfigName, "Src")]
         public void DebugExtendedTestApp_CompareGeneratedFiles(string f, string subFolder)
         {
             SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugExtendedTestAppNugetRefFileWriter().SlnxName), new DebugExtendedTestAppNugetRefFileWriter());
-            
+
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugExtendedTestAppNugetRefFileWriter.FolderName, subFolder, f));
             var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugExtendedTestAppNugetRefFileWriter.FolderName, subFolder, f));
-            Assert.IsTrue(TestHelper.Compare(resultFile, expectedFile));
+
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
     }
 }
