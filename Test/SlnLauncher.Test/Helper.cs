@@ -59,6 +59,15 @@ namespace SlnLauncher.Test
 
         private static bool Compare(string resultFile, string expectedFile, string skipUpTo, params string[] skip)
         {
+            if (!File.Exists(resultFile))
+            {
+                NUnit.Framework.TestContext.WriteLine($"Missing result file {resultFile}");
+            }
+            if (!File.Exists(expectedFile))
+            {
+                NUnit.Framework.TestContext.WriteLine($"Missing expected file {expectedFile}");
+            }
+
             var resultLines = File.ReadAllLines(resultFile);
             var expectedLines = File.ReadAllLines(GetExpectedPathFor(expectedFile));
             if (resultLines.Length == expectedLines.Length)
@@ -90,7 +99,7 @@ namespace SlnLauncher.Test
                         {
                             if (!skip.Any(x => resLine.Contains(x)))
                             {
-                                Console.WriteLine($"Error at line {i + 1} in {resultFile} vs {expectedFile}");
+                                NUnit.Framework.TestContext.WriteLine($"Error at line {i + 1} in {resultFile} vs {expectedFile}");
                                 break;
                             }
                         }
@@ -102,6 +111,16 @@ namespace SlnLauncher.Test
                 }
             }
             return false;
+        }
+
+        public static void AreFilesEqual(string resultFile, string expectedFile, params string[] skip)
+        {
+            var res = Compare(resultFile, expectedFile, skip);
+            if (!res)
+            {
+                NUnit.Framework.TestContext.WriteLine($"Expected file {expectedFile} does not match with {resultFile}");
+            }
+            NUnit.Framework.Assert.IsTrue(res);
         }
 
         internal static string GetStimulPathFor(string file)
