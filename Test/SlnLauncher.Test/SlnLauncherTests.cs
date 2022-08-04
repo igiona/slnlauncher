@@ -54,7 +54,7 @@ namespace SlnLauncher.Test
             {
                 if (!_originalVariables.ContainsKey(keys[i])) //Reset all new vars
                 {
-                    Console.WriteLine("Resetting: {0}", keys[i]);
+                    //Console.WriteLine("Resetting: {0}", keys[i]);
                     System.Environment.SetEnvironmentVariable(keys[i], null);
                 }
             }
@@ -194,10 +194,10 @@ namespace SlnLauncher.Test
         {
             var slnx = TestHelper.GetStimulPathFor(Path.Combine(TestAppFileWriter.FolderName, slnxName));
 
-            var errro = Assert.Throws(ex, () =>
+            var error = Assert.Throws(ex, () =>
                  SlnLauncher.Program.Main(TestHelper.GetArguments(slnx, commandLineArg), new TestAppFileWriter())
             );
-            Console.WriteLine(errro.Message);
+            //Console.WriteLine(error.Message);
         }
 
 
@@ -335,6 +335,17 @@ namespace SlnLauncher.Test
 
             var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugExtendedTestAppNugetRefFileWriter.FolderName, subFolder, f));
             var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugExtendedTestAppNugetRefFileWriter.FolderName, subFolder, f));
+
+            TestHelper.AreFilesEqual(resultFile, expectedFile);
+        }
+
+        [TestCase(Slnx.CsProject.ImportSlnxConfigName, "App")]
+        public void DebugTestAppNoRe_CompareGeneratedFiles(string f, string subFolder)
+        {
+            SlnLauncher.Program.Main(TestHelper.GetArguments(new DebugTestAppNoRefFileWriter().SlnxName), new DebugTestAppNoRefFileWriter());
+
+            var expectedFile = TestHelper.GetExpectedPathFor(Path.Combine(DebugTestAppNoRefFileWriter.FolderName, subFolder, f));
+            var resultFile = TestHelper.GetResultPathFor(Path.Combine(DebugTestAppNoRefFileWriter.FolderName, subFolder, f));
 
             TestHelper.AreFilesEqual(resultFile, expectedFile);
         }
