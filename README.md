@@ -1,3 +1,6 @@
+Deprecated: this tool has no need to exist anymore. Luckily, the standard tools closed the gap and now the issues addressed by this project are covered there!
+Happy dotnet everyone!
+
 # SlnLauncher
 
 <img src="https://github.com/igiona/slnlauncher/blob/master/Icon/SlnLauncher.png?raw=true" width="100">
